@@ -3,6 +3,7 @@
 use chrono::{DateTime, Utc};
 
 use crate::customer::Customer;
+use crate::inventory::DeviceModel;
 
 struct PlaceholderType;
 
@@ -36,26 +37,14 @@ pub struct TicketItem {
     // ? Should there be item-specific notes?
 }
 
-pub enum DeviceModel {
-    Apple(ApplePhone),
-    Samsung(SamsungPhone),
-    Google(GooglePhone),
-    Motorola(MotorolaPhone),
-    // TODO: Support more devics (other models and device types)
-    Other,
-}
-
-pub enum ApplePhone {}
-pub enum SamsungPhone {}
-pub enum GooglePhone {}
-pub enum MotorolaPhone {}
-
 pub enum RepairKind {
     Screen,
     Battery,
     Backglass,
+    Frame,
     FrontCamera,
     RearCamera,
+    LensCover,
     ChargePort,
     Other,
 }
