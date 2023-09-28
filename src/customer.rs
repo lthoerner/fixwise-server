@@ -1,17 +1,23 @@
 #![allow(dead_code)]
 
 use phonenumber::PhoneNumber;
+use uuid::Uuid;
 
 struct PlaceholderType;
 
+pub struct CustomerID {
+    id: Uuid,
+}
+
 pub struct Customer {
+    id: CustomerID,
     name: Name,
     primary_phone: PhoneNumber,
     alternate_phones: Vec<PhoneNumber>,
     email: EmailAddress,
     contact_method: ContactMethod,
     // TODO: This will be replaced by a referral info type later
-    referral: Option<Box<Customer>>,
+    referral: Option<CustomerID>,
 }
 
 pub struct Name {
