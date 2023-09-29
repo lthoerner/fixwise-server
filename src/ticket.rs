@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 
 use crate::customer::Customer;
-use crate::inventory::DeviceModel;
+use crate::inventory::PhoneModel;
 
 struct PlaceholderType;
 
@@ -31,7 +31,7 @@ pub enum TicketStatus {
 
 pub struct TicketItem {
     // TODO: Add support for other inventory types
-    pub device: DeviceModel,
+    pub device: PhoneModel,
     pub repair: RepairKind,
     pub price: f32,
     // ? Should there be item-specific notes?

@@ -6,18 +6,36 @@ pub enum InventoryType {
 }
 
 pub enum CategorizedInventoryKind {
-    Device(DeviceModel),
-    Part(DeviceModel, PartKind),
+    Device(DeviceKind),
+    Part(DeviceKind, PartKind),
     Accessory,
 }
 
-pub enum DeviceModel {
+pub enum DeviceKind {
+    Phone(PhoneModel),
+    Tablet(TabletModel),
+    Console(ConsoleModel),
+}
+
+pub enum PhoneModel {
     Apple(ApplePhone),
     Samsung(SamsungPhone),
     Google(GooglePhone),
     Motorola(MotorolaPhone),
     // TODO: Support more devices (other models and device types)
     Other,
+}
+
+pub enum TabletModel {
+    Apple(AppleTablet),
+    Samsung(SamsungTablet),
+    Other,
+}
+
+pub enum ConsoleModel {
+    PlayStation(PlayStationConsole),
+    Xbox(XboxConsole),
+    Nintendo(NintendoConsole),
 }
 
 pub enum ApplePhone {
@@ -65,7 +83,15 @@ pub enum ApplePhone {
     IphoneSE3,
 }
 
+pub enum AppleTablet {
+    // TODO: Add models
+}
+
 pub enum SamsungPhone {
+    // TODO: Add models
+}
+
+pub enum SamsungTablet {
     // TODO: Add models
 }
 
@@ -75,6 +101,46 @@ pub enum GooglePhone {
 
 pub enum MotorolaPhone {
     // TODO: Add models
+}
+
+pub enum PlayStationConsole {
+    PlayStation5Disc,
+    PlayStation5Digital,
+    PlayStation4Pro,
+    PlayStation4Slim,
+    PlayStation4,
+    PlayStation3Slim,
+    PlayStation3SuperSlim,
+    PlayStation3,
+    PlayStation2Slim,
+    PlayStation2,
+    PlayStation1,
+    PlayStation,
+    PlayStationVita,
+    PlayStationPortable,
+    PlayStationClassic,
+}
+
+pub enum XboxConsole {
+    XboxSeriesX,
+    XboxSeriesS,
+    XboxOneX,
+    XboxOneS,
+    XboxOne,
+    Xbox360E,
+    Xbox360S,
+    Xbox360,
+    Xbox,
+}
+
+pub enum NintendoConsole {
+    Switch,
+    WiiU,
+    Wii,
+    GameCube,
+    Nintendo64,
+    SuperNintendoEntertainmentSystem,
+    NintendoEntertainmentSystem,
 }
 
 // ? How do we handle sub-types here, like different types of rear cameras?
@@ -91,9 +157,10 @@ pub enum PartKind {
 }
 
 pub enum AccessoryKind {
-    Case(DeviceModel),
+    Case(PhoneModel),
     // TODO: Find a better way to model multi-compatibility
-    ScreenProtector(Vec<DeviceModel>),
+    ScreenProtector(Vec<PhoneModel>),
+    // ? Is it necessary to have concrete types for this or should we just use a custom item system?
     Charger(ChargerType),
 }
 
