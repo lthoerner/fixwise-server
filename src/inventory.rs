@@ -84,7 +84,39 @@ pub enum ApplePhone {
 }
 
 pub enum AppleTablet {
-    // TODO: Add models
+    Ipad10,
+    Ipad9,
+    Ipad8,
+    Ipad7,
+    Ipad6,
+    Ipad5,
+    Ipad4,
+    Ipad3,
+    Ipad2,
+    Ipad1,
+    IpadProLarge6,
+    IpadProLarge5,
+    IpadProLarge4,
+    IpadProLarge3,
+    IpadProLarge2,
+    IpadProLarge1,
+    IpadProMedium4,
+    IpadProMedium3,
+    IpadProMedium2,
+    IpadProMedium1,
+    IpadPro9Pt7,
+    IpadPro10Pt5,
+    IpadAir5,
+    IpadAir4,
+    IpadAir3,
+    IpadAir2,
+    IpadAir1,
+    IpadMini6,
+    IpadMini5,
+    IpadMini4,
+    IpadMini3,
+    IpadMini2,
+    IpadMini1,
 }
 
 pub enum SamsungPhone {
