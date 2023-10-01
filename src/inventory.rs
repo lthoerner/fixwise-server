@@ -128,7 +128,33 @@ pub enum SamsungTablet {
 }
 
 pub enum GooglePhone {
-    // TODO: Add models
+    Pixel7Pro,
+    Pixel7,
+    Pixel6Pro,
+    Pixel6A,
+    Pixel6,
+    Pixel5A,
+    Pixel5,
+    Pixel4XL,
+    Pixel4A,
+    Pixel4,
+    Pixel3XL,
+    Pixel3AXL,
+    Pixel3A,
+    Pixel3,
+    Pixel2XL,
+    Pixel2,
+    Pixel1XL,
+    Pixel1,
+    Nexus6P,
+    Nexus6,
+    Nexus5X,
+    Nexus5,
+    Nexus4,
+    SamsungGalaxyNexus,
+    NexusS,
+    NexusOne,
+    AndroidDevPhone1,
 }
 
 pub enum MotorolaPhone {
@@ -146,7 +172,7 @@ pub enum PlayStationConsole {
     PlayStation3,
     PlayStation2Slim,
     PlayStation2,
-    PlayStation1,
+    PlayStationOne,
     PlayStation,
     PlayStationVita,
     PlayStationPortable,
