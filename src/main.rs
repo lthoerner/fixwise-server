@@ -12,6 +12,8 @@ use surrealdb::opt::auth::Root;
 use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 
+/// A record with the bare minimum amount of structure, used to provide generic functions with type
+/// parameters when the actual result is not important.
 #[derive(Debug, Deserialize)]
 struct GenericRecord {
     // * This has to be an attribute tag because `_id` does not map to `id`.
@@ -19,12 +21,14 @@ struct GenericRecord {
     id: Thing,
 }
 
+/// A device manufacturer.
 #[derive(Debug, Serialize, Deserialize)]
 struct Manufacturer {
     id: String,
     common_name: String,
 }
 
+/// A device and all of its relevant metadata, such as its make and model.
 #[derive(Debug, Serialize)]
 struct Device {
     id: String,
@@ -35,7 +39,7 @@ struct Device {
     extended_model_identifiers: Vec<String>,
 }
 
-/// Represents an extension which can be added to the database.
+/// An extension which can be added to the database.
 #[derive(Debug)]
 struct Extension {
     // name: String,
@@ -44,11 +48,13 @@ struct Extension {
     devices: Vec<Device>,
 }
 
+/// Wrapper type for a SurrealDB connection.
 struct Database {
     connection: Surreal<Client>,
 }
 
 impl Database {
+    /// Connects to the database, if it is available.
     async fn connect() -> Self {
         let connection = Surreal::new::<Ws>("localhost:8000").await.unwrap();
         connection.use_ns("test").use_db("test").await.unwrap();
@@ -63,6 +69,7 @@ impl Database {
         Self { connection }
     }
 
+    /// Sets up the tables needed for core functionality.
     async fn setup_tables(&self) -> anyhow::Result<()> {
         // ? Do device kinds need a common name?
         self.connection
@@ -86,6 +93,7 @@ impl Database {
         Ok(())
     }
 
+    /// Sets up IDs for "baked-in" manufacturers and device kinds.
     async fn setup_reserved_items(&self) -> anyhow::Result<()> {
         self.connection
             .query(
@@ -111,6 +119,7 @@ impl Database {
         Ok(())
     }
 
+    /// Adds the contents of an inventory extension to the database.
     async fn add_extension(&self, ext: Extension) -> anyhow::Result<()> {
         let mut futures = Vec::new();
         for kind in ext.device_kinds {
@@ -162,7 +171,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Represents an extension read from a TOML file.
+/// An extension as read from a TOML file.
 /// Some types are not compatible with the database, so this type must be converted into an
 /// `Extension` before calling `Database::add_extension()`.
 #[derive(Debug, Deserialize)]
@@ -199,6 +208,8 @@ impl From<ExtensionToml> for Extension {
     }
 }
 
+/// A device and its metadata as read from a TOML extension.
+/// This must be converted into a `Device` before adding it to the database.
 #[derive(Debug, Deserialize)]
 struct DeviceToml {
     // TODO: Figure out a better name for this
