@@ -2874,6 +2874,7 @@ dependencies = [
  "chrono",
  "futures-util",
  "phonenumber",
+ "semver",
  "serde",
  "surrealdb",
  "tokio",
