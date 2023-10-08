@@ -1,5 +1,5 @@
 extension_id = 'iphone_all'
-extension_common_name = 'iPhones'
+extension_common_name = 'iPhones ALL'
 extension_version = '0.1.0'
 load_override = true
 
