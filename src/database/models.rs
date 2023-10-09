@@ -13,7 +13,7 @@ use super::{
 
 /// An explicitly-namespaced extension ID.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ExtensionID {
+pub struct InventoryExtensionID {
     non_namespaced_id: String,
 }
 
@@ -36,10 +36,10 @@ pub struct ClassificationID {
 /// The extension and classification IDs are not namespaced to their respective tables in this form.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceID {
-    pub extension_id: String,
-    pub manufacturer_id: String,
-    pub classification_id: String,
-    pub device_id: String,
+    pub extension_id: InventoryExtensionID,
+    pub manufacturer_id: ManufacturerID,
+    pub classification_id: ClassificationID,
+    pub non_namespaced_id: String,
 }
 
 /// The metadata of an extension.
@@ -47,7 +47,7 @@ pub struct DeviceID {
 /// It is used to identify existing extensions to the `ExtensionManager` to prevent conflicts.
 #[derive(Debug, PartialEq)]
 pub struct InventoryExtensionInfo {
-    pub id: ExtensionID,
+    pub id: InventoryExtensionID,
     pub common_name: String,
     pub version: Version,
 }
@@ -74,7 +74,7 @@ pub struct InventoryExtensionInfoPullRecord {
 pub struct Manufacturer {
     pub id: ManufacturerID,
     pub common_name: String,
-    pub extensions: HashSet<ExtensionID>,
+    pub extensions: HashSet<InventoryExtensionID>,
 }
 
 /// A device manufacturer which can be added to the database.
@@ -98,7 +98,7 @@ pub struct ManufacturerPullRecord {
 pub struct Classification {
     pub id: ClassificationID,
     pub common_name: String,
-    pub extensions: HashSet<ExtensionID>,
+    pub extensions: HashSet<InventoryExtensionID>,
 }
 
 /// A classification of device which can be added to the database.
@@ -124,7 +124,7 @@ pub struct Device {
     pub common_name: String,
     pub manufacturer: ManufacturerID,
     pub classification: ClassificationID,
-    pub extension: ExtensionID,
+    pub extension: InventoryExtensionID,
     pub primary_model_identifiers: Vec<String>,
     pub extended_model_identifiers: Vec<String>,
 }
@@ -192,7 +192,7 @@ impl TryFrom<InventoryExtensionInfoPullRecord> for InventoryExtensionInfo {
     type Error = anyhow::Error;
     fn try_from(extension: InventoryExtensionInfoPullRecord) -> Result<Self, anyhow::Error> {
         Ok(InventoryExtensionInfo {
-            id: ExtensionID::try_from(extension.id)?,
+            id: InventoryExtensionID::try_from(extension.id)?,
             common_name: extension.common_name,
             version: Version::parse(&extension.version)?,
         })
@@ -218,7 +218,7 @@ impl TryFrom<ManufacturerPullRecord> for Manufacturer {
             extensions: manufacturer
                 .extensions
                 .into_iter()
-                .map(ExtensionID::try_from)
+                .map(InventoryExtensionID::try_from)
                 .collect::<Result<HashSet<_>, _>>()?,
         })
     }
@@ -243,7 +243,7 @@ impl TryFrom<ClassificationPullRecord> for Classification {
             extensions: classification
                 .extensions
                 .into_iter()
-                .map(ExtensionID::try_from)
+                .map(InventoryExtensionID::try_from)
                 .collect::<Result<HashSet<_>, _>>()?,
         })
     }
@@ -273,10 +273,10 @@ impl From<&InventoryExtension> for InventoryExtensionInfo {
     }
 }
 
-impl ExtensionID {
-    pub fn new(id: String) -> Self {
+impl InventoryExtensionID {
+    pub fn new(id: &str) -> Self {
         Self {
-            non_namespaced_id: id,
+            non_namespaced_id: id.to_owned(),
         }
     }
 
@@ -289,8 +289,8 @@ impl ExtensionID {
     }
 }
 
-impl From<&ExtensionID> for Thing {
-    fn from(id: &ExtensionID) -> Self {
+impl From<&InventoryExtensionID> for Thing {
+    fn from(id: &InventoryExtensionID) -> Self {
         Thing {
             tb: EXTENSION_TABLE_NAME.to_owned(),
             id: Id::String(id.non_namespaced_id.clone()),
@@ -298,11 +298,11 @@ impl From<&ExtensionID> for Thing {
     }
 }
 
-impl TryFrom<Thing> for ExtensionID {
+impl TryFrom<Thing> for InventoryExtensionID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(ExtensionID {
+            Ok(InventoryExtensionID {
                 non_namespaced_id: id,
             })
         } else {
@@ -312,9 +312,9 @@ impl TryFrom<Thing> for ExtensionID {
 }
 
 impl ManufacturerID {
-    pub fn new(id: String) -> Self {
+    pub fn new(id: &str) -> Self {
         Self {
-            non_namespaced_id: id,
+            non_namespaced_id: id.to_owned(),
         }
     }
 
@@ -350,9 +350,9 @@ impl TryFrom<Thing> for ManufacturerID {
 }
 
 impl ClassificationID {
-    pub fn new(id: String) -> Self {
+    pub fn new(id: &str) -> Self {
         Self {
-            non_namespaced_id: id,
+            non_namespaced_id: id.to_owned(),
         }
     }
 
@@ -388,26 +388,28 @@ impl TryFrom<Thing> for ClassificationID {
 }
 
 impl DeviceID {
+    /// Creates a `DeviceID`.
+    /// None of the parameters to this function should be namespaced.
     pub fn new(
-        extension_id: String,
-        manufacturer_id: String,
-        classification_id: String,
-        device_id: String,
+        extension_id: &str,
+        manufacturer_id: &str,
+        classification_id: &str,
+        id: &str,
     ) -> Self {
         Self {
-            extension_id,
-            manufacturer_id,
-            classification_id,
-            device_id,
+            extension_id: InventoryExtensionID::new(extension_id),
+            manufacturer_id: ManufacturerID::new(manufacturer_id),
+            classification_id: ClassificationID::new(classification_id),
+            non_namespaced_id: id.to_owned(),
         }
     }
 
     pub fn to_non_namespaced_string(&self) -> String {
         [
-            self.extension_id.as_str(),
-            self.manufacturer_id.as_str(),
-            self.classification_id.as_str(),
-            self.device_id.as_str(),
+            self.extension_id.to_non_namespaced_string().as_str(),
+            self.manufacturer_id.to_non_namespaced_string().as_str(),
+            self.classification_id.to_non_namespaced_string().as_str(),
+            self.non_namespaced_id.as_str(),
         ]
         .join("/")
     }
@@ -423,10 +425,10 @@ impl From<&DeviceID> for Thing {
             tb: super::DEVICE_TABLE_NAME.to_owned(),
             id: Id::String(
                 [
-                    id.extension_id.as_str(),
-                    id.manufacturer_id.as_str(),
-                    id.classification_id.as_str(),
-                    id.device_id.as_str(),
+                    id.extension_id.to_non_namespaced_string().as_str(),
+                    id.manufacturer_id.to_non_namespaced_string().as_str(),
+                    id.classification_id.to_non_namespaced_string().as_str(),
+                    id.non_namespaced_id.as_str(),
                 ]
                 .join("/"),
             ),
@@ -454,13 +456,13 @@ impl TryFrom<Thing> for DeviceID {
                 Some(extension_id),
                 Some(manufacturer_id),
                 Some(classification_id),
-                Some(device_id),
+                Some(id),
                 None,
             ) => Ok(DeviceID {
-                extension_id: extension_id.to_owned(),
-                manufacturer_id: manufacturer_id.to_owned(),
-                classification_id: classification_id.to_owned(),
-                device_id: device_id.to_owned(),
+                extension_id: InventoryExtensionID::new(extension_id),
+                manufacturer_id: ManufacturerID::new(manufacturer_id),
+                classification_id: ClassificationID::new(classification_id),
+                non_namespaced_id: id.to_owned(),
             }),
             _ => Err(anyhow!("Improperly-formatted namespaced device ID")),
         }

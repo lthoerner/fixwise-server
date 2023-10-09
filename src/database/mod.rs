@@ -1,6 +1,7 @@
 pub mod models;
 
 use std::future::IntoFuture;
+use std::net::{Ipv4Addr, SocketAddr};
 
 use futures_util::future;
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -9,9 +10,9 @@ use surrealdb::Surreal;
 
 use self::models::{
     Classification, ClassificationID, ClassificationPullRecord, ClassificationPushRecord,
-    DevicePushRecord, GenericPullRecord, InventoryExtensionInfo, InventoryExtensionInfoPullRecord,
-    InventoryExtensionInfoPushRecord, Manufacturer, ManufacturerID, ManufacturerPullRecord,
-    ManufacturerPushRecord,
+    DevicePushRecord, GenericPullRecord, InventoryExtensionID, InventoryExtensionInfo,
+    InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord, Manufacturer,
+    ManufacturerID, ManufacturerPullRecord, ManufacturerPushRecord,
 };
 use crate::extension::InventoryExtension;
 
@@ -23,22 +24,64 @@ const DEVICE_TABLE_NAME: &str = "devices";
 /// Wrapper type for a SurrealDB connection.
 pub struct Database {
     connection: Surreal<Client>,
+    #[allow(dead_code)]
+    config: DatabaseConfig,
+}
+
+/// Configuration for connecting to the database.
+pub struct DatabaseConfig {
+    pub address: SocketAddr,
+    pub username: String,
+    pub password: String,
+    pub namespace: String,
+    pub database: String,
+}
+
+impl Default for DatabaseConfig {
+    fn default() -> Self {
+        DatabaseConfig {
+            address: (Ipv4Addr::LOCALHOST, 8000).into(),
+            username: "root".to_owned(),
+            password: "root".to_owned(),
+            namespace: "test".to_owned(),
+            database: "test".to_owned(),
+        }
+    }
 }
 
 impl Database {
-    /// Connects to the database, if it is available.
+    /// Connects to the database, if it is available, using the default configuration.
     pub async fn connect() -> Self {
-        let connection = Surreal::new::<Ws>("localhost:8000").await.unwrap();
-        connection.use_ns("test").use_db("test").await.unwrap();
+        Self::connect_with_config(DatabaseConfig::default()).await
+    }
+
+    /// Connects to the database using defaults except for the provided database name.
+    #[allow(dead_code)]
+    pub async fn connect_with_name(database: &str) -> Self {
+        Self::connect_with_config(DatabaseConfig {
+            database: database.to_owned(),
+            ..Default::default()
+        })
+        .await
+    }
+
+    /// Connects to the database using the provided configuration.
+    pub async fn connect_with_config(config: DatabaseConfig) -> Self {
+        let connection = Surreal::new::<Ws>(config.address).await.unwrap();
+        connection
+            .use_ns(&config.namespace)
+            .use_db(&config.database)
+            .await
+            .unwrap();
         connection
             .signin(Root {
-                username: "root",
-                password: "root",
+                username: &config.username,
+                password: &config.password,
             })
             .await
             .unwrap();
 
-        Self { connection }
+        Self { connection, config }
     }
 
     /// Sets up the tables needed for core functionality.
@@ -86,11 +129,16 @@ impl Database {
 
     /// Sets up IDs for "baked-in" manufacturers and device classifications.
     pub async fn setup_reserved_items(&self) -> anyhow::Result<()> {
-        // * The double brackets are required to escape their meaning in a formatting literal.
+        // * The double braces are required to escape their meaning in a formatting literal.
         self.connection
             .query(&format!(
                 "
-                INSERT INTO {0} {{id: \"builtin\", common_name: \"Built-in\"}};
+                INSERT INTO {0} {{
+                    id: \"builtin\",
+                    common_name: \"Built-in\",
+                    version: \"0.0.0\"
+                }};
+
                 INSERT INTO {1} [
                     {{
                         id: \"apple\",
@@ -118,6 +166,7 @@ impl Database {
                         extensions: [\"{0}:builtin\"]
                     }},
                 ];
+
                 INSERT INTO {2} [
                     {{
                         id: \"phone\",
@@ -151,6 +200,36 @@ impl Database {
             .await?;
 
         Ok(())
+    }
+
+    /// Deletes all items from the database, but leaves the schema intact.
+    /// Used mostly for testing purposes.
+    #[allow(dead_code)]
+    pub async fn clear(&self) -> anyhow::Result<()> {
+        self.connection
+            .delete::<Vec<GenericPullRecord>>(EXTENSION_TABLE_NAME)
+            .await?;
+        self.connection
+            .delete::<Vec<GenericPullRecord>>(MANUFACTURER_TABLE_NAME)
+            .await?;
+        self.connection
+            .delete::<Vec<GenericPullRecord>>(CLASSIFICATION_TABLE_NAME)
+            .await?;
+        self.connection
+            .delete::<Vec<GenericPullRecord>>(DEVICE_TABLE_NAME)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Deletes the current database and all of its contents.
+    /// Used by tests so the database instance can be reused.
+    #[cfg(test)]
+    pub async fn teardown(self) {
+        self.connection
+            .query(&format!("REMOVE DATABASE {}", self.config.database))
+            .await
+            .unwrap();
     }
 
     /// Loads the contents of an inventory extension into the database.
@@ -192,6 +271,10 @@ impl Database {
         &self,
         extension_info: &InventoryExtensionInfo,
     ) -> anyhow::Result<()> {
+        if extension_info.id == InventoryExtensionID::new("builtin") {
+            return Err(anyhow::anyhow!("Cannot unload built-in extension"));
+        }
+
         self.connection
             .query(&format!(
                 "
@@ -222,6 +305,7 @@ impl Database {
         Ok(extensions)
     }
 
+    /// Adds a manufacturer to the database, merging it with an existing record if needed.
     async fn add_manufacturer(&self, mut manufacturer: Manufacturer) -> anyhow::Result<()> {
         if let Some(existing_record) = self.get_manufacturer(&manufacturer.id).await? {
             manufacturer.merge(existing_record.try_into()?);
@@ -235,6 +319,7 @@ impl Database {
         Ok(())
     }
 
+    /// Adds a classification to the database, merging it with an existing record if needed.
     async fn add_classification(&self, mut classification: Classification) -> anyhow::Result<()> {
         if let Some(existing_record) = self.get_classification(&classification.id).await? {
             classification.merge(existing_record.try_into()?);
@@ -248,6 +333,8 @@ impl Database {
         Ok(())
     }
 
+    // ? Can this be combined with `get_classification()` into a single function?
+    /// Gets a manufacturer from the database, if it exists.
     async fn get_manufacturer(
         &self,
         id: &ManufacturerID,
@@ -261,6 +348,7 @@ impl Database {
             .await?)
     }
 
+    /// Gets a classification from the database, if it exists.
     async fn get_classification(
         &self,
         id: &ClassificationID,

@@ -1,21 +1,23 @@
 use std::collections::HashSet;
+use std::ffi::OsStr;
+use std::fs::DirEntry;
+use std::path::Path;
 use std::str::FromStr;
-use std::{ffi::OsStr, path::Path};
 
 use anyhow::anyhow;
 use semver::Version;
 use serde::Deserialize;
 
 use crate::database::models::{
-    Classification, ClassificationID, Device, DeviceID, ExtensionID, InventoryExtensionInfo,
-    Manufacturer, ManufacturerID,
+    Classification, ClassificationID, Device, DeviceID, InventoryExtensionID,
+    InventoryExtensionInfo, Manufacturer, ManufacturerID,
 };
 use crate::database::Database;
 
 /// An extension of the database inventory system.
 #[derive(Debug)]
 pub struct InventoryExtension {
-    pub id: ExtensionID,
+    pub id: InventoryExtensionID,
     pub name: String,
     pub version: Version,
     pub load_override: bool,
@@ -24,11 +26,11 @@ pub struct InventoryExtension {
     pub devices: Vec<Device>,
 }
 
-/// An extension as read from a TOML file.
+/// An inventory extension as read from a TOML file.
 /// Some types are not compatible with the database, so this type must be converted into an
-/// `Extension` before calling `Database::add_extension()`.
+/// `InventoryExtension` before calling `Database::load_extension()`.
 #[derive(Debug, Deserialize)]
-struct ExtensionToml {
+struct InventoryExtensionToml {
     extension_id: String,
     extension_common_name: String,
     extension_version: String,
@@ -68,39 +70,41 @@ pub struct DeviceToml {
 }
 
 /// Manages the parsing and loading of extensions into the database.
+#[derive(Default)]
 pub struct ExtensionManager {
     extensions: Vec<InventoryExtension>,
 }
 
 impl ExtensionManager {
     /// Loads all extensions from the default location (the extensions folder).
-    // * Cannot use `Default` here due to error handling requirements.
     pub fn new() -> anyhow::Result<Self> {
-        let extensions_dir_entries = std::fs::read_dir("./extensions")?;
-        let mut extensions = Vec::new();
-        for extension_file in extensions_dir_entries.flatten() {
-            let (path, filetype) = (extension_file.path(), extension_file.file_type());
-            if let Ok(filetype) = filetype {
-                if filetype.is_file() && path.extension() == Some(OsStr::new("toml")) {
-                    extensions.push(ExtensionManager::stage_extension(&path)?);
-                }
+        let mut manager = Self::default();
+        for extension_file in std::fs::read_dir("./extensions")?.flatten() {
+            if Self::is_extension(&extension_file) {
+                manager.stage_extension(&extension_file.path())?;
             }
         }
 
-        let extensions = extensions
-            .into_iter()
-            .map(InventoryExtension::from)
-            .collect();
+        Ok(manager)
+    }
 
-        Ok(ExtensionManager { extensions })
+    /// Creates a manager for the provided extensions.
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn with_extensions(extensions: impl Iterator<Item = InventoryExtension>) -> Self {
+        Self {
+            extensions: extensions.collect(),
+        }
     }
 
     /// Parses a TOML file into an extension which can be added to the database by the manager.
-    fn stage_extension(filename: &Path) -> anyhow::Result<ExtensionToml> {
+    fn stage_extension(&mut self, filename: &Path) -> anyhow::Result<()> {
         // ? Is it any better to read to bytes and convert to struct or is string fine?
         let toml = std::fs::read_to_string(filename)?;
-        let extension: ExtensionToml = toml::from_str(&toml)?;
-        Ok(extension)
+        let extension: InventoryExtensionToml = toml::from_str(&toml)?;
+        self.extensions.push(InventoryExtension::from(extension));
+
+        Ok(())
     }
 
     /// Adds all extensions from the manager into the database, handling any conflicts.
@@ -147,20 +151,50 @@ impl ExtensionManager {
 
         Ok(())
     }
+
+    /// Checks whether a given filesystem object is a valid extension.
+    fn is_extension(object: &DirEntry) -> bool {
+        let (path, filetype) = (object.path(), object.file_type());
+        if let Ok(filetype) = filetype {
+            if filetype.is_file() && path.extension() == Some(OsStr::new("toml")) {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+impl InventoryExtension {
+    /// Creates a basic extension for testing purposes.
+    /// Can be modified to test different scenarios.
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn base() -> Self {
+        Self {
+            id: InventoryExtensionID::new("base_test"),
+            name: "Base Testing Extension".to_owned(),
+            version: Version::new(1, 0, 0),
+            load_override: false,
+            manufacturers: Vec::new(),
+            classifications: Vec::new(),
+            devices: Vec::new(),
+        }
+    }
 }
 
 // TODO: Remove unwraps
 // * Inner types here (`Manufacturer`, `Classification`, `Device`) must be converted with context
 // * provided by the `ExtensionToml` itself, so they cannot be converted directly.
-impl From<ExtensionToml> for InventoryExtension {
-    fn from(toml: ExtensionToml) -> Self {
+impl From<InventoryExtensionToml> for InventoryExtension {
+    fn from(toml: InventoryExtensionToml) -> Self {
         let manufacturers = toml
             .manufacturers
             .into_iter()
             .map(|m| Manufacturer {
-                id: ManufacturerID::new(m.id),
+                id: ManufacturerID::new(&m.id),
                 common_name: m.common_name,
-                extensions: HashSet::from([ExtensionID::new(toml.extension_id.clone())]),
+                extensions: HashSet::from([InventoryExtensionID::new(&toml.extension_id)]),
             })
             .collect();
 
@@ -169,9 +203,9 @@ impl From<ExtensionToml> for InventoryExtension {
             .unwrap_or_default()
             .into_iter()
             .map(|c| Classification {
-                id: ClassificationID::new(c.id),
+                id: ClassificationID::new(&c.id),
                 common_name: c.common_name,
-                extensions: HashSet::from([ExtensionID::new(toml.extension_id.clone())]),
+                extensions: HashSet::from([InventoryExtensionID::new(&toml.extension_id)]),
             })
             .collect();
 
@@ -181,22 +215,22 @@ impl From<ExtensionToml> for InventoryExtension {
             // ? Is there a more conventional way to do this conversion?
             .map(|d| Device {
                 id: DeviceID::new(
-                    toml.extension_id.clone(),
-                    d.manufacturer.clone(),
-                    d.classification.clone(),
-                    d.true_name.clone(),
+                    &toml.extension_id,
+                    &d.manufacturer,
+                    &d.classification,
+                    &d.true_name,
                 ),
                 common_name: d.common_name,
-                manufacturer: ManufacturerID::new(d.manufacturer.clone()),
-                classification: ClassificationID::new(d.classification.clone()),
-                extension: ExtensionID::new(toml.extension_id.clone()),
+                manufacturer: ManufacturerID::new(&d.manufacturer),
+                classification: ClassificationID::new(&d.classification),
+                extension: InventoryExtensionID::new(&toml.extension_id),
                 primary_model_identifiers: d.primary_model_identifiers,
                 extended_model_identifiers: d.extended_model_identifiers,
             })
             .collect();
 
         InventoryExtension {
-            id: ExtensionID::new(toml.extension_id.clone()),
+            id: InventoryExtensionID::new(&toml.extension_id),
             name: toml.extension_common_name,
             version: Version::from_str(&toml.extension_version).unwrap(),
             load_override: toml.load_override.unwrap_or_default(),
