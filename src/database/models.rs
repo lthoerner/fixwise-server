@@ -70,7 +70,7 @@ pub struct InventoryExtensionInfoPullRecord {
 
 // TODO: Find a better place for standard models
 /// A device manufacturer.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Manufacturer {
     pub id: ManufacturerID,
     pub common_name: String,
@@ -94,7 +94,7 @@ pub struct ManufacturerPullRecord {
 }
 
 /// A classification of device, such as a phone, tablet, or gaming console.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Classification {
     pub id: ClassificationID,
     pub common_name: String,
@@ -118,7 +118,7 @@ pub struct ClassificationPullRecord {
 }
 
 /// A device and all of its relevant metadata, such as its make and model.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Device {
     pub id: DeviceID,
     pub common_name: String,
@@ -163,6 +163,18 @@ pub struct GenericPullRecord {
 }
 
 impl Manufacturer {
+    /// Creates a basic manufacturer for testing purposes.
+    /// Can be modified to test different scenarios.
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
+        Self {
+            id: ManufacturerID::new(&format!("test_{num}")),
+            common_name: format!("Test Manufacturer {num}"),
+            extensions: HashSet::from([extension_id.clone()]),
+        }
+    }
+
     /// Merges the extensions field of another manufacturer into this one.
     /// Does not check whether the two manufacturers share the same ID and other metadata.
     pub fn merge(&mut self, other: Manufacturer) {
@@ -171,10 +183,50 @@ impl Manufacturer {
 }
 
 impl Classification {
+    /// Creates a basic classification for testing purposes.
+    /// Can be modified to test different scenarios.
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
+        Self {
+            id: ClassificationID::new(&format!("test_{num}")),
+            common_name: format!("Test Classification {num}"),
+            extensions: HashSet::from([extension_id.clone()]),
+        }
+    }
+
     /// Merges the extensions field of another classification into this one.
     /// Does not check whether the two classifications share the same ID and other metadata.
     pub fn merge(&mut self, other: Classification) {
         self.extensions.extend(other.extensions);
+    }
+}
+
+impl Device {
+    /// Creates a basic device for testing purposes.
+    /// Can be modified to test different scenarios.
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test(
+        num: u32,
+        extension_id: &InventoryExtensionID,
+        manufacturer_id: &ManufacturerID,
+        classification_id: &ClassificationID,
+    ) -> Self {
+        Self {
+            id: DeviceID::new(
+                &extension_id.to_non_namespaced_string(),
+                &manufacturer_id.to_non_namespaced_string(),
+                &classification_id.to_non_namespaced_string(),
+                &format!("test_{num}"),
+            ),
+            common_name: format!("Test Device {num}"),
+            manufacturer: manufacturer_id.clone(),
+            classification: classification_id.clone(),
+            extension: extension_id.clone(),
+            primary_model_identifiers: vec![format!("test_{num}_primary")],
+            extended_model_identifiers: vec![format!("test_{num}_extended")],
+        }
     }
 }
 
@@ -260,6 +312,21 @@ impl<'a> From<&'a Device> for DevicePushRecord<'a> {
             primary_model_identifiers: &device.primary_model_identifiers,
             extended_model_identifiers: &device.extended_model_identifiers,
         }
+    }
+}
+
+impl TryFrom<DevicePullRecord> for Device {
+    type Error = anyhow::Error;
+    fn try_from(device: DevicePullRecord) -> Result<Self, Self::Error> {
+        Ok(Device {
+            id: DeviceID::try_from(device.id)?,
+            common_name: device.common_name,
+            manufacturer: ManufacturerID::try_from(device.manufacturer)?,
+            classification: ClassificationID::try_from(device.classification)?,
+            extension: InventoryExtensionID::try_from(device.extension)?,
+            primary_model_identifiers: device.primary_model_identifiers,
+            extended_model_identifiers: device.extended_model_identifiers,
+        })
     }
 }
 

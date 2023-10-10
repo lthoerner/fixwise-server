@@ -9,10 +9,10 @@ use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 
 use self::models::{
-    Classification, ClassificationID, ClassificationPullRecord, ClassificationPushRecord,
-    DevicePushRecord, GenericPullRecord, InventoryExtensionID, InventoryExtensionInfo,
-    InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord, Manufacturer,
-    ManufacturerID, ManufacturerPullRecord, ManufacturerPushRecord,
+    Classification, ClassificationID, ClassificationPullRecord, ClassificationPushRecord, Device,
+    DevicePullRecord, DevicePushRecord, GenericPullRecord, InventoryExtensionID,
+    InventoryExtensionInfo, InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord,
+    Manufacturer, ManufacturerID, ManufacturerPullRecord, ManufacturerPushRecord,
 };
 use crate::extension::InventoryExtension;
 
@@ -56,6 +56,7 @@ impl Database {
     }
 
     /// Connects to the database using defaults except for the provided database name.
+    #[cfg(test)]
     #[allow(dead_code)]
     pub async fn connect_with_name(database: &str) -> Self {
         Self::connect_with_config(DatabaseConfig {
@@ -203,7 +204,8 @@ impl Database {
     }
 
     /// Deletes all items from the database, but leaves the schema intact.
-    /// Used mostly for testing purposes.
+    /// Used for testing purposes.
+    #[cfg(test)]
     #[allow(dead_code)]
     pub async fn clear(&self) -> anyhow::Result<()> {
         self.connection
@@ -305,6 +307,53 @@ impl Database {
         Ok(extensions)
     }
 
+    /// Lists all the manufacturers in the database.
+    #[allow(dead_code)]
+    pub async fn list_manufacturers(&self) -> anyhow::Result<Vec<Manufacturer>> {
+        let pull_records = self
+            .connection
+            .select::<Vec<ManufacturerPullRecord>>(MANUFACTURER_TABLE_NAME)
+            .await?;
+
+        let mut manufacturers = Vec::new();
+        for record in pull_records {
+            manufacturers.push(Manufacturer::try_from(record)?);
+        }
+
+        Ok(manufacturers)
+    }
+
+    /// Lists all the classifications in the database.
+    #[allow(dead_code)]
+    pub async fn list_classifications(&self) -> anyhow::Result<Vec<Classification>> {
+        let pull_records = self
+            .connection
+            .select::<Vec<ClassificationPullRecord>>(CLASSIFICATION_TABLE_NAME)
+            .await?;
+
+        let mut classifications = Vec::new();
+        for record in pull_records {
+            classifications.push(Classification::try_from(record)?);
+        }
+
+        Ok(classifications)
+    }
+
+    /// Lists all the devices in the database.
+    pub async fn list_devices(&self) -> anyhow::Result<Vec<Device>> {
+        let pull_records = self
+            .connection
+            .select::<Vec<DevicePullRecord>>(DEVICE_TABLE_NAME)
+            .await?;
+
+        let mut devices = Vec::new();
+        for record in pull_records {
+            devices.push(Device::try_from(record)?);
+        }
+
+        Ok(devices)
+    }
+
     /// Adds a manufacturer to the database, merging it with an existing record if needed.
     async fn add_manufacturer(&self, mut manufacturer: Manufacturer) -> anyhow::Result<()> {
         if let Some(existing_record) = self.get_manufacturer(&manufacturer.id).await? {
@@ -360,5 +409,22 @@ impl Database {
                 id.to_non_namespaced_string(),
             ))
             .await?)
+    }
+
+    /// Checks that the database only contains the given extension and its contents.
+    /// Used for testing purposes.
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub async fn only_contains(&self, extension: &InventoryExtension) -> anyhow::Result<bool> {
+        let loaded_extension_info = self.list_extensions().await?;
+        let loaded_manufacturer_info = self.list_manufacturers().await?;
+        let loaded_classification_info = self.list_classifications().await?;
+        let loaded_device_info = self.list_devices().await?;
+
+        Ok(loaded_extension_info.len() == 1
+            && loaded_extension_info[0] == InventoryExtensionInfo::from(extension)
+            && loaded_manufacturer_info == extension.manufacturers
+            && loaded_classification_info == extension.classifications
+            && loaded_device_info == extension.devices)
     }
 }

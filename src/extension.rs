@@ -15,7 +15,7 @@ use crate::database::models::{
 use crate::database::Database;
 
 /// An extension of the database inventory system.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InventoryExtension {
     pub id: InventoryExtensionID,
     pub name: String,
@@ -91,9 +91,9 @@ impl ExtensionManager {
     /// Creates a manager for the provided extensions.
     #[cfg(test)]
     #[allow(dead_code)]
-    pub fn with_extensions(extensions: impl Iterator<Item = InventoryExtension>) -> Self {
+    pub fn with_extensions(extensions: impl IntoIterator<Item = InventoryExtension>) -> Self {
         Self {
-            extensions: extensions.collect(),
+            extensions: extensions.into_iter().collect(),
         }
     }
 
@@ -170,10 +170,10 @@ impl InventoryExtension {
     /// Can be modified to test different scenarios.
     #[cfg(test)]
     #[allow(dead_code)]
-    pub fn base() -> Self {
+    pub fn test(num: u32) -> Self {
         Self {
-            id: InventoryExtensionID::new("base_test"),
-            name: "Base Testing Extension".to_owned(),
+            id: InventoryExtensionID::new(&format!("test_{num}")),
+            name: format!("Test Extension {num}"),
             version: Version::new(1, 0, 0),
             load_override: false,
             manufacturers: Vec::new(),
