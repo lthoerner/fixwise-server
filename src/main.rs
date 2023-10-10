@@ -30,23 +30,69 @@ mod tests {
     use crate::extension::{ExtensionManager, InventoryExtension};
 
     #[tokio::test]
+    #[ignore = "not implemented"]
     /// Tests that two extensions with the same ID, but incompatible metadata, will cause an error.
     async fn incompatible_duplicate_extensions() {
         let db = Database::connect_with_name("test_incompatible_duplicate_extensions").await;
-
         db.teardown().await;
-
         todo!()
     }
 
     #[tokio::test]
-    /// Tests that two extensions with the same ID and metadata will not be reloaded or conflict.
+    /// Tests that two extensions with the same ID and metadata will not be reloaded or cause a
+    /// conflict, even if they have different contents.
     async fn compatible_duplicate_extensions() {
         let db = Database::connect_with_name("test_compatible_duplicate_extensions").await;
 
-        db.teardown().await;
+        // Create two extensions with the same ID and metadata, but different contents
+        let mut original_extension = InventoryExtension::test(1);
+        let mut duplicate_extension = original_extension.clone();
+        // Add a different manufacturer to each extension
+        let manufacturer_1 = Manufacturer::test(1, &original_extension.id);
+        let manufacturer_2 = Manufacturer::test(2, &duplicate_extension.id);
+        original_extension
+            .manufacturers
+            .push(manufacturer_1.clone());
+        duplicate_extension
+            .manufacturers
+            .push(manufacturer_2.clone());
+        // Add a different classification to each extension
+        let classification_1 = Classification::test(1, &original_extension.id);
+        let classification_2 = Classification::test(2, &duplicate_extension.id);
+        original_extension
+            .classifications
+            .push(classification_1.clone());
+        duplicate_extension
+            .classifications
+            .push(classification_2.clone());
+        // Add a different device to each extension
+        let device_1 = Device::test(
+            1,
+            &original_extension.id,
+            &manufacturer_1.id,
+            &classification_1.id,
+        );
+        let device_2 = Device::test(
+            2,
+            &duplicate_extension.id,
+            &manufacturer_2.id,
+            &classification_2.id,
+        );
+        original_extension.devices.push(device_1.clone());
+        duplicate_extension.devices.push(device_2.clone());
 
-        todo!()
+        // Load the first extension into the database
+        let manager = ExtensionManager::with_extensions([original_extension.clone()]);
+        manager.load_extensions(&db).await.unwrap();
+        // Make sure the extension was loaded correctly
+        assert!(db.only_contains(&original_extension).await.unwrap());
+        // Load the second extension into the database
+        let manager = ExtensionManager::with_extensions([duplicate_extension.clone()]);
+        manager.load_extensions(&db).await.unwrap();
+        // Make sure the second extension was not loaded
+        assert!(db.only_contains(&original_extension).await.unwrap());
+
+        db.teardown().await;
     }
 
     #[tokio::test]
