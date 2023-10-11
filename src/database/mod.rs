@@ -87,10 +87,7 @@ impl Database {
 
     /// Sets up the tables needed for core functionality.
     pub async fn setup_tables(&self) -> anyhow::Result<()> {
-        // * Some notes:
-        // * - ID is an implicit field on all tables and uses the `sql::Thing` type.
-        // * - Manufacturers and device classifications do not have an `extension` field because
-        // *   they can be added by multiple extensions without conflict.
+        // * ID is an implicit field on all tables and uses the `sql::Thing` type.
         self.connection
             .query(&format!(
                 "
