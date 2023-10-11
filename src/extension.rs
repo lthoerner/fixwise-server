@@ -123,6 +123,7 @@ impl ExtensionManager {
                         // * the case that two extensions with the same ID exist in the database.
                         db.unload_extension(loaded_extension_info).await?;
                     }
+                // TODO: The two below conditions are incompatible, need to fix
                 } else if staged_extension_info.id == loaded_extension_info.id
                     && staged_extension_info.common_name != loaded_extension_info.common_name
                     && staged_extension_info.version == loaded_extension_info.version
