@@ -1,5 +1,3 @@
-pub mod models;
-
 use std::future::IntoFuture;
 use std::net::{Ipv4Addr, SocketAddr};
 
@@ -8,18 +6,22 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 
-use self::models::{
-    Classification, ClassificationID, ClassificationPullRecord, ClassificationPushRecord, Device,
-    DevicePullRecord, DevicePushRecord, GenericPullRecord, InventoryExtensionID,
-    InventoryExtensionInfo, InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord,
-    Manufacturer, ManufacturerID, ManufacturerPullRecord, ManufacturerPushRecord,
-};
 use crate::extension::InventoryExtension;
+use crate::models::common::{
+    Classification, ClassificationID, Device, InventoryExtensionID, InventoryExtensionInfo,
+    Manufacturer, ManufacturerID,
+};
+use crate::models::database::{
+    ClassificationPullRecord, ClassificationPushRecord, DevicePullRecord, DevicePushRecord,
+    GenericPullRecord, InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord,
+    ManufacturerPullRecord, ManufacturerPushRecord,
+};
 
-const EXTENSION_TABLE_NAME: &str = "extensions";
-const MANUFACTURER_TABLE_NAME: &str = "manufacturers";
-const CLASSIFICATION_TABLE_NAME: &str = "classifications";
-const DEVICE_TABLE_NAME: &str = "devices";
+// TODO: Find a more sensible place to move these
+pub const EXTENSION_TABLE_NAME: &str = "extensions";
+pub const MANUFACTURER_TABLE_NAME: &str = "manufacturers";
+pub const CLASSIFICATION_TABLE_NAME: &str = "classifications";
+pub const DEVICE_TABLE_NAME: &str = "devices";
 
 /// Wrapper type for a SurrealDB connection.
 pub struct Database {

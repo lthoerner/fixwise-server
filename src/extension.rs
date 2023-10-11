@@ -8,11 +8,11 @@ use anyhow::anyhow;
 use semver::Version;
 use serde::Deserialize;
 
-use crate::database::models::{
+use crate::database::Database;
+use crate::models::common::{
     Classification, ClassificationID, Device, DeviceID, InventoryExtensionID,
     InventoryExtensionInfo, Manufacturer, ManufacturerID,
 };
-use crate::database::Database;
 
 /// An extension of the database inventory system.
 #[derive(Debug, Clone)]
@@ -246,10 +246,10 @@ mod tests {
     use semver::Version;
 
     use super::{ExtensionManager, InventoryExtension};
-    use crate::database::models::{
+    use crate::database::Database;
+    use crate::models::common::{
         Classification, Device, InventoryExtensionID, InventoryExtensionInfo, Manufacturer,
     };
-    use crate::database::Database;
 
     #[tokio::test]
     #[ignore = "not implemented"]

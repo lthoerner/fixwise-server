@@ -1,8 +1,6 @@
-mod customer;
 mod database;
 mod extension;
-mod inventory;
-mod ticket;
+mod models;
 
 use database::Database;
 use extension::ExtensionManager;
