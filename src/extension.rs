@@ -5,6 +5,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::anyhow;
+use log::{error, info, warn};
 use semver::Version;
 use serde::Deserialize;
 
@@ -81,6 +82,11 @@ impl ExtensionManager {
         let mut manager = Self::default();
         for extension_file in std::fs::read_dir("./extensions")?.flatten() {
             if Self::is_extension(&extension_file) {
+                info!(
+                    "Located extension file: {}",
+                    extension_file.path().display()
+                );
+                info!("Staging extension...");
                 manager.stage_extension(&extension_file.path())?;
             }
         }
@@ -110,17 +116,26 @@ impl ExtensionManager {
     /// Adds all extensions from the manager into the database, handling any conflicts.
     // ? How will callbacks be handled here? Probably need to do some sort of DI pattern.
     pub async fn load_extensions(self, db: &Database) -> anyhow::Result<()> {
+        info!("Loading staged extensions into database...");
         let loaded_extensions = db.list_extensions().await?;
         'staged_extension: for staged_extension in self.extensions.into_iter() {
             let staged_extension_info = InventoryExtensionInfo::from(&staged_extension);
             for loaded_extension_info in &loaded_extensions {
                 if staged_extension_info == *loaded_extension_info {
                     if !staged_extension.load_override {
+                        info!(
+                            "Skipped extension '{}' because it is already loaded.",
+                            staged_extension_info.common_name
+                        );
                         continue 'staged_extension;
                     } else {
                         // * Though it is theoretically possible that another extension may run
                         // * into a similar conflict with a different outcome, it should never be
                         // * the case that two extensions with the same ID exist in the database.
+                        warn!(
+                            "Reloading extension '{}' due to a load override.",
+                            loaded_extension_info.common_name
+                        );
                         db.unload_extension(loaded_extension_info).await?;
                     }
                 // TODO: The two below conditions are incompatible, need to fix
@@ -128,6 +143,12 @@ impl ExtensionManager {
                     && staged_extension_info.common_name != loaded_extension_info.common_name
                     && staged_extension_info.version == loaded_extension_info.version
                 {
+                    error!(
+                        "Staged extension '{0}' and loaded extension '{1}' both have ID '{2}'.",
+                        staged_extension_info.common_name,
+                        loaded_extension_info.common_name,
+                        staged_extension_info.id.to_non_namespaced_string()
+                    );
                     return Err(anyhow!(
                         "Extension '{0}' has ID '{1}' but '{1}' is already loaded",
                         staged_extension_info.common_name,
@@ -140,12 +161,33 @@ impl ExtensionManager {
                     // * updated or downgraded. Upgrades will happen automatically, but the user
                     // * must be prompted for a downgrade to occur.
                     // * The extension name can change between versions, so it is not checked.
-                    // TODO: Add prompt for downgrade
+                    // TODO: Add user prompt for downgrade
+                    if staged_extension_info.version < loaded_extension_info.version {
+                        warn!(
+                            "Downgrading loaded extension '{}' from version {} to {}.",
+                            staged_extension_info.common_name,
+                            loaded_extension_info.version,
+                            staged_extension_info.version
+                        );
+                    } else {
+                        info!(
+                            "Upgrading loaded extension '{}' from version {} to {}.",
+                            staged_extension_info.common_name,
+                            loaded_extension_info.version,
+                            staged_extension_info.version
+                        );
+                    }
+
                     db.unload_extension(loaded_extension_info).await?;
                 }
             }
 
+            info!(
+                "Loading extension '{}' into database...",
+                staged_extension_info.common_name
+            );
             db.load_extension(staged_extension).await?;
+            info!("Extension loaded.")
         }
 
         // TODO: Add checks for duplicate manufacturers and classifications

@@ -2,6 +2,7 @@ use std::future::IntoFuture;
 use std::net::{Ipv4Addr, SocketAddr};
 
 use futures_util::future;
+use log::{debug, error, info};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
@@ -16,6 +17,7 @@ use crate::models::database::{
     GenericPullRecord, InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord,
     ManufacturerPullRecord, ManufacturerPushRecord,
 };
+use crate::stop;
 
 // TODO: Find a more sensible place to move these
 pub const EXTENSION_TABLE_NAME: &str = "extensions";
@@ -70,25 +72,44 @@ impl Database {
 
     /// Connects to the database using the provided configuration.
     pub async fn connect_with_config(config: DatabaseConfig) -> Self {
-        let connection = Surreal::new::<Ws>(config.address).await.unwrap();
+        debug!(
+            "Connecting to database [NS: '{}', DB: '{}'] at {}",
+            config.namespace, config.database, config.address
+        );
+
+        let Ok(connection) = Surreal::new::<Ws>(config.address).await else {
+            error!("Failed to connect to database. Please make sure it is running.");
+            stop(1);
+        };
+
         connection
             .use_ns(&config.namespace)
             .use_db(&config.database)
             .await
-            .unwrap();
+            .unwrap_or_else(|_| {
+                error!("Failed to select namespace and database from SurrealDB instance.");
+                stop(2);
+            });
+
         connection
             .signin(Root {
                 username: &config.username,
                 password: &config.password,
             })
             .await
-            .unwrap();
+            .unwrap_or_else(|_| {
+                error!("Failed to sign into SurrealDB instance. Please check your credentials.");
+                stop(3);
+            });
 
         Self { connection, config }
     }
 
-    /// Sets up the tables needed for core functionality.
+    /// Sets up the tables and schema needed for core functionality.
+    /// If the tables already exist, this will do nothing.
     pub async fn setup_tables(&self) -> anyhow::Result<()> {
+        info!("Setting up database tables/schema...");
+
         // * ID is an implicit field on all tables and uses the `sql::Thing` type.
         self.connection
             .query(&format!(
@@ -122,13 +143,19 @@ impl Database {
                 CLASSIFICATION_TABLE_NAME,
                 DEVICE_TABLE_NAME
             ))
-            .await?;
+            .await
+            .unwrap_or_else(|_| {
+                error!("Failed to set up database tables/schema.");
+                stop(4);
+            });
 
         Ok(())
     }
 
-    /// Sets up IDs for "baked-in" manufacturers and device classifications.
+    /// Sets up IDs for "built-in" manufacturers and device classifications.
     pub async fn setup_reserved_items(&self) -> anyhow::Result<()> {
+        info!("Setting up reserved/built-in items...");
+
         // * The double braces are required to escape their meaning in a formatting literal.
         self.connection
             .query(&format!(
