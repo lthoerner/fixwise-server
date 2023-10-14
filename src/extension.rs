@@ -168,15 +168,27 @@ impl ExtensionManager {
                 let downgrading = same_id
                     && staged_extension_metadata.version < loaded_extension_metadata.version;
 
-                if different_name && (updating || downgrading) {
-                    // $ NOTIFICATION HERE
-                    warn!(
-                        "Extension '{}' has the name '{}', but a different version was supplied \
-                        with the name '{}'.",
-                        &staged_extension_id,
-                        loaded_extension_metadata.common_name,
-                        staged_extension_metadata.common_name
-                    )
+                if different_name {
+                    if updating || downgrading {
+                        // $ NOTIFICATION HERE
+                        warn!(
+                            "Loaded extension '{}' has the name '{}', but a staged extension with \
+                            the same ID, but a different version, has the name '{}'.",
+                            &staged_extension_id,
+                            loaded_extension_metadata.common_name,
+                            staged_extension_metadata.common_name
+                        )
+                    } else {
+                        // $ PROMPT HERE
+                        error!(
+                            "Loaded extension '{}' has the name '{}', but a staged extension with \
+                            the same ID and version has the name '{}', so it has been skipped.",
+                            &staged_extension_id,
+                            loaded_extension_metadata.common_name,
+                            staged_extension_metadata.common_name
+                        );
+                        continue 'current_extension;
+                    }
                 }
 
                 if same_extension {
