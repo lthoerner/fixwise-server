@@ -258,15 +258,7 @@ impl From<&DeviceID> for Thing {
     fn from(id: &DeviceID) -> Self {
         Thing {
             tb: DEVICE_TABLE_NAME.to_owned(),
-            id: Id::String(
-                [
-                    id.extension_id.to_non_namespaced_string().as_str(),
-                    id.manufacturer_id.to_non_namespaced_string().as_str(),
-                    id.classification_id.to_non_namespaced_string().as_str(),
-                    id.to_non_namespaced_string().as_str(),
-                ]
-                .join("/"),
-            ),
+            id: Id::String(id.to_non_namespaced_string()),
         }
     }
 }
