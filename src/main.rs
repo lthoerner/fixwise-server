@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
     manager.load_extensions(&db).await?;
     info!("All inventory extensions loaded.");
 
-    Ok(())
+    stop(0);
 }
 
 /// Exits the program with a friendly log message instead of an ugly panic message.

@@ -9,12 +9,12 @@ use surrealdb::Surreal;
 
 use crate::extension::InventoryExtension;
 use crate::models::common::{
-    Classification, ClassificationID, Device, InventoryExtensionID, InventoryExtensionInfo,
+    Classification, ClassificationID, Device, InventoryExtensionID, InventoryExtensionMetadata,
     Manufacturer, ManufacturerID,
 };
 use crate::models::database::{
     ClassificationPullRecord, ClassificationPushRecord, DevicePullRecord, DevicePushRecord,
-    GenericPullRecord, InventoryExtensionInfoPullRecord, InventoryExtensionInfoPushRecord,
+    GenericPullRecord, InventoryExtensionMetadataPullRecord, InventoryExtensionMetadataPushRecord,
     ManufacturerPullRecord, ManufacturerPushRecord,
 };
 use crate::stop;
@@ -264,8 +264,8 @@ impl Database {
     pub async fn load_extension(&self, extension: InventoryExtension) -> anyhow::Result<()> {
         self.connection
             .create::<Vec<GenericPullRecord>>(EXTENSION_TABLE_NAME)
-            .content(InventoryExtensionInfoPushRecord::from(
-                &InventoryExtensionInfo::from(&extension),
+            .content(InventoryExtensionMetadataPushRecord::from(
+                &extension.metadata,
             ))
             .await?;
 
@@ -297,9 +297,9 @@ impl Database {
 
     pub async fn unload_extension(
         &self,
-        extension_info: &InventoryExtensionInfo,
+        extension_id: &InventoryExtensionID,
     ) -> anyhow::Result<()> {
-        if extension_info.id == InventoryExtensionID::new("builtin") {
+        if &extension_id.to_non_namespaced_string() == "builtin" {
             return Err(anyhow::anyhow!("Cannot unload built-in extension"));
         }
 
@@ -311,7 +311,7 @@ impl Database {
                 DELETE {DEVICE_TABLE_NAME} WHERE extension = \"{0}\";
                 DELETE {EXTENSION_TABLE_NAME} WHERE id = \"{0}\";
                 ",
-                extension_info.id.to_namespaced_string()
+                extension_id.to_namespaced_string()
             ))
             .await?;
 
@@ -319,15 +319,15 @@ impl Database {
     }
 
     /// Lists all currently-loaded extensions in the database.
-    pub async fn list_extensions(&self) -> anyhow::Result<Vec<InventoryExtensionInfo>> {
+    pub async fn list_extensions(&self) -> anyhow::Result<Vec<InventoryExtensionMetadata>> {
         let pull_records = self
             .connection
-            .select::<Vec<InventoryExtensionInfoPullRecord>>(EXTENSION_TABLE_NAME)
+            .select::<Vec<InventoryExtensionMetadataPullRecord>>(EXTENSION_TABLE_NAME)
             .await?;
 
         let mut extensions = Vec::new();
         for record in pull_records {
-            extensions.push(InventoryExtensionInfo::try_from(record)?);
+            extensions.push(InventoryExtensionMetadata::try_from(record)?);
         }
 
         Ok(extensions)
@@ -442,15 +442,15 @@ impl Database {
     #[cfg(test)]
     #[allow(dead_code)]
     pub async fn only_contains(&self, extension: &InventoryExtension) -> anyhow::Result<bool> {
-        let loaded_extension_info = self.list_extensions().await?;
-        let loaded_manufacturer_info = self.list_manufacturers().await?;
-        let loaded_classification_info = self.list_classifications().await?;
-        let loaded_device_info = self.list_devices().await?;
+        let loaded_extension = self.list_extensions().await?;
+        let loaded_manufacturers = self.list_manufacturers().await?;
+        let loaded_classifications = self.list_classifications().await?;
+        let loaded_devices = self.list_devices().await?;
 
-        Ok(loaded_extension_info.len() == 1
-            && loaded_extension_info[0] == InventoryExtensionInfo::from(extension)
-            && loaded_manufacturer_info == extension.manufacturers
-            && loaded_classification_info == extension.classifications
-            && loaded_device_info == extension.devices)
+        Ok(loaded_extension.len() == 1
+            && loaded_extension[0] == extension.metadata
+            && loaded_manufacturers == extension.manufacturers
+            && loaded_classifications == extension.classifications
+            && loaded_devices == extension.devices)
     }
 }

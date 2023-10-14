@@ -8,15 +8,14 @@ use surrealdb::sql::{Id, Thing};
 use crate::database::{
     CLASSIFICATION_TABLE_NAME, DEVICE_TABLE_NAME, EXTENSION_TABLE_NAME, MANUFACTURER_TABLE_NAME,
 };
-use crate::extension::InventoryExtension;
 use crate::models::common::{
     Classification, ClassificationID, Device, DeviceID, InventoryExtensionID,
-    InventoryExtensionInfo, Manufacturer, ManufacturerID,
+    InventoryExtensionMetadata, Manufacturer, ManufacturerID,
 };
 
 /// The metadata of an extension which can be added to the database.
 #[derive(Debug, Serialize)]
-pub struct InventoryExtensionInfoPushRecord<'a> {
+pub struct InventoryExtensionMetadataPushRecord<'a> {
     pub id: Thing,
     pub common_name: &'a str,
     pub version: String,
@@ -24,7 +23,7 @@ pub struct InventoryExtensionInfoPushRecord<'a> {
 
 /// The metadata of an extension as read from the database.
 #[derive(Debug, Deserialize)]
-pub struct InventoryExtensionInfoPullRecord {
+pub struct InventoryExtensionMetadataPullRecord {
     pub id: Thing,
     pub common_name: String,
     pub version: String,
@@ -95,9 +94,9 @@ pub struct GenericPullRecord {
     id: Thing,
 }
 
-impl<'a> From<&'a InventoryExtensionInfo> for InventoryExtensionInfoPushRecord<'a> {
-    fn from(extension: &'a InventoryExtensionInfo) -> Self {
-        InventoryExtensionInfoPushRecord {
+impl<'a> From<&'a InventoryExtensionMetadata> for InventoryExtensionMetadataPushRecord<'a> {
+    fn from(extension: &'a InventoryExtensionMetadata) -> Self {
+        InventoryExtensionMetadataPushRecord {
             id: Thing::from(&extension.id),
             common_name: &extension.common_name,
             version: extension.version.to_string(),
@@ -105,10 +104,10 @@ impl<'a> From<&'a InventoryExtensionInfo> for InventoryExtensionInfoPushRecord<'
     }
 }
 
-impl TryFrom<InventoryExtensionInfoPullRecord> for InventoryExtensionInfo {
+impl TryFrom<InventoryExtensionMetadataPullRecord> for InventoryExtensionMetadata {
     type Error = anyhow::Error;
-    fn try_from(extension: InventoryExtensionInfoPullRecord) -> Result<Self, anyhow::Error> {
-        Ok(InventoryExtensionInfo {
+    fn try_from(extension: InventoryExtensionMetadataPullRecord) -> Result<Self, anyhow::Error> {
+        Ok(InventoryExtensionMetadata {
             id: InventoryExtensionID::try_from(extension.id)?,
             common_name: extension.common_name,
             version: Version::parse(&extension.version)?,
@@ -195,21 +194,11 @@ impl TryFrom<DevicePullRecord> for Device {
     }
 }
 
-impl From<&InventoryExtension> for InventoryExtensionInfo {
-    fn from(extension: &InventoryExtension) -> Self {
-        InventoryExtensionInfo {
-            id: extension.id.clone(),
-            common_name: extension.name.clone(),
-            version: extension.version.clone(),
-        }
-    }
-}
-
 impl From<&InventoryExtensionID> for Thing {
     fn from(id: &InventoryExtensionID) -> Self {
         Thing {
             tb: EXTENSION_TABLE_NAME.to_owned(),
-            id: Id::String(id.non_namespaced_id.clone()),
+            id: Id::String(id.to_non_namespaced_string()),
         }
     }
 }
@@ -218,9 +207,7 @@ impl TryFrom<Thing> for InventoryExtensionID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(InventoryExtensionID {
-                non_namespaced_id: id,
-            })
+            Ok(InventoryExtensionID::new(&id))
         } else {
             Err(anyhow!("Non-string ID for extension"))
         }
@@ -231,7 +218,7 @@ impl From<&ManufacturerID> for Thing {
     fn from(id: &ManufacturerID) -> Self {
         Thing {
             tb: MANUFACTURER_TABLE_NAME.to_owned(),
-            id: Id::String(id.non_namespaced_id.clone()),
+            id: Id::String(id.to_non_namespaced_string()),
         }
     }
 }
@@ -240,9 +227,7 @@ impl TryFrom<Thing> for ManufacturerID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(ManufacturerID {
-                non_namespaced_id: id,
-            })
+            Ok(ManufacturerID::new(&id))
         } else {
             Err(anyhow!("Non-string ID for manufacturer"))
         }
@@ -253,7 +238,7 @@ impl From<&ClassificationID> for Thing {
     fn from(id: &ClassificationID) -> Self {
         Thing {
             tb: CLASSIFICATION_TABLE_NAME.to_owned(),
-            id: Id::String(id.non_namespaced_id.clone()),
+            id: Id::String(id.to_non_namespaced_string()),
         }
     }
 }
@@ -262,9 +247,7 @@ impl TryFrom<Thing> for ClassificationID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(ClassificationID {
-                non_namespaced_id: id,
-            })
+            Ok(ClassificationID::new(&id))
         } else {
             Err(anyhow!("Non-string ID for classification"))
         }
@@ -280,7 +263,7 @@ impl From<&DeviceID> for Thing {
                     id.extension_id.to_non_namespaced_string().as_str(),
                     id.manufacturer_id.to_non_namespaced_string().as_str(),
                     id.classification_id.to_non_namespaced_string().as_str(),
-                    id.non_namespaced_id.as_str(),
+                    id.to_non_namespaced_string().as_str(),
                 ]
                 .join("/"),
             ),
@@ -310,12 +293,12 @@ impl TryFrom<Thing> for DeviceID {
                 Some(classification_id),
                 Some(id),
                 None,
-            ) => Ok(DeviceID {
-                extension_id: InventoryExtensionID::new(extension_id),
-                manufacturer_id: ManufacturerID::new(manufacturer_id),
-                classification_id: ClassificationID::new(classification_id),
-                non_namespaced_id: id.to_owned(),
-            }),
+            ) => Ok(DeviceID::new(
+                extension_id,
+                manufacturer_id,
+                classification_id,
+                id,
+            )),
             _ => Err(anyhow!("Improperly-formatted namespaced device ID")),
         }
     }

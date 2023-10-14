@@ -9,19 +9,19 @@ use crate::database::{
 /// An explicitly-namespaced extension ID.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryExtensionID {
-    pub non_namespaced_id: String,
+    non_namespaced_id: String,
 }
 
 /// An explicitly-namespaced manufacturer ID.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ManufacturerID {
-    pub non_namespaced_id: String,
+    non_namespaced_id: String,
 }
 
 /// An explicitly-namespaced classification ID.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClassificationID {
-    pub non_namespaced_id: String,
+    non_namespaced_id: String,
 }
 
 /// An explicitly-namespaced device ID, in the format of
@@ -34,14 +34,14 @@ pub struct DeviceID {
     pub extension_id: InventoryExtensionID,
     pub manufacturer_id: ManufacturerID,
     pub classification_id: ClassificationID,
-    pub non_namespaced_id: String,
+    non_namespaced_id: String,
 }
 
-/// The metadata of an extension.
+/// The metadata of an inventory extension.
 /// This does not include the extension contents, such as devices or manufacturers.
-/// It is used to identify existing extensions to the `ExtensionManager` to prevent conflicts.
-#[derive(Debug, PartialEq)]
-pub struct InventoryExtensionInfo {
+/// Used to identify existing extensions to the `ExtensionManager` to prevent conflicts.
+#[derive(Debug, Clone, PartialEq)]
+pub struct InventoryExtensionMetadata {
     pub id: InventoryExtensionID,
     pub common_name: String,
     pub version: Version,

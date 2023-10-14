@@ -4,7 +4,6 @@ use std::fs::DirEntry;
 use std::path::Path;
 use std::str::FromStr;
 
-use anyhow::anyhow;
 use log::{error, info, warn};
 use semver::Version;
 use serde::Deserialize;
@@ -12,15 +11,13 @@ use serde::Deserialize;
 use crate::database::Database;
 use crate::models::common::{
     Classification, ClassificationID, Device, DeviceID, InventoryExtensionID,
-    InventoryExtensionInfo, Manufacturer, ManufacturerID,
+    InventoryExtensionMetadata, Manufacturer, ManufacturerID,
 };
 
 /// An extension of the database inventory system.
 #[derive(Debug, Clone)]
 pub struct InventoryExtension {
-    pub id: InventoryExtensionID,
-    pub name: String,
-    pub version: Version,
+    pub metadata: InventoryExtensionMetadata,
     pub load_override: bool,
     pub manufacturers: Vec<Manufacturer>,
     pub classifications: Vec<Classification>,
@@ -73,7 +70,7 @@ pub struct DeviceToml {
 /// Manages the parsing and loading of extensions into the database.
 #[derive(Default)]
 pub struct ExtensionManager {
-    extensions: Vec<InventoryExtension>,
+    staged_extensions: Vec<InventoryExtension>,
 }
 
 impl ExtensionManager {
@@ -86,7 +83,6 @@ impl ExtensionManager {
                     "Located extension file: {}",
                     extension_file.path().display()
                 );
-                info!("Staging extension...");
                 manager.stage_extension(&extension_file.path())?;
             }
         }
@@ -98,19 +94,47 @@ impl ExtensionManager {
     #[cfg(test)]
     #[allow(dead_code)]
     pub fn with_extensions(extensions: impl IntoIterator<Item = InventoryExtension>) -> Self {
-        Self {
-            extensions: extensions.into_iter().collect(),
+        let mut manager = Self::default();
+        for extension in extensions {
+            manager.staged_extensions.push(extension);
         }
+
+        manager
     }
 
     /// Parses a TOML file into an extension which can be added to the database by the manager.
     fn stage_extension(&mut self, filename: &Path) -> anyhow::Result<()> {
-        // ? Is it any better to read to bytes and convert to struct or is string fine?
         let toml = std::fs::read_to_string(filename)?;
-        let extension: InventoryExtensionToml = toml::from_str(&toml)?;
-        self.extensions.push(InventoryExtension::from(extension));
+        let extension_toml: InventoryExtensionToml = toml::from_str(&toml)?;
+        let extension = InventoryExtension::from(extension_toml);
+        if !self.already_contains(&extension) {
+            info!(
+                "Extension '{}' staged.",
+                extension.metadata.id.to_non_namespaced_string()
+            );
+            self.staged_extensions.push(extension);
+        } else {
+            // $ NOTIFICATION OR PROMPT HERE
+            error!(
+                "Extension with ID '{}' already staged, skipping.",
+                extension.metadata.id.to_non_namespaced_string()
+            );
+        }
 
         Ok(())
+    }
+
+    /// Checks whether a given extension shares an ID with any of the already-staged extensions.
+    fn already_contains(&self, extension: &InventoryExtension) -> bool {
+        let extension_id = &extension.metadata.id;
+        for staged_extension in &self.staged_extensions {
+            let staged_extension_id = &staged_extension.metadata.id;
+            if extension_id == staged_extension_id {
+                return true;
+            }
+        }
+
+        false
     }
 
     /// Adds all extensions from the manager into the database, handling any conflicts.
@@ -118,76 +142,88 @@ impl ExtensionManager {
     pub async fn load_extensions(self, db: &Database) -> anyhow::Result<()> {
         info!("Loading staged extensions into database...");
         let loaded_extensions = db.list_extensions().await?;
-        'staged_extension: for staged_extension in self.extensions.into_iter() {
-            let staged_extension_info = InventoryExtensionInfo::from(&staged_extension);
-            for loaded_extension_info in &loaded_extensions {
-                if staged_extension_info == *loaded_extension_info {
-                    if !staged_extension.load_override {
-                        info!(
-                            "Skipped extension '{}' because it is already loaded.",
-                            staged_extension_info.common_name
-                        );
-                        continue 'staged_extension;
-                    } else {
-                        // * Though it is theoretically possible that another extension may run
-                        // * into a similar conflict with a different outcome, it should never be
-                        // * the case that two extensions with the same ID exist in the database.
+
+        'current_extension: for staged_extension in self.staged_extensions.into_iter() {
+            let staged_extension_metadata = &staged_extension.metadata;
+            let staged_extension_id = staged_extension_metadata.id.to_non_namespaced_string();
+            'conflict_check: for loaded_extension_metadata in &loaded_extensions {
+                // * Two extensions are considered to be the same if they have all the same
+                // * metadata, including the ID, name, and version, regardless of their contents.
+                let same_extension = staged_extension_metadata == loaded_extension_metadata;
+
+                let same_id =
+                    same_extension || staged_extension_metadata.id == loaded_extension_metadata.id;
+
+                if !same_id {
+                    continue 'conflict_check;
+                }
+
+                let same_name = same_extension
+                    || staged_extension_metadata.common_name
+                        == loaded_extension_metadata.common_name;
+                let different_name = !same_name;
+
+                let updating = same_id
+                    && staged_extension_metadata.version > loaded_extension_metadata.version;
+                let downgrading = same_id
+                    && staged_extension_metadata.version < loaded_extension_metadata.version;
+
+                if different_name && (updating || downgrading) {
+                    // $ NOTIFICATION HERE
+                    warn!(
+                        "Extension '{}' has the name '{}', but a different version was supplied \
+                        with the name '{}'.",
+                        &staged_extension_id,
+                        loaded_extension_metadata.common_name,
+                        staged_extension_metadata.common_name
+                    )
+                }
+
+                if same_extension {
+                    if staged_extension.load_override {
                         warn!(
                             "Reloading extension '{}' due to a load override.",
-                            loaded_extension_info.common_name
+                            &staged_extension_id
                         );
-                        db.unload_extension(loaded_extension_info).await?;
-                    }
-                // TODO: The two below conditions are incompatible, need to fix
-                } else if staged_extension_info.id == loaded_extension_info.id
-                    && staged_extension_info.common_name != loaded_extension_info.common_name
-                    && staged_extension_info.version == loaded_extension_info.version
-                {
-                    error!(
-                        "Staged extension '{0}' and loaded extension '{1}' both have ID '{2}'.",
-                        staged_extension_info.common_name,
-                        loaded_extension_info.common_name,
-                        staged_extension_info.id.to_non_namespaced_string()
-                    );
-                    return Err(anyhow!(
-                        "Extension '{0}' has ID '{1}' but '{1}' is already loaded",
-                        staged_extension_info.common_name,
-                        staged_extension_info.id.to_non_namespaced_string(),
-                    ));
-                } else if staged_extension_info.id == loaded_extension_info.id
-                    && staged_extension_info.version != loaded_extension_info.version
-                {
-                    // * If the ID is the same, but the version is different, the plugin can be
-                    // * updated or downgraded. Upgrades will happen automatically, but the user
-                    // * must be prompted for a downgrade to occur.
-                    // * The extension name can change between versions, so it is not checked.
-                    // TODO: Add user prompt for downgrade
-                    if staged_extension_info.version < loaded_extension_info.version {
-                        warn!(
-                            "Downgrading loaded extension '{}' from version {} to {}.",
-                            staged_extension_info.common_name,
-                            loaded_extension_info.version,
-                            staged_extension_info.version
-                        );
+                        db.unload_extension(&loaded_extension_metadata.id).await?;
+                        break 'conflict_check;
                     } else {
                         info!(
-                            "Upgrading loaded extension '{}' from version {} to {}.",
-                            staged_extension_info.common_name,
-                            loaded_extension_info.version,
-                            staged_extension_info.version
+                            "Skipped extension '{}' because it is already loaded.",
+                            &staged_extension_id
                         );
+                        continue 'current_extension;
                     }
-
-                    db.unload_extension(loaded_extension_info).await?;
+                } else if updating {
+                    // $ NOTIFICATION HERE
+                    info!(
+                        "Updating loaded extension '{}' from version {} to {}.",
+                        &staged_extension_id,
+                        loaded_extension_metadata.version,
+                        staged_extension_metadata.version
+                    );
+                    db.unload_extension(&loaded_extension_metadata.id).await?;
+                    break 'conflict_check;
+                } else if downgrading {
+                    // $ PROMPT HERE
+                    warn!(
+                        "Downgrading loaded extension '{}' from version {} to {}.",
+                        &staged_extension_id,
+                        loaded_extension_metadata.version,
+                        staged_extension_metadata.version
+                    );
+                    db.unload_extension(&loaded_extension_metadata.id).await?;
+                    break 'conflict_check;
                 }
             }
 
-            info!(
-                "Loading extension '{}' into database...",
-                staged_extension_info.common_name
-            );
+            // * Any staged extension can only logically have up to one conflict with a loaded
+            // * extension, because of the following reasons:
+            // * - Conflicts can only arise when a staged and a loaded extension share the same ID.
+            // * - No two loaded extensions can have the same ID due to database constraints.
+            // * - No two staged extensions can have the same ID because they are pre-filtered.
             db.load_extension(staged_extension).await?;
-            info!("Extension loaded.")
+            info!("Extension {} loaded.", &staged_extension_id);
         }
 
         // TODO: Add checks for duplicate manufacturers and classifications
@@ -215,9 +251,11 @@ impl InventoryExtension {
     #[allow(dead_code)]
     pub fn test(num: u32) -> Self {
         Self {
-            id: InventoryExtensionID::new(&format!("test_{num}")),
-            name: format!("Test Extension {num}"),
-            version: Version::new(1, 0, 0),
+            metadata: InventoryExtensionMetadata {
+                id: InventoryExtensionID::new(&format!("test_{num}")),
+                common_name: format!("Test Extension {num}"),
+                version: Version::new(1, 0, 0),
+            },
             load_override: false,
             manufacturers: Vec::new(),
             classifications: Vec::new(),
@@ -273,9 +311,11 @@ impl From<InventoryExtensionToml> for InventoryExtension {
             .collect();
 
         InventoryExtension {
-            id: InventoryExtensionID::new(&toml.extension_id),
-            name: toml.extension_common_name,
-            version: Version::from_str(&toml.extension_version).unwrap(),
+            metadata: InventoryExtensionMetadata {
+                id: InventoryExtensionID::new(&toml.extension_id),
+                common_name: toml.extension_common_name,
+                version: Version::from_str(&toml.extension_version).unwrap(),
+            },
             load_override: toml.load_override.unwrap_or_default(),
             manufacturers,
             classifications,
@@ -290,9 +330,7 @@ mod tests {
 
     use super::{ExtensionManager, InventoryExtension};
     use crate::database::Database;
-    use crate::models::common::{
-        Classification, Device, InventoryExtensionID, InventoryExtensionInfo, Manufacturer,
-    };
+    use crate::models::common::{Classification, Device, InventoryExtensionID, Manufacturer};
 
     #[tokio::test]
     #[ignore = "not implemented"]
@@ -313,8 +351,8 @@ mod tests {
         let mut original_extension = InventoryExtension::test(1);
         let mut duplicate_extension = original_extension.clone();
         // Add a different manufacturer to each extension
-        let manufacturer_1 = Manufacturer::test(1, &original_extension.id);
-        let manufacturer_2 = Manufacturer::test(2, &duplicate_extension.id);
+        let manufacturer_1 = Manufacturer::test(1, &original_extension.metadata.id);
+        let manufacturer_2 = Manufacturer::test(2, &duplicate_extension.metadata.id);
         original_extension
             .manufacturers
             .push(manufacturer_1.clone());
@@ -322,8 +360,8 @@ mod tests {
             .manufacturers
             .push(manufacturer_2.clone());
         // Add a different classification to each extension
-        let classification_1 = Classification::test(1, &original_extension.id);
-        let classification_2 = Classification::test(2, &duplicate_extension.id);
+        let classification_1 = Classification::test(1, &original_extension.metadata.id);
+        let classification_2 = Classification::test(2, &duplicate_extension.metadata.id);
         original_extension
             .classifications
             .push(classification_1.clone());
@@ -333,13 +371,13 @@ mod tests {
         // Add a different device to each extension
         let device_1 = Device::test(
             1,
-            &original_extension.id,
+            &original_extension.metadata.id,
             &manufacturer_1.id,
             &classification_1.id,
         );
         let device_2 = Device::test(
             2,
-            &duplicate_extension.id,
+            &duplicate_extension.metadata.id,
             &manufacturer_2.id,
             &classification_2.id,
         );
@@ -368,17 +406,17 @@ mod tests {
         // Create two extensions with the same ID, but different versions
         let mut original_extension = InventoryExtension::test(1);
         let mut updated_extension = InventoryExtension::test(1);
-        updated_extension.version = Version::new(1, 0, 1);
+        updated_extension.metadata.version = Version::new(1, 0, 1);
         // Add a different manufacturer to each extension
-        let manufacturer_1 = Manufacturer::test(1, &original_extension.id);
-        let manufacturer_2 = Manufacturer::test(2, &updated_extension.id);
+        let manufacturer_1 = Manufacturer::test(1, &original_extension.metadata.id);
+        let manufacturer_2 = Manufacturer::test(2, &updated_extension.metadata.id);
         original_extension
             .manufacturers
             .push(manufacturer_1.clone());
         updated_extension.manufacturers.push(manufacturer_2.clone());
         // Add a different classification to each extension
-        let classification_1 = Classification::test(1, &original_extension.id);
-        let classification_2 = Classification::test(2, &updated_extension.id);
+        let classification_1 = Classification::test(1, &original_extension.metadata.id);
+        let classification_2 = Classification::test(2, &updated_extension.metadata.id);
         original_extension
             .classifications
             .push(classification_1.clone());
@@ -388,13 +426,13 @@ mod tests {
         // Add a different device to each extension
         let device_1 = Device::test(
             1,
-            &original_extension.id,
+            &original_extension.metadata.id,
             &manufacturer_1.id,
             &classification_1.id,
         );
         let device_2 = Device::test(
             2,
-            &updated_extension.id,
+            &updated_extension.metadata.id,
             &manufacturer_2.id,
             &classification_2.id,
         );
@@ -425,8 +463,8 @@ mod tests {
         let mut reloaded_extension = InventoryExtension::test(1);
         reloaded_extension.load_override = true;
         // Add a different manufacturer to each extension
-        let manufacturer_1 = Manufacturer::test(1, &original_extension.id);
-        let manufacturer_2 = Manufacturer::test(2, &reloaded_extension.id);
+        let manufacturer_1 = Manufacturer::test(1, &original_extension.metadata.id);
+        let manufacturer_2 = Manufacturer::test(2, &reloaded_extension.metadata.id);
         original_extension
             .manufacturers
             .push(manufacturer_1.clone());
@@ -434,8 +472,8 @@ mod tests {
             .manufacturers
             .push(manufacturer_2.clone());
         // Add a different classification to each extension
-        let classification_1 = Classification::test(1, &original_extension.id);
-        let classification_2 = Classification::test(2, &reloaded_extension.id);
+        let classification_1 = Classification::test(1, &original_extension.metadata.id);
+        let classification_2 = Classification::test(2, &reloaded_extension.metadata.id);
         original_extension
             .classifications
             .push(classification_1.clone());
@@ -445,13 +483,13 @@ mod tests {
         // Add a different device to each extension
         let device_1 = Device::test(
             1,
-            &original_extension.id,
+            &original_extension.metadata.id,
             &manufacturer_1.id,
             &classification_1.id,
         );
         let device_2 = Device::test(
             2,
-            &reloaded_extension.id,
+            &reloaded_extension.metadata.id,
             &manufacturer_2.id,
             &classification_2.id,
         );
@@ -480,11 +518,7 @@ mod tests {
 
         // TODO: Match on error variant once custom errors are added
         assert!(db
-            .unload_extension(&InventoryExtensionInfo {
-                id: InventoryExtensionID::new("builtin"),
-                common_name: "Built-in".to_owned(),
-                version: Version::new(0, 0, 0)
-            })
+            .unload_extension(&InventoryExtensionID::new("builtin"))
             .await
             .is_err());
 
