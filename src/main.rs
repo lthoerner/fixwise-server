@@ -2,20 +2,41 @@ mod database;
 mod extension;
 mod models;
 
+use std::sync::OnceLock;
+
 use log::info;
 use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 
 use database::Database;
 use extension::ExtensionManager;
 
+static DEVELOPER_MODE: OnceLock<bool> = OnceLock::new();
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    use clap::{Arg, ArgAction, Command};
+    // * More arguments will most likely be added in later versions
+    let args = Command::new("techtriage")
+        .bin_name("techtriage")
+        .arg(
+            Arg::new("developer mode")
+                .short('d')
+                .long("dev")
+                .action(ArgAction::SetTrue)
+                .help("Enable developer mode"),
+        )
+        .get_matches();
+
+    DEVELOPER_MODE.get_or_init(|| *args.get_one::<bool>("developer mode").unwrap());
+
     TermLogger::init(
-        LevelFilter::Debug,
+        if *DEVELOPER_MODE.get().unwrap() {
+            LevelFilter::Debug
+        } else {
+            LevelFilter::Info
+        },
         Config::default(),
-        // * Stdout is used because stderr is conventionally used for any non-standard output.
-        // * In the case of this server software, the logs are the standard output.
-        TerminalMode::Stdout,
+        TerminalMode::Stderr,
         ColorChoice::Auto,
     )?;
 

@@ -233,21 +233,23 @@ impl Database {
     /// Used for testing purposes.
     #[cfg(test)]
     #[allow(dead_code)]
-    pub async fn clear(&self) -> anyhow::Result<()> {
+    pub async fn clear(&self) {
         self.connection
             .delete::<Vec<GenericPullRecord>>(EXTENSION_TABLE_NAME)
-            .await?;
+            .await
+            .unwrap();
         self.connection
             .delete::<Vec<GenericPullRecord>>(MANUFACTURER_TABLE_NAME)
-            .await?;
+            .await
+            .unwrap();
         self.connection
             .delete::<Vec<GenericPullRecord>>(CLASSIFICATION_TABLE_NAME)
-            .await?;
+            .await
+            .unwrap();
         self.connection
             .delete::<Vec<GenericPullRecord>>(DEVICE_TABLE_NAME)
-            .await?;
-
-        Ok(())
+            .await
+            .unwrap();
     }
 
     /// Deletes the current database and all of its contents.
@@ -295,6 +297,7 @@ impl Database {
         Ok(())
     }
 
+    /// Removes an extension and its contents from the database.
     pub async fn unload_extension(
         &self,
         extension_id: &InventoryExtensionID,
@@ -315,6 +318,14 @@ impl Database {
             ))
             .await?;
 
+        Ok(())
+    }
+
+    /// Removes the extension corresponding to the ID of the given extension, and loads the given
+    /// extension in its place.
+    pub async fn reload_extension(&self, extension: InventoryExtension) -> anyhow::Result<()> {
+        self.unload_extension(&extension.metadata.id).await?;
+        self.load_extension(extension).await?;
         Ok(())
     }
 
@@ -441,16 +452,16 @@ impl Database {
     /// Used for testing purposes.
     #[cfg(test)]
     #[allow(dead_code)]
-    pub async fn only_contains(&self, extension: &InventoryExtension) -> anyhow::Result<bool> {
-        let loaded_extension = self.list_extensions().await?;
-        let loaded_manufacturers = self.list_manufacturers().await?;
-        let loaded_classifications = self.list_classifications().await?;
-        let loaded_devices = self.list_devices().await?;
+    pub async fn only_contains(&self, extension: &InventoryExtension) {
+        let loaded_extensions = self.list_extensions().await.unwrap();
+        let loaded_manufacturers = self.list_manufacturers().await.unwrap();
+        let loaded_classifications = self.list_classifications().await.unwrap();
+        let loaded_devices = self.list_devices().await.unwrap();
 
-        Ok(loaded_extension.len() == 1
-            && loaded_extension[0] == extension.metadata
-            && loaded_manufacturers == extension.manufacturers
-            && loaded_classifications == extension.classifications
-            && loaded_devices == extension.devices)
+        assert!(loaded_extensions.len() == 1);
+        assert!(loaded_extensions[0] == extension.metadata);
+        assert!(loaded_manufacturers == extension.manufacturers);
+        assert!(loaded_classifications == extension.classifications);
+        assert!(loaded_devices == extension.devices);
     }
 }
