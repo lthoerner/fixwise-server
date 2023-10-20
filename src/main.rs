@@ -10,12 +10,29 @@ use extension::ExtensionManager;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    use clap::{Arg, ArgAction, Command};
+    // * More arguments will most likely be added in later versions
+    let args = Command::new("techtriage")
+        .bin_name("techtriage")
+        .arg(
+            Arg::new("developer mode")
+                .short('d')
+                .long("dev")
+                .action(ArgAction::SetTrue)
+                .help("Enable developer mode"),
+        )
+        .get_matches();
+
+    let load_override = *args.get_one::<bool>("developer mode").unwrap();
+
     TermLogger::init(
-        LevelFilter::Debug,
+        if load_override {
+            LevelFilter::Debug
+        } else {
+            LevelFilter::Info
+        },
         Config::default(),
-        // * Stdout is used because stderr is conventionally used for any non-standard output.
-        // * In the case of this server software, the logs are the standard output.
-        TerminalMode::Stdout,
+        TerminalMode::Stderr,
         ColorChoice::Auto,
     )?;
 
@@ -31,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Loading inventory extensions...");
     let manager = ExtensionManager::new()?;
-    manager.load_extensions(&db).await?;
+    manager.load_extensions(&db, load_override).await?;
     info!("All inventory extensions loaded.");
 
     stop(0);
