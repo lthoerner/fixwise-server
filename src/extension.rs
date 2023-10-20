@@ -4,9 +4,9 @@ use std::fs::DirEntry;
 use std::path::Path;
 use std::str::FromStr;
 
-use log::{error, info, warn};
 use semver::Version;
 use serde::Deserialize;
+use tracing::{error, info, warn};
 
 use crate::database::Database;
 use crate::models::common::{
@@ -339,15 +339,26 @@ impl From<InventoryExtensionToml> for InventoryExtension {
 #[cfg(test)]
 mod tests {
     use semver::Version;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+    use tracing_subscriber::{fmt, EnvFilter};
 
     use super::{ExtensionManager, InventoryExtension};
     use crate::database::Database;
     use crate::models::common::{Classification, Device, InventoryExtensionID, Manufacturer};
 
+    fn init_logger() {
+        let test_writer = fmt::layer().with_test_writer();
+        let builder = fmt::Subscriber::builder().with_env_filter(EnvFilter::from_default_env());
+        let subscriber = builder.finish();
+        let _ = subscriber.with(test_writer).try_init();
+    }
+
     #[tokio::test]
     #[ignore = "not implemented"]
     /// Tests that two extensions with the same ID, but incompatible metadata, will cause an error.
     async fn incompatible_duplicate_extensions() {
+        init_logger();
         let db = Database::connect_with_name("test_incompatible_duplicate_extensions").await;
         db.teardown().await;
         todo!()
@@ -357,6 +368,7 @@ mod tests {
     /// Tests that two extensions with the same ID and metadata will not be reloaded or cause a
     /// conflict, even if they have different contents.
     async fn compatible_duplicate_extensions() {
+        init_logger();
         let db = Database::connect_with_name("test_compatible_duplicate_extensions").await;
 
         // Create two extensions with the same ID and metadata, but different contents
@@ -413,6 +425,7 @@ mod tests {
     #[tokio::test]
     /// Tests that an extension will be replaced by an updated version of itself.
     async fn reload_extension_update() {
+        init_logger();
         let db = Database::connect_with_name("test_reload_extension_update").await;
 
         // Create two extensions with the same ID, but different versions
@@ -468,6 +481,7 @@ mod tests {
     #[tokio::test]
     /// Tests that an extension will be replaced by the same extension with the load override flag.
     async fn reload_extension_override() {
+        init_logger();
         let db = Database::connect_with_name("test_reload_extension_override").await;
 
         // Create two extensions with the same metadata, but with a load override
@@ -524,6 +538,7 @@ mod tests {
 
     #[tokio::test]
     async fn unload_builtin_extension() {
+        init_logger();
         let db = Database::connect_with_name("test_unload_builtin_extension").await;
         db.setup_tables().await.unwrap();
         db.setup_reserved_items().await.unwrap();
