@@ -2,10 +2,10 @@ use std::future::IntoFuture;
 use std::net::{Ipv4Addr, SocketAddr};
 
 use futures_util::future;
-use log::{debug, error, info};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
+use tracing::{debug, error, info};
 
 use crate::extension::InventoryExtension;
 use crate::models::common::{

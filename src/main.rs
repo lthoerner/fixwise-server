@@ -4,16 +4,15 @@ mod models;
 
 use std::sync::OnceLock;
 
-use log::info;
-use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
-
 use database::Database;
 use extension::ExtensionManager;
+use tracing::info;
 
 static DEVELOPER_MODE: OnceLock<bool> = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
     use clap::{Arg, ArgAction, Command};
     // * More arguments will most likely be added in later versions
     let args = Command::new("techtriage")
@@ -28,17 +27,6 @@ async fn main() -> anyhow::Result<()> {
         .get_matches();
 
     DEVELOPER_MODE.get_or_init(|| *args.get_one::<bool>("developer mode").unwrap());
-
-    TermLogger::init(
-        if *DEVELOPER_MODE.get().unwrap() {
-            LevelFilter::Debug
-        } else {
-            LevelFilter::Info
-        },
-        Config::default(),
-        TerminalMode::Stderr,
-        ColorChoice::Auto,
-    )?;
 
     info!("TechTriage v{}", env!("CARGO_PKG_VERSION"));
     info!("Starting server...");

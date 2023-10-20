@@ -10,11 +10,11 @@ anyhow = "1.0.75"
 clap = { version = "4.4.6", features = ["derive"] }
 # chrono = "0.4.31"
 futures-util = "0.3.28"
-log = "0.4.20"
 # phonenumber = "0.3.3"
 semver = "1.0.19"
-serde = { version = "1.0.188" }
-simplelog = "0.12.1"
+serde = { version = "1.0.188", features = ["derive"] }
 surrealdb = "1.0.0"
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
 toml = "0.8.2"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
