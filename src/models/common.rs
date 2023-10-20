@@ -39,7 +39,8 @@ pub struct DeviceID {
 
 /// The metadata of an inventory extension.
 /// This does not include the extension contents, such as devices or manufacturers.
-/// Used to identify existing extensions to the `ExtensionManager` to prevent conflicts.
+/// Used to identify existing extensions to the
+/// [`ExtensionManager`](crate::extensions::ExtensionManager) to prevent conflicts.
 #[derive(Debug, Clone, PartialEq)]
 pub struct InventoryExtensionMetadata {
     pub id: InventoryExtensionID,
@@ -124,7 +125,7 @@ impl ClassificationID {
 }
 
 impl DeviceID {
-    /// Creates a `DeviceID`.
+    /// Creates a [`DeviceID`].
     /// None of the parameters to this function should be namespaced.
     pub fn new(
         extension_id: &str,

@@ -110,7 +110,7 @@ impl Database {
     pub async fn setup_tables(&self) -> anyhow::Result<()> {
         info!("Setting up database tables/schema...");
 
-        // * ID is an implicit field on all tables and uses the `sql::Thing` type.
+        // * ID is an implicit field on all tables and uses the [`sql::Thing`] type.
         self.connection
             .query(&format!(
                 "

@@ -30,7 +30,7 @@ pub struct InventoryExtension {
 
 /// An inventory extension as read from a TOML file.
 /// Some types are not compatible with the database, so this type must be converted into an
-/// `InventoryExtension` before calling `Database::load_extension()`.
+/// [`InventoryExtension`] before calling [`Database::load_extension`].
 #[derive(Debug, Deserialize)]
 struct InventoryExtensionToml {
     extension_id: String,
@@ -42,7 +42,7 @@ struct InventoryExtensionToml {
 }
 
 /// A device manufacturer as read from a TOML extension.
-/// This must be converted into a `Manufacturer` before adding it to the database.
+/// This must be converted into a [`Manufacturer`] before adding it to the database.
 #[derive(Debug, Deserialize)]
 struct ManufacturerToml {
     id: String,
@@ -50,7 +50,7 @@ struct ManufacturerToml {
 }
 
 /// A classification of device as read from a TOML extension.
-/// This must be converted into a `Classification` before adding it to the database.
+/// This must be converted into a [`Classification`] before adding it to the database.
 #[derive(Debug, Deserialize)]
 struct ClassificationToml {
     id: String,
@@ -58,7 +58,7 @@ struct ClassificationToml {
 }
 
 /// A device and its metadata as read from a TOML extension.
-/// This must be converted into a `Device` before adding it to the database.
+/// This must be converted into a [`Device`] before adding it to the database.
 #[derive(Debug, Deserialize)]
 pub struct DeviceToml {
     // TODO: Figure out a better name for this
@@ -175,8 +175,8 @@ impl ExtensionManager {
 }
 
 // TODO: Remove unwraps
-// * Inner types here (`Manufacturer`, `Classification`, `Device`) must be converted with context
-// * provided by the `ExtensionToml` itself, so they cannot be converted directly.
+// * Inner types here ([`Manufacturer`], [`Classification`], [`Device`]) must be converted with
+// *  context provided by the [`ExtensionToml`] itself, so they cannot be converted directly.
 impl From<InventoryExtensionToml> for InventoryExtension {
     fn from(toml: InventoryExtensionToml) -> Self {
         let manufacturers = toml

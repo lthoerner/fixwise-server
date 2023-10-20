@@ -74,7 +74,7 @@ pub struct DevicePullRecord {
 }
 
 /// A record with the bare minimum amount of structure, used to provide generic functions
-/// (particularly `Surreal.create()`) with type parameters when the actual result is not important.
+/// (particularly [`Surreal::create`](surrealdb::Surreal::create) with type parameters when the actual result is not important.
 #[derive(Debug, Deserialize)]
 pub struct GenericPullRecord {
     // * This has to be an attribute tag because `_id` does not map to `id`.
