@@ -5,12 +5,22 @@ use crate::database::Database;
 use crate::models::common::{Classification, Device, Manufacturer};
 
 #[tokio::test]
-#[ignore = "not implemented"]
-/// Tests that two extensions with the same ID, but incompatible metadata, will cause an error.
-async fn incompatible_duplicate_extensions() {
-    let db = Database::connect_with_name("incompatible_duplicate_extensions").await;
+/// Tests that an extension which does not already exist in the database will be loaded without
+/// causing a conflict.
+async fn load_new_extension() {
+    let db = Database::connect_with_name("load_new_extension").await;
+
+    // Create a basic extension
+    let extension = Extension::test_single(1, 1);
+    let load_override = false;
+
+    // Load the extension into the database
+    let manager = Manager::with_extensions([extension.clone()]);
+    manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the extension was loaded correctly
+    db.only_contains(&extension).await;
+
     db.teardown().await;
-    todo!()
 }
 
 #[tokio::test]
@@ -18,12 +28,12 @@ async fn incompatible_duplicate_extensions() {
 /// conflict, even if they have different contents.
 async fn compatible_duplicate_extensions() {
     let db = Database::connect_with_name("compatible_duplicate_extensions").await;
-    let load_override = false;
 
     // Create two extensions with the same metadata, but different contents
     let (original_extension, duplicate_extension) = Extension::test_pair();
+    let load_override = false;
 
-    // Load the first extension into the database
+    // Load the extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
     manager.load_extensions(&db, load_override).await.unwrap();
     // Make sure the extension was loaded correctly
@@ -41,13 +51,13 @@ async fn compatible_duplicate_extensions() {
 /// Tests that an extension will be replaced by an updated version of itself.
 async fn reload_extension_update() {
     let db = Database::connect_with_name("reload_extension_update").await;
-    let load_override = false;
 
     // Create two extensions with the same ID, but different versions
     let (original_extension, mut updated_extension) = Extension::test_pair();
     updated_extension.metadata.version = Version::new(1, 0, 1);
+    let load_override = false;
 
-    // Load the first extension into the database
+    // Load the extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
     manager.load_extensions(&db, load_override).await.unwrap();
     // Make sure the extension was loaded correctly
@@ -55,8 +65,32 @@ async fn reload_extension_update() {
     // Reload the extension with the updated version, which should unload the original extension
     let manager = Manager::with_extensions([updated_extension.clone()]);
     manager.load_extensions(&db, load_override).await.unwrap();
-    // Make sure the original extension was unloaded and the new version was loaded
+    // Make sure the original extension was unloaded and the newer version was loaded
     db.only_contains(&updated_extension).await;
+
+    db.teardown().await;
+}
+
+#[tokio::test]
+/// Tests that an extension will not be replaced by a downgraded version of itself.
+async fn skip_extension_downgrade() {
+    let db = Database::connect_with_name("skip_extension_downgrade").await;
+
+    // Create two extensions with the same ID, but different versions
+    let (mut original_extension, downgraded_extension) = Extension::test_pair();
+    original_extension.metadata.version = Version::new(1, 0, 1);
+    let load_override = false;
+
+    // Load the extension into the database
+    let manager = Manager::with_extensions([original_extension.clone()]);
+    manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the extension was loaded correctly
+    db.only_contains(&original_extension).await;
+    // Attempt to load the older version of the extension, which should leave the original intact
+    let manager = Manager::with_extensions([downgraded_extension.clone()]);
+    manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the original extension was left intact and the older version was not loaded
+    db.only_contains(&original_extension).await;
 
     db.teardown().await;
 }
@@ -65,12 +99,12 @@ async fn reload_extension_update() {
 /// Tests that an extension will be replaced by the same extension with the load override flag.
 async fn reload_extension_override() {
     let db = Database::connect_with_name("reload_extension_override").await;
-    let load_override = true;
 
     // Create two extensions with the same metadata, but with developer mode enabled
     let (original_extension, reloaded_extension) = Extension::test_pair();
+    let load_override = true;
 
-    // Load the first extension into the database
+    // Load the extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
     manager.load_extensions(&db, load_override).await.unwrap();
     // Make sure the extension was loaded correctly
@@ -100,7 +134,7 @@ async fn unload_builtin_extension() {
 }
 
 impl Extension {
-    /// Creates a basic extension for testing purposes.
+    /// Creates a basic extension with no contents for testing purposes.
     /// Can be modified to test different scenarios.
     fn test(num: u32) -> Self {
         Self {
@@ -115,45 +149,33 @@ impl Extension {
         }
     }
 
+    /// Creates a single basic extension with contents.
+    /// Can be modified to test different scenarios.
+    fn test_single(extension_num: u32, contents_num: u32) -> Self {
+        // Create an empty extension.
+        let mut extension = Self::test(extension_num);
+
+        // Populate the extension with one manufacturer, classification, and device.
+        let manufacturer = Manufacturer::test(contents_num, &extension.metadata.id);
+        let classification = Classification::test(contents_num, &extension.metadata.id);
+        let device = Device::test(
+            contents_num,
+            &extension.metadata.id,
+            &manufacturer.id,
+            &classification.id,
+        );
+
+        extension.manufacturers.push(manufacturer);
+        extension.classifications.push(classification);
+        extension.devices.push(device);
+
+        extension
+    }
+
     /// Creates two basic extensions with the same metadata and different contents.
     /// Can be modified to test different scenarios.
     fn test_pair() -> (Self, Self) {
-        // Create two empty extensions with the same metadata.
-        let mut extension_1 = Self::test(1);
-        let mut extension_2 = extension_1.clone();
-
-        // Add a different manufacturer to each extension.
-        let manufacturer_1 = Manufacturer::test(1, &extension_1.metadata.id);
-        let manufacturer_2 = Manufacturer::test(2, &extension_2.metadata.id);
-
-        // Add a different classification to each extension.
-        let classification_1 = Classification::test(1, &extension_1.metadata.id);
-        let classification_2 = Classification::test(2, &extension_2.metadata.id);
-
-        // Add a different device to each extension.
-        let device_1 = Device::test(
-            1,
-            &extension_1.metadata.id,
-            &manufacturer_1.id,
-            &classification_1.id,
-        );
-        let device_2 = Device::test(
-            2,
-            &extension_2.metadata.id,
-            &manufacturer_2.id,
-            &classification_2.id,
-        );
-
-        extension_1.manufacturers.push(manufacturer_1);
-        extension_2.manufacturers.push(manufacturer_2);
-
-        extension_1.classifications.push(classification_1);
-        extension_2.classifications.push(classification_2);
-
-        extension_1.devices.push(device_1);
-        extension_2.devices.push(device_2);
-
-        (extension_1, extension_2)
+        (Self::test_single(1, 1), Self::test_single(1, 2))
     }
 }
 
