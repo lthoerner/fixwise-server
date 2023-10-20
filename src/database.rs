@@ -5,7 +5,7 @@ use futures_util::future;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, instrument};
 
 use crate::extension::InventoryExtension;
 use crate::models::common::{
@@ -26,6 +26,7 @@ pub const CLASSIFICATION_TABLE_NAME: &str = "classifications";
 pub const DEVICE_TABLE_NAME: &str = "devices";
 
 /// Wrapper type for a SurrealDB connection.
+#[derive(Debug)]
 pub struct Database {
     connection: Surreal<Client>,
     #[allow(dead_code)]
@@ -33,6 +34,7 @@ pub struct Database {
 }
 
 /// Configuration for connecting to the database.
+#[derive(Debug)]
 pub struct DatabaseConfig {
     pub address: SocketAddr,
     pub username: String,
@@ -55,6 +57,7 @@ impl Default for DatabaseConfig {
 
 impl Database {
     /// Connects to the database, if it is available, using the default configuration.
+    #[instrument]
     pub async fn connect() -> Self {
         Self::connect_with_config(DatabaseConfig::default()).await
     }
@@ -62,6 +65,7 @@ impl Database {
     /// Connects to the database using defaults except for the provided database name.
     #[cfg(test)]
     #[allow(dead_code)]
+    #[instrument]
     pub async fn connect_with_name(database: &str) -> Self {
         Self::connect_with_config(DatabaseConfig {
             database: database.to_owned(),
@@ -71,6 +75,7 @@ impl Database {
     }
 
     /// Connects to the database using the provided configuration.
+    #[instrument]
     pub async fn connect_with_config(config: DatabaseConfig) -> Self {
         debug!(
             "Connecting to database [NS: '{}', DB: '{}'] at {}",
@@ -107,6 +112,7 @@ impl Database {
 
     /// Sets up the tables and schema needed for core functionality.
     /// If the tables already exist, this will do nothing.
+    #[instrument(ret)]
     pub async fn setup_tables(&self) -> anyhow::Result<()> {
         info!("Setting up database tables/schema...");
 
@@ -153,6 +159,7 @@ impl Database {
     }
 
     /// Sets up IDs for "built-in" manufacturers and device classifications.
+    #[instrument(ret)]
     pub async fn setup_reserved_items(&self) -> anyhow::Result<()> {
         info!("Setting up reserved/built-in items...");
 
@@ -233,6 +240,7 @@ impl Database {
     /// Used for testing purposes.
     #[cfg(test)]
     #[allow(dead_code)]
+    #[instrument(ret)]
     pub async fn clear(&self) {
         self.connection
             .delete::<Vec<GenericPullRecord>>(EXTENSION_TABLE_NAME)
@@ -255,6 +263,7 @@ impl Database {
     /// Deletes the current database and all of its contents.
     /// Used by tests so the database instance can be reused.
     #[cfg(test)]
+    #[instrument]
     pub async fn teardown(self) {
         self.connection
             .query(&format!("REMOVE DATABASE {}", self.config.database))
@@ -263,6 +272,7 @@ impl Database {
     }
 
     /// Loads the contents of an inventory extension into the database.
+    #[instrument(ret)]
     pub async fn load_extension(&self, extension: InventoryExtension) -> anyhow::Result<()> {
         self.connection
             .create::<Vec<GenericPullRecord>>(EXTENSION_TABLE_NAME)
@@ -298,6 +308,7 @@ impl Database {
     }
 
     /// Removes an extension and its contents from the database.
+    #[instrument(ret)]
     pub async fn unload_extension(
         &self,
         extension_id: &InventoryExtensionID,
@@ -330,6 +341,7 @@ impl Database {
     }
 
     /// Lists all currently-loaded extensions in the database.
+    #[instrument(ret)]
     pub async fn list_extensions(&self) -> anyhow::Result<Vec<InventoryExtensionMetadata>> {
         let pull_records = self
             .connection
@@ -346,6 +358,7 @@ impl Database {
 
     /// Lists all the manufacturers in the database.
     #[allow(dead_code)]
+    #[instrument(ret)]
     pub async fn list_manufacturers(&self) -> anyhow::Result<Vec<Manufacturer>> {
         let pull_records = self
             .connection
@@ -362,6 +375,7 @@ impl Database {
 
     /// Lists all the classifications in the database.
     #[allow(dead_code)]
+    #[instrument(ret)]
     pub async fn list_classifications(&self) -> anyhow::Result<Vec<Classification>> {
         let pull_records = self
             .connection
@@ -377,6 +391,7 @@ impl Database {
     }
 
     /// Lists all the devices in the database.
+    #[instrument(ret)]
     pub async fn list_devices(&self) -> anyhow::Result<Vec<Device>> {
         let pull_records = self
             .connection
@@ -392,6 +407,7 @@ impl Database {
     }
 
     /// Adds a manufacturer to the database, merging it with an existing record if needed.
+    #[instrument(ret)]
     async fn add_manufacturer(&self, mut manufacturer: Manufacturer) -> anyhow::Result<()> {
         if let Some(existing_record) = self.get_manufacturer(&manufacturer.id).await? {
             manufacturer.merge(existing_record.try_into()?);
@@ -406,6 +422,7 @@ impl Database {
     }
 
     /// Adds a classification to the database, merging it with an existing record if needed.
+    #[instrument(ret)]
     async fn add_classification(&self, mut classification: Classification) -> anyhow::Result<()> {
         if let Some(existing_record) = self.get_classification(&classification.id).await? {
             classification.merge(existing_record.try_into()?);
@@ -421,6 +438,7 @@ impl Database {
 
     // ? Can this be combined with `get_classification()` into a single function?
     /// Gets a manufacturer from the database, if it exists.
+    #[instrument(ret)]
     async fn get_manufacturer(
         &self,
         id: &ManufacturerID,
@@ -435,6 +453,7 @@ impl Database {
     }
 
     /// Gets a classification from the database, if it exists.
+    #[instrument(ret)]
     async fn get_classification(
         &self,
         id: &ClassificationID,
@@ -452,6 +471,7 @@ impl Database {
     /// Used for testing purposes.
     #[cfg(test)]
     #[allow(dead_code)]
+    #[instrument(ret)]
     pub async fn only_contains(&self, extension: &InventoryExtension) {
         let loaded_extensions = self.list_extensions().await.unwrap();
         let loaded_manufacturers = self.list_manufacturers().await.unwrap();

@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use semver::Version;
 use serde::Deserialize;
-use tracing::{error, info, warn};
+use tracing::{error, info, instrument, warn};
 
 use crate::database::Database;
 use crate::models::common::{
@@ -16,23 +16,28 @@ use crate::models::common::{
 use crate::DEVELOPER_MODE;
 
 /// Indicator that the common name of a staged extension did not match its loaded counterpart.
+#[derive(Debug)]
 struct NameChange {
     loaded_name: String,
     staged_name: String,
 }
 
 /// Indicator that the version of a staged extension did not match its loaded counterpart.
+#[derive(Debug)]
 struct VersionChange {
     loaded_version: Version,
     staged_version: Version,
 }
 
 /// Indicator that the manager encountered an error when staging an extension.
+#[derive(Debug)]
+#[allow(dead_code)]
 struct StageConflict {
     id: ExtensionID,
 }
 
 /// Indicator that the manager encountered an error when loading an extension.
+#[derive(Debug)]
 pub struct LoadConflict {
     id: ExtensionID,
     name_change: Option<NameChange>,
@@ -240,13 +245,14 @@ pub struct DeviceToml {
 }
 
 /// Manages the parsing and loading of extensions into the database.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ExtensionManager {
     staged_extensions: Vec<InventoryExtension>,
 }
 
 impl ExtensionManager {
     /// Loads all extensions from the default location (the extensions folder).
+    #[instrument(ret)]
     pub fn new() -> anyhow::Result<Self> {
         let mut manager = Self::default();
         for extension_file in std::fs::read_dir("./extensions")?.flatten() {
@@ -265,6 +271,7 @@ impl ExtensionManager {
     /// Creates a manager for the provided extensions.
     #[cfg(test)]
     #[allow(dead_code)]
+    #[instrument(skip(extensions))]
     pub fn with_extensions(extensions: impl IntoIterator<Item = InventoryExtension>) -> Self {
         let mut manager = Self::default();
         for extension in extensions {
@@ -275,6 +282,7 @@ impl ExtensionManager {
     }
 
     /// Parses a TOML file into an extension which can be added to the database by the manager.
+    #[instrument(ret)]
     fn stage_extension(&mut self, filename: &Path) -> anyhow::Result<()> {
         let toml = std::fs::read_to_string(filename)?;
         let extension_toml: InventoryExtensionToml = toml::from_str(&toml)?;
@@ -297,6 +305,7 @@ impl ExtensionManager {
     }
 
     /// Checks whether a given extension shares an ID with any of the already-staged extensions.
+    #[instrument]
     fn already_contains(&self, extension: &InventoryExtension) -> bool {
         let extension_id = &extension.metadata.id;
         for staged_extension in &self.staged_extensions {
@@ -311,6 +320,7 @@ impl ExtensionManager {
 
     /// Adds all extensions from the manager into the database, handling any conflicts.
     // ? How will callbacks be handled here? Probably need to do some sort of DI pattern.
+    #[instrument(ret)]
     pub async fn load_extensions(self, db: &Database) -> anyhow::Result<Vec<LoadConflict>> {
         info!("Loading staged extensions into database...");
         let mut loaded_extensions = db.list_extensions().await?;
@@ -339,6 +349,7 @@ impl ExtensionManager {
     }
 
     /// Checks whether a given filesystem object is a valid extension.
+    #[instrument]
     fn is_extension(object: &DirEntry) -> bool {
         let (path, filetype) = (object.path(), object.file_type());
         if let Ok(filetype) = filetype {
@@ -356,6 +367,7 @@ impl InventoryExtension {
     /// Can be modified to test different scenarios.
     #[cfg(test)]
     #[allow(dead_code)]
+    #[instrument]
     pub fn test(num: u32) -> Self {
         Self {
             metadata: Metadata {
