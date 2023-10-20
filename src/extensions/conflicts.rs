@@ -17,22 +17,25 @@ impl StageConflict {
 }
 
 /// Indicator that the common name of a staged extension did not match its loaded counterpart.
-struct NameChange {
-    loaded_name: String,
-    staged_name: String,
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct NameChange {
+    pub(super) loaded_name: String,
+    pub(super) staged_name: String,
 }
 
 /// Indicator that the version of a staged extension did not match its loaded counterpart.
-struct VersionChange {
-    loaded_version: Version,
-    staged_version: Version,
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct VersionChange {
+    pub(super) loaded_version: Version,
+    pub(super) staged_version: Version,
 }
 
 /// Indicator that the manager encountered an error when loading an extension.
+#[derive(Debug, PartialEq, Eq)]
 pub struct LoadConflict {
-    id: ExtensionID,
-    name_change: Option<NameChange>,
-    version_change: Option<VersionChange>,
+    pub(super) id: ExtensionID,
+    pub(super) name_change: Option<NameChange>,
+    pub(super) version_change: Option<VersionChange>,
 }
 
 impl LoadConflict {

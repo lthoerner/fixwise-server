@@ -1,5 +1,6 @@
 use semver::Version;
 
+use super::conflicts::{LoadConflict, VersionChange};
 use super::{ExtensionID, ExtensionManager as Manager, InventoryExtension as Extension, Metadata};
 use crate::database::Database;
 use crate::models::common::{Classification, Device, Manufacturer};
@@ -16,7 +17,8 @@ async fn load_new_extension() {
 
     // Load the extension into the database
     let manager = Manager::with_extensions([extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    assert_eq!(conflicts.len(), 0);
     // Make sure the extension was loaded correctly
     db.only_contains(&extension).await;
 
@@ -24,8 +26,8 @@ async fn load_new_extension() {
 }
 
 #[tokio::test]
-/// Tests that two extensions with the same ID and metadata will not be reloaded or cause a
-/// conflict, even if they have different contents.
+/// Tests that two extensions with the same ID and metadata will not be reloaded or cause an
+/// unresolvable conflict, even if they have different contents.
 async fn compatible_duplicate_extensions() {
     let db = Database::connect_with_name("compatible_duplicate_extensions").await;
 
@@ -35,12 +37,19 @@ async fn compatible_duplicate_extensions() {
 
     // Load the extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    assert_eq!(conflicts.len(), 0);
     // Make sure the extension was loaded correctly
     db.only_contains(&original_extension).await;
     // Load the second extension into the database
     let manager = Manager::with_extensions([duplicate_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the conflicts were correctly identified
+    assert_eq!(conflicts.len(), 1);
+    assert_eq!(
+        conflicts[0],
+        LoadConflict::duplicate(duplicate_extension.metadata.id)
+    );
     // Make sure the second extension was not loaded
     db.only_contains(&original_extension).await;
 
@@ -59,12 +68,23 @@ async fn reload_extension_update() {
 
     // Load the extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    assert_eq!(conflicts.len(), 0);
     // Make sure the extension was loaded correctly
     db.only_contains(&original_extension).await;
     // Reload the extension with the updated version, which should unload the original extension
     let manager = Manager::with_extensions([updated_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the conflicts were correctly identified
+    assert_eq!(conflicts.len(), 1);
+    assert_eq!(
+        conflicts[0],
+        LoadConflict::version_change(
+            original_extension.metadata.id,
+            original_extension.metadata.version,
+            updated_extension.metadata.version.clone()
+        )
+    );
     // Make sure the original extension was unloaded and the newer version was loaded
     db.only_contains(&updated_extension).await;
 
@@ -88,7 +108,17 @@ async fn skip_extension_downgrade() {
     db.only_contains(&original_extension).await;
     // Attempt to load the older version of the extension, which should leave the original intact
     let manager = Manager::with_extensions([downgraded_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the conflicts were correctly identified
+    assert_eq!(conflicts.len(), 1);
+    assert_eq!(
+        conflicts[0],
+        LoadConflict::version_change(
+            downgraded_extension.metadata.id,
+            original_extension.metadata.version.clone(),
+            downgraded_extension.metadata.version
+        )
+    );
     // Make sure the original extension was left intact and the older version was not loaded
     db.only_contains(&original_extension).await;
 
@@ -106,12 +136,19 @@ async fn reload_extension_override() {
 
     // Load the extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    assert_eq!(conflicts.len(), 0);
     // Make sure the extension was loaded correctly
     db.only_contains(&original_extension).await;
     // Reload the extension, which should unload the original extension
     let manager = Manager::with_extensions([reloaded_extension.clone()]);
-    manager.load_extensions(&db, load_override).await.unwrap();
+    let conflicts = manager.load_extensions(&db, load_override).await.unwrap();
+    // Make sure the conflicts were correctly identified
+    assert_eq!(conflicts.len(), 1);
+    assert_eq!(
+        conflicts[0],
+        LoadConflict::duplicate(original_extension.metadata.id)
+    );
     // Make sure the original extension was unloaded and the new version was loaded
     db.only_contains(&reloaded_extension).await;
 
@@ -189,5 +226,28 @@ impl Manager {
         }
 
         manager
+    }
+}
+
+impl LoadConflict {
+    /// Creates a duplicate conflict between two copies of the same extension.
+    fn duplicate(id: ExtensionID) -> Self {
+        Self {
+            id,
+            version_change: None,
+            name_change: None,
+        }
+    }
+
+    /// Creates a version change conflict between two versions of the same extension.
+    fn version_change(id: ExtensionID, loaded_version: Version, staged_version: Version) -> Self {
+        Self {
+            id,
+            version_change: Some(VersionChange {
+                loaded_version,
+                staged_version,
+            }),
+            name_change: None,
+        }
     }
 }
