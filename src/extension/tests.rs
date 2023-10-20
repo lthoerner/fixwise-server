@@ -203,7 +203,6 @@ impl Extension {
     /// Creates a basic extension for testing purposes.
     /// Can be modified to test different scenarios.
     #[cfg(test)]
-    #[allow(dead_code)]
     pub fn test(num: u32) -> Self {
         Self {
             metadata: Metadata {
@@ -221,7 +220,6 @@ impl Extension {
 impl Manager {
     /// Creates a manager for the provided extensions.
     #[cfg(test)]
-    #[allow(dead_code)]
     pub fn with_extensions(extensions: impl IntoIterator<Item = Extension>) -> Self {
         let mut manager = Self::default();
         for extension in extensions {

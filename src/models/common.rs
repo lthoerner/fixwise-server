@@ -156,18 +156,6 @@ impl DeviceID {
 }
 
 impl Manufacturer {
-    /// Creates a basic manufacturer for testing purposes.
-    /// Can be modified to test different scenarios.
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
-        Self {
-            id: ManufacturerID::new(&format!("test_{num}")),
-            common_name: format!("Test Manufacturer {num}"),
-            extensions: HashSet::from([extension_id.clone()]),
-        }
-    }
-
     /// Merges the extensions field of another manufacturer into this one.
     /// Does not check whether the two manufacturers share the same ID and other metadata.
     pub fn merge(&mut self, other: Manufacturer) {
@@ -176,49 +164,9 @@ impl Manufacturer {
 }
 
 impl Classification {
-    /// Creates a basic classification for testing purposes.
-    /// Can be modified to test different scenarios.
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
-        Self {
-            id: ClassificationID::new(&format!("test_{num}")),
-            common_name: format!("Test Classification {num}"),
-            extensions: HashSet::from([extension_id.clone()]),
-        }
-    }
-
     /// Merges the extensions field of another classification into this one.
     /// Does not check whether the two classifications share the same ID and other metadata.
     pub fn merge(&mut self, other: Classification) {
         self.extensions.extend(other.extensions);
-    }
-}
-
-impl Device {
-    /// Creates a basic device for testing purposes.
-    /// Can be modified to test different scenarios.
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub fn test(
-        num: u32,
-        extension_id: &InventoryExtensionID,
-        manufacturer_id: &ManufacturerID,
-        classification_id: &ClassificationID,
-    ) -> Self {
-        Self {
-            id: DeviceID::new(
-                &extension_id.to_non_namespaced_string(),
-                &manufacturer_id.to_non_namespaced_string(),
-                &classification_id.to_non_namespaced_string(),
-                &format!("test_{num}"),
-            ),
-            common_name: format!("Test Device {num}"),
-            manufacturer: manufacturer_id.clone(),
-            classification: classification_id.clone(),
-            extension: extension_id.clone(),
-            primary_model_identifiers: vec![format!("test_{num}_primary")],
-            extended_model_identifiers: vec![format!("test_{num}_extended")],
-        }
     }
 }

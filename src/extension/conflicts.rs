@@ -16,7 +16,7 @@ struct VersionChange {
 }
 
 /// Indicator that the manager encountered an error when staging an extension.
-struct StageConflict {
+pub struct StageConflict {
     id: ExtensionID,
 }
 
