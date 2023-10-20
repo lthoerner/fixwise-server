@@ -8,7 +8,6 @@ use super::common::{
 impl Manufacturer {
     /// Creates a basic manufacturer for testing purposes.
     /// Can be modified to test different scenarios.
-    #[cfg(test)]
     pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
         Self {
             id: ManufacturerID::new(&format!("test_{num}")),
@@ -21,7 +20,6 @@ impl Manufacturer {
 impl Classification {
     /// Creates a basic classification for testing purposes.
     /// Can be modified to test different scenarios.
-    #[cfg(test)]
     pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
         Self {
             id: ClassificationID::new(&format!("test_{num}")),
@@ -34,7 +32,6 @@ impl Classification {
 impl Device {
     /// Creates a basic device for testing purposes.
     /// Can be modified to test different scenarios.
-    #[cfg(test)]
     pub fn test(
         num: u32,
         extension_id: &InventoryExtensionID,

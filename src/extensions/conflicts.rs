@@ -3,6 +3,19 @@ use semver::Version;
 
 use super::{ExtensionID, InventoryExtension as Extension, Metadata};
 
+/// Indicator that the manager encountered an error when staging an extension.
+pub struct StageConflict {
+    id: ExtensionID,
+}
+
+impl StageConflict {
+    pub fn new(metadata: &Metadata) -> Self {
+        Self {
+            id: metadata.id.clone(),
+        }
+    }
+}
+
 /// Indicator that the common name of a staged extension did not match its loaded counterpart.
 struct NameChange {
     loaded_name: String,
@@ -13,11 +26,6 @@ struct NameChange {
 struct VersionChange {
     loaded_version: Version,
     staged_version: Version,
-}
-
-/// Indicator that the manager encountered an error when staging an extension.
-pub struct StageConflict {
-    id: ExtensionID,
 }
 
 /// Indicator that the manager encountered an error when loading an extension.

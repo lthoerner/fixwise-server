@@ -20,42 +20,8 @@ async fn compatible_duplicate_extensions() {
     let db = Database::connect_with_name("compatible_duplicate_extensions").await;
     let load_override = false;
 
-    // Create two extensions with the same ID and metadata, but different contents
-    let mut original_extension = Extension::test(1);
-    let mut duplicate_extension = original_extension.clone();
-    // Add a different manufacturer to each extension
-    let manufacturer_1 = Manufacturer::test(1, &original_extension.metadata.id);
-    let manufacturer_2 = Manufacturer::test(2, &duplicate_extension.metadata.id);
-    original_extension
-        .manufacturers
-        .push(manufacturer_1.clone());
-    duplicate_extension
-        .manufacturers
-        .push(manufacturer_2.clone());
-    // Add a different classification to each extension
-    let classification_1 = Classification::test(1, &original_extension.metadata.id);
-    let classification_2 = Classification::test(2, &duplicate_extension.metadata.id);
-    original_extension
-        .classifications
-        .push(classification_1.clone());
-    duplicate_extension
-        .classifications
-        .push(classification_2.clone());
-    // Add a different device to each extension
-    let device_1 = Device::test(
-        1,
-        &original_extension.metadata.id,
-        &manufacturer_1.id,
-        &classification_1.id,
-    );
-    let device_2 = Device::test(
-        2,
-        &duplicate_extension.metadata.id,
-        &manufacturer_2.id,
-        &classification_2.id,
-    );
-    original_extension.devices.push(device_1.clone());
-    duplicate_extension.devices.push(device_2.clone());
+    // Create two extensions with the same metadata, but different contents
+    let (original_extension, duplicate_extension) = Extension::test_pair();
 
     // Load the first extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
@@ -78,40 +44,8 @@ async fn reload_extension_update() {
     let load_override = false;
 
     // Create two extensions with the same ID, but different versions
-    let mut original_extension = Extension::test(1);
-    let mut updated_extension = original_extension.clone();
+    let (original_extension, mut updated_extension) = Extension::test_pair();
     updated_extension.metadata.version = Version::new(1, 0, 1);
-    // Add a different manufacturer to each extension
-    let manufacturer_1 = Manufacturer::test(1, &original_extension.metadata.id);
-    let manufacturer_2 = Manufacturer::test(2, &updated_extension.metadata.id);
-    original_extension
-        .manufacturers
-        .push(manufacturer_1.clone());
-    updated_extension.manufacturers.push(manufacturer_2.clone());
-    // Add a different classification to each extension
-    let classification_1 = Classification::test(1, &original_extension.metadata.id);
-    let classification_2 = Classification::test(2, &updated_extension.metadata.id);
-    original_extension
-        .classifications
-        .push(classification_1.clone());
-    updated_extension
-        .classifications
-        .push(classification_2.clone());
-    // Add a different device to each extension
-    let device_1 = Device::test(
-        1,
-        &original_extension.metadata.id,
-        &manufacturer_1.id,
-        &classification_1.id,
-    );
-    let device_2 = Device::test(
-        2,
-        &updated_extension.metadata.id,
-        &manufacturer_2.id,
-        &classification_2.id,
-    );
-    original_extension.devices.push(device_1.clone());
-    updated_extension.devices.push(device_2.clone());
 
     // Load the first extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
@@ -134,41 +68,7 @@ async fn reload_extension_override() {
     let load_override = true;
 
     // Create two extensions with the same metadata, but with developer mode enabled
-    let mut original_extension = Extension::test(1);
-    let mut reloaded_extension = original_extension.clone();
-    // Add a different manufacturer to each extension
-    let manufacturer_1 = Manufacturer::test(1, &original_extension.metadata.id);
-    let manufacturer_2 = Manufacturer::test(2, &reloaded_extension.metadata.id);
-    original_extension
-        .manufacturers
-        .push(manufacturer_1.clone());
-    reloaded_extension
-        .manufacturers
-        .push(manufacturer_2.clone());
-    // Add a different classification to each extension
-    let classification_1 = Classification::test(1, &original_extension.metadata.id);
-    let classification_2 = Classification::test(2, &reloaded_extension.metadata.id);
-    original_extension
-        .classifications
-        .push(classification_1.clone());
-    reloaded_extension
-        .classifications
-        .push(classification_2.clone());
-    // Add a different device to each extension
-    let device_1 = Device::test(
-        1,
-        &original_extension.metadata.id,
-        &manufacturer_1.id,
-        &classification_1.id,
-    );
-    let device_2 = Device::test(
-        2,
-        &reloaded_extension.metadata.id,
-        &manufacturer_2.id,
-        &classification_2.id,
-    );
-    original_extension.devices.push(device_1.clone());
-    reloaded_extension.devices.push(device_2.clone());
+    let (original_extension, reloaded_extension) = Extension::test_pair();
 
     // Load the first extension into the database
     let manager = Manager::with_extensions([original_extension.clone()]);
@@ -202,8 +102,7 @@ async fn unload_builtin_extension() {
 impl Extension {
     /// Creates a basic extension for testing purposes.
     /// Can be modified to test different scenarios.
-    #[cfg(test)]
-    pub fn test(num: u32) -> Self {
+    fn test(num: u32) -> Self {
         Self {
             metadata: Metadata {
                 id: ExtensionID::new(&format!("test_{num}")),
@@ -215,15 +114,56 @@ impl Extension {
             devices: Vec::new(),
         }
     }
+
+    /// Creates two basic extensions with the same metadata and different contents.
+    /// Can be modified to test different scenarios.
+    fn test_pair() -> (Self, Self) {
+        // Create two empty extensions with the same metadata.
+        let mut extension_1 = Self::test(1);
+        let mut extension_2 = extension_1.clone();
+
+        // Add a different manufacturer to each extension.
+        let manufacturer_1 = Manufacturer::test(1, &extension_1.metadata.id);
+        let manufacturer_2 = Manufacturer::test(2, &extension_2.metadata.id);
+
+        // Add a different classification to each extension.
+        let classification_1 = Classification::test(1, &extension_1.metadata.id);
+        let classification_2 = Classification::test(2, &extension_2.metadata.id);
+
+        // Add a different device to each extension.
+        let device_1 = Device::test(
+            1,
+            &extension_1.metadata.id,
+            &manufacturer_1.id,
+            &classification_1.id,
+        );
+        let device_2 = Device::test(
+            2,
+            &extension_2.metadata.id,
+            &manufacturer_2.id,
+            &classification_2.id,
+        );
+
+        extension_1.manufacturers.push(manufacturer_1);
+        extension_2.manufacturers.push(manufacturer_2);
+
+        extension_1.classifications.push(classification_1);
+        extension_2.classifications.push(classification_2);
+
+        extension_1.devices.push(device_1);
+        extension_2.devices.push(device_2);
+
+        (extension_1, extension_2)
+    }
 }
 
 impl Manager {
     /// Creates a manager for the provided extensions.
-    #[cfg(test)]
-    pub fn with_extensions(extensions: impl IntoIterator<Item = Extension>) -> Self {
+    fn with_extensions(extensions: impl IntoIterator<Item = Extension>) -> Self {
         let mut manager = Self::default();
         for extension in extensions {
-            manager.staged_extensions.push(extension);
+            // $ This cannot be an unwrap if it is to be tested
+            manager.stage_extension(extension).unwrap();
         }
 
         manager

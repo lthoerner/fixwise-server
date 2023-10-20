@@ -12,7 +12,7 @@ use log::{error, info};
 use semver::Version;
 use serde::Deserialize;
 
-use self::conflicts::LoadConflict;
+use self::conflicts::{LoadConflict, StageConflict};
 use crate::database::Database;
 use crate::models::common::{
     Classification, ClassificationID, Device, DeviceID, InventoryExtensionID as ExtensionID,
@@ -86,18 +86,25 @@ impl ExtensionManager {
                     "Located extension file: {}",
                     extension_file.path().display()
                 );
-                manager.stage_extension(&extension_file.path())?;
+                manager.stage_extension(Self::parse_extension(&extension_file.path())?)?;
             }
         }
 
         Ok(manager)
     }
 
-    /// Parses a TOML file into an extension which can be added to the database by the manager.
-    fn stage_extension(&mut self, filename: &Path) -> anyhow::Result<()> {
+    /// Parses a TOML file into an extensoin which can be added to the database by the manager.
+    fn parse_extension(filename: &Path) -> anyhow::Result<InventoryExtension> {
         let toml = std::fs::read_to_string(filename)?;
         let extension_toml: InventoryExtensionToml = toml::from_str(&toml)?;
-        let extension = InventoryExtension::from(extension_toml);
+        Ok(InventoryExtension::from(extension_toml))
+    }
+
+    /// Stages an extension, checking whether it conflicts with other already-staged extensions.
+    fn stage_extension(
+        &mut self,
+        extension: InventoryExtension,
+    ) -> anyhow::Result<Option<StageConflict>> {
         if !self.already_contains(&extension) {
             info!(
                 "Staging extension '{}'.",
@@ -110,9 +117,10 @@ impl ExtensionManager {
                 "Extension with ID '{}' already staged, skipping.",
                 extension.metadata.id.to_non_namespaced_string()
             );
+            return Ok(Some(StageConflict::new(&extension.metadata)));
         }
 
-        Ok(())
+        Ok(None)
     }
 
     /// Checks whether a given extension shares an ID with any of the already-staged extensions.
