@@ -7,7 +7,7 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 
-use crate::extension::InventoryExtension;
+use crate::extensions::InventoryExtension;
 use crate::models::common::{
     Classification, ClassificationID, Device, InventoryExtensionID, InventoryExtensionMetadata,
     Manufacturer, ManufacturerID,

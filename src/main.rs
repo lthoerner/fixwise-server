@@ -1,12 +1,12 @@
 mod database;
-mod extension;
+mod extensions;
 mod models;
 
 use log::info;
 use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 
 use database::Database;
-use extension::ExtensionManager;
+use extensions::ExtensionManager;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
