@@ -5,16 +5,17 @@ use semver::Version;
 use surrealdb::sql::{Id, Thing};
 
 use super::common::{
-    Classification, ClassificationID, Device, DeviceID, InventoryExtensionID,
-    InventoryExtensionMetadata, Manufacturer, ManufacturerID,
+    Device, DeviceClassification, DeviceClassificationID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerID, InventoryExtensionID, InventoryExtensionMetadata,
 };
 use super::database::{
-    ClassificationPullRecord, ClassificationPushRecord, DevicePullRecord, DevicePushRecord,
+    DeviceClassificationPullRecord, DeviceClassificationPushRecord, DeviceManufacturerPullRecord,
+    DeviceManufacturerPushRecord, DevicePullRecord, DevicePushRecord,
     InventoryExtensionMetadataPullRecord, InventoryExtensionMetadataPushRecord,
-    ManufacturerPullRecord, ManufacturerPushRecord,
 };
 use crate::database::{
-    CLASSIFICATION_TABLE_NAME, DEVICE_TABLE_NAME, EXTENSION_TABLE_NAME, MANUFACTURER_TABLE_NAME,
+    DEVICE_CLASSIFICATION_TABLE_NAME, DEVICE_MANUFACTURER_TABLE_NAME, DEVICE_TABLE_NAME,
+    EXTENSION_TABLE_NAME,
 };
 
 impl<'a> From<&'a InventoryExtensionMetadata> for InventoryExtensionMetadataPushRecord<'a> {
@@ -38,9 +39,9 @@ impl TryFrom<InventoryExtensionMetadataPullRecord> for InventoryExtensionMetadat
     }
 }
 
-impl<'a> From<&'a Manufacturer> for ManufacturerPushRecord<'a> {
-    fn from(manufacturer: &'a Manufacturer) -> Self {
-        ManufacturerPushRecord {
+impl<'a> From<&'a DeviceManufacturer> for DeviceManufacturerPushRecord<'a> {
+    fn from(manufacturer: &'a DeviceManufacturer) -> Self {
+        DeviceManufacturerPushRecord {
             id: Thing::from(&manufacturer.id),
             common_name: &manufacturer.common_name,
             extensions: manufacturer.extensions.iter().map(Thing::from).collect(),
@@ -48,11 +49,11 @@ impl<'a> From<&'a Manufacturer> for ManufacturerPushRecord<'a> {
     }
 }
 
-impl TryFrom<ManufacturerPullRecord> for Manufacturer {
+impl TryFrom<DeviceManufacturerPullRecord> for DeviceManufacturer {
     type Error = anyhow::Error;
-    fn try_from(manufacturer: ManufacturerPullRecord) -> Result<Self, anyhow::Error> {
-        Ok(Manufacturer {
-            id: ManufacturerID::try_from(manufacturer.id)?,
+    fn try_from(manufacturer: DeviceManufacturerPullRecord) -> Result<Self, anyhow::Error> {
+        Ok(DeviceManufacturer {
+            id: DeviceManufacturerID::try_from(manufacturer.id)?,
             common_name: manufacturer.common_name,
             extensions: manufacturer
                 .extensions
@@ -63,9 +64,9 @@ impl TryFrom<ManufacturerPullRecord> for Manufacturer {
     }
 }
 
-impl<'a> From<&'a Classification> for ClassificationPushRecord<'a> {
-    fn from(classification: &'a Classification) -> Self {
-        ClassificationPushRecord {
+impl<'a> From<&'a DeviceClassification> for DeviceClassificationPushRecord<'a> {
+    fn from(classification: &'a DeviceClassification) -> Self {
+        DeviceClassificationPushRecord {
             id: Thing::from(&classification.id),
             common_name: &classification.common_name,
             extensions: classification.extensions.iter().map(Thing::from).collect(),
@@ -73,11 +74,11 @@ impl<'a> From<&'a Classification> for ClassificationPushRecord<'a> {
     }
 }
 
-impl TryFrom<ClassificationPullRecord> for Classification {
+impl TryFrom<DeviceClassificationPullRecord> for DeviceClassification {
     type Error = anyhow::Error;
-    fn try_from(classification: ClassificationPullRecord) -> Result<Self, anyhow::Error> {
-        Ok(Classification {
-            id: ClassificationID::try_from(classification.id)?,
+    fn try_from(classification: DeviceClassificationPullRecord) -> Result<Self, anyhow::Error> {
+        Ok(DeviceClassification {
+            id: DeviceClassificationID::try_from(classification.id)?,
             common_name: classification.common_name,
             extensions: classification
                 .extensions
@@ -108,8 +109,8 @@ impl TryFrom<DevicePullRecord> for Device {
         Ok(Device {
             id: DeviceID::try_from(device.id)?,
             common_name: device.common_name,
-            manufacturer: ManufacturerID::try_from(device.manufacturer)?,
-            classification: ClassificationID::try_from(device.classification)?,
+            manufacturer: DeviceManufacturerID::try_from(device.manufacturer)?,
+            classification: DeviceClassificationID::try_from(device.classification)?,
             extension: InventoryExtensionID::try_from(device.extension)?,
             primary_model_identifiers: device.primary_model_identifiers,
             extended_model_identifiers: device.extended_model_identifiers,
@@ -137,42 +138,42 @@ impl TryFrom<Thing> for InventoryExtensionID {
     }
 }
 
-impl From<&ManufacturerID> for Thing {
-    fn from(id: &ManufacturerID) -> Self {
+impl From<&DeviceManufacturerID> for Thing {
+    fn from(id: &DeviceManufacturerID) -> Self {
         Thing {
-            tb: MANUFACTURER_TABLE_NAME.to_owned(),
+            tb: DEVICE_MANUFACTURER_TABLE_NAME.to_owned(),
             id: Id::String(id.to_non_namespaced_string()),
         }
     }
 }
 
-impl TryFrom<Thing> for ManufacturerID {
+impl TryFrom<Thing> for DeviceManufacturerID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(ManufacturerID::new(&id))
+            Ok(DeviceManufacturerID::new(&id))
         } else {
-            Err(anyhow!("Non-string ID for manufacturer"))
+            Err(anyhow!("Non-string ID for device manufacturer"))
         }
     }
 }
 
-impl From<&ClassificationID> for Thing {
-    fn from(id: &ClassificationID) -> Self {
+impl From<&DeviceClassificationID> for Thing {
+    fn from(id: &DeviceClassificationID) -> Self {
         Thing {
-            tb: CLASSIFICATION_TABLE_NAME.to_owned(),
+            tb: DEVICE_CLASSIFICATION_TABLE_NAME.to_owned(),
             id: Id::String(id.to_non_namespaced_string()),
         }
     }
 }
 
-impl TryFrom<Thing> for ClassificationID {
+impl TryFrom<Thing> for DeviceClassificationID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(ClassificationID::new(&id))
+            Ok(DeviceClassificationID::new(&id))
         } else {
-            Err(anyhow!("Non-string ID for classification"))
+            Err(anyhow!("Non-string ID for device classification"))
         }
     }
 }

@@ -9,20 +9,20 @@ use surrealdb::Surreal;
 
 use crate::extensions::InventoryExtension;
 use crate::models::common::{
-    Classification, ClassificationID, Device, InventoryExtensionID, InventoryExtensionMetadata,
-    Manufacturer, ManufacturerID,
+    Device, DeviceClassification, DeviceClassificationID, DeviceManufacturer, DeviceManufacturerID,
+    InventoryExtensionID, InventoryExtensionMetadata,
 };
 use crate::models::database::{
-    ClassificationPullRecord, ClassificationPushRecord, DevicePullRecord, DevicePushRecord,
-    GenericPullRecord, InventoryExtensionMetadataPullRecord, InventoryExtensionMetadataPushRecord,
-    ManufacturerPullRecord, ManufacturerPushRecord,
+    DeviceClassificationPullRecord, DeviceClassificationPushRecord, DeviceManufacturerPullRecord,
+    DeviceManufacturerPushRecord, DevicePullRecord, DevicePushRecord, GenericPullRecord,
+    InventoryExtensionMetadataPullRecord, InventoryExtensionMetadataPushRecord,
 };
 use crate::stop;
 
 // TODO: Find a more sensible place to move these
 pub const EXTENSION_TABLE_NAME: &str = "extensions";
-pub const MANUFACTURER_TABLE_NAME: &str = "manufacturers";
-pub const CLASSIFICATION_TABLE_NAME: &str = "classifications";
+pub const DEVICE_MANUFACTURER_TABLE_NAME: &str = "device_manufacturers";
+pub const DEVICE_CLASSIFICATION_TABLE_NAME: &str = "device_classifications";
 pub const DEVICE_TABLE_NAME: &str = "devices";
 
 /// Wrapper type for a SurrealDB connection.
@@ -114,34 +114,30 @@ impl Database {
         self.connection
             .query(&format!(
                 "
-                DEFINE TABLE {0} SCHEMAFUL;
-                DEFINE FIELD common_name ON TABLE {0} TYPE string;
-                DEFINE FIELD version ON TABLE {0} TYPE string;
+                DEFINE TABLE {EXTENSION_TABLE_NAME} SCHEMAFUL;
+                DEFINE FIELD common_name ON TABLE {EXTENSION_TABLE_NAME} TYPE string;
+                DEFINE FIELD version ON TABLE {EXTENSION_TABLE_NAME} TYPE string;
 
-                DEFINE TABLE {1} SCHEMAFUL;
-                DEFINE FIELD common_name ON TABLE {1} TYPE string;
-                DEFINE FIELD extensions ON TABLE {1} TYPE array<record({0})>;
-                DEFINE FIELD extensions.* ON TABLE {1} TYPE record({0});
+                DEFINE TABLE {DEVICE_MANUFACTURER_TABLE_NAME} SCHEMAFUL;
+                DEFINE FIELD common_name ON TABLE {DEVICE_MANUFACTURER_TABLE_NAME} TYPE string;
+                DEFINE FIELD extensions ON TABLE {DEVICE_MANUFACTURER_TABLE_NAME} TYPE array<record({EXTENSION_TABLE_NAME})>;
+                DEFINE FIELD extensions.* ON TABLE {DEVICE_MANUFACTURER_TABLE_NAME} TYPE record({EXTENSION_TABLE_NAME});
 
-                DEFINE TABLE {2} SCHEMAFUL;
-                DEFINE FIELD common_name ON TABLE {2} TYPE string;
-                DEFINE FIELD extensions ON TABLE {2} TYPE array<record({0})>;
-                DEFINE FIELD extensions.* ON TABLE {2} TYPE record({0});
+                DEFINE TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} SCHEMAFUL;
+                DEFINE FIELD common_name ON TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} TYPE string;
+                DEFINE FIELD extensions ON TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} TYPE array<record({EXTENSION_TABLE_NAME})>;
+                DEFINE FIELD extensions.* ON TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} TYPE record({EXTENSION_TABLE_NAME});
 
-                DEFINE TABLE {3} SCHEMAFUL;
-                DEFINE FIELD common_name ON TABLE {3} TYPE string;
-                DEFINE FIELD manufacturer ON TABLE {3} TYPE record({1});
-                DEFINE FIELD classification ON TABLE {3} TYPE record({2});
-                DEFINE FIELD extension ON TABLE {3} TYPE record({0});
-                DEFINE FIELD primary_model_identifiers ON TABLE {3} TYPE array<string>;
-                DEFINE FIELD primary_model_identifiers.* ON TABLE {3} TYPE string;
-                DEFINE FIELD extended_model_identifiers ON TABLE {3} TYPE array<string>;
-                DEFINE FIELD extended_model_identifiers.* ON TABLE {3} TYPE string;
+                DEFINE TABLE {DEVICE_TABLE_NAME} SCHEMAFUL;
+                DEFINE FIELD common_name ON TABLE {DEVICE_TABLE_NAME} TYPE string;
+                DEFINE FIELD manufacturer ON TABLE {DEVICE_TABLE_NAME} TYPE record({DEVICE_MANUFACTURER_TABLE_NAME});
+                DEFINE FIELD classification ON TABLE {DEVICE_TABLE_NAME} TYPE record({DEVICE_CLASSIFICATION_TABLE_NAME});
+                DEFINE FIELD extension ON TABLE {DEVICE_TABLE_NAME} TYPE record({EXTENSION_TABLE_NAME});
+                DEFINE FIELD primary_model_identifiers ON TABLE {DEVICE_TABLE_NAME} TYPE array<string>;
+                DEFINE FIELD primary_model_identifiers.* ON TABLE {DEVICE_TABLE_NAME} TYPE string;
+                DEFINE FIELD extended_model_identifiers ON TABLE {DEVICE_TABLE_NAME} TYPE array<string>;
+                DEFINE FIELD extended_model_identifiers.* ON TABLE {DEVICE_TABLE_NAME} TYPE string;
                 ",
-                EXTENSION_TABLE_NAME,
-                MANUFACTURER_TABLE_NAME,
-                CLASSIFICATION_TABLE_NAME,
-                DEVICE_TABLE_NAME
             ))
             .await
             .unwrap_or_else(|_| {
@@ -160,69 +156,68 @@ impl Database {
         self.connection
             .query(&format!(
                 "
-                INSERT INTO {0} {{
+                INSERT INTO {EXTENSION_TABLE_NAME} {{
                     id: \"builtin\",
                     common_name: \"Built-in\",
                     version: \"0.0.0\"
                 }};
 
-                INSERT INTO {1} [
+                INSERT INTO {DEVICE_MANUFACTURER_TABLE_NAME} [
                     {{
                         id: \"apple\",
                         common_name: \"Apple\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"samsung\",
                         common_name: \"Samsung\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"google\",
                         common_name: \"Google\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"motorola\",
                         common_name: \"Motorola\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"lg\",
                         common_name: \"LG\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                 ];
 
-                INSERT INTO {2} [
+                INSERT INTO {DEVICE_CLASSIFICATION_TABLE_NAME} [
                     {{
                         id: \"phone\",
                         common_name: \"Phone\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"tablet\",
                         common_name: \"Tablet\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"console\",
                         common_name: \"Console\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"laptop\",
                         common_name: \"Laptop\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                     {{
                         id: \"desktop\",
                         common_name: \"Desktop\",
-                        extensions: [\"{0}:builtin\"]
+                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
                     }},
                 ];
                 ",
-                EXTENSION_TABLE_NAME, MANUFACTURER_TABLE_NAME, CLASSIFICATION_TABLE_NAME
             ))
             .await?;
 
@@ -239,11 +234,11 @@ impl Database {
             .await
             .unwrap();
         self.connection
-            .delete::<Vec<GenericPullRecord>>(MANUFACTURER_TABLE_NAME)
+            .delete::<Vec<GenericPullRecord>>(DEVICE_MANUFACTURER_TABLE_NAME)
             .await
             .unwrap();
         self.connection
-            .delete::<Vec<GenericPullRecord>>(CLASSIFICATION_TABLE_NAME)
+            .delete::<Vec<GenericPullRecord>>(DEVICE_CLASSIFICATION_TABLE_NAME)
             .await
             .unwrap();
         self.connection
@@ -272,14 +267,14 @@ impl Database {
             .await?;
 
         let mut futures = Vec::new();
-        for classification in extension.classifications {
-            futures.push(self.add_classification(classification));
+        for classification in extension.device_classifications {
+            futures.push(self.add_device_classification(classification));
         }
         future::join_all(futures).await;
 
         let mut futures = Vec::new();
-        for manufacturer in extension.manufacturers {
-            futures.push(self.add_manufacturer(manufacturer));
+        for manufacturer in extension.device_manufacturers {
+            futures.push(self.add_device_manufacturer(manufacturer));
         }
         future::join_all(futures).await;
 
@@ -309,8 +304,8 @@ impl Database {
         self.connection
             .query(&format!(
                 "
-                DELETE {MANUFACTURER_TABLE_NAME} WHERE extensions = [\"{0}\"];
-                DELETE {CLASSIFICATION_TABLE_NAME} WHERE extensions = [\"{0}\"];
+                DELETE {DEVICE_MANUFACTURER_TABLE_NAME} WHERE extensions = [\"{0}\"];
+                DELETE {DEVICE_CLASSIFICATION_TABLE_NAME} WHERE extensions = [\"{0}\"];
                 DELETE {DEVICE_TABLE_NAME} WHERE extension = \"{0}\";
                 DELETE {EXTENSION_TABLE_NAME} WHERE id = \"{0}\";
                 ",
@@ -344,33 +339,33 @@ impl Database {
         Ok(extensions)
     }
 
-    /// Lists all the manufacturers in the database.
+    /// Lists all the device manufacturers in the database.
     #[allow(dead_code)]
-    pub async fn list_manufacturers(&self) -> anyhow::Result<Vec<Manufacturer>> {
+    pub async fn list_devie_manufacturers(&self) -> anyhow::Result<Vec<DeviceManufacturer>> {
         let pull_records = self
             .connection
-            .select::<Vec<ManufacturerPullRecord>>(MANUFACTURER_TABLE_NAME)
+            .select::<Vec<DeviceManufacturerPullRecord>>(DEVICE_MANUFACTURER_TABLE_NAME)
             .await?;
 
         let mut manufacturers = Vec::new();
         for record in pull_records {
-            manufacturers.push(Manufacturer::try_from(record)?);
+            manufacturers.push(DeviceManufacturer::try_from(record)?);
         }
 
         Ok(manufacturers)
     }
 
-    /// Lists all the classifications in the database.
+    /// Lists all the device classifications in the database.
     #[allow(dead_code)]
-    pub async fn list_classifications(&self) -> anyhow::Result<Vec<Classification>> {
+    pub async fn list_device_classifications(&self) -> anyhow::Result<Vec<DeviceClassification>> {
         let pull_records = self
             .connection
-            .select::<Vec<ClassificationPullRecord>>(CLASSIFICATION_TABLE_NAME)
+            .select::<Vec<DeviceClassificationPullRecord>>(DEVICE_CLASSIFICATION_TABLE_NAME)
             .await?;
 
         let mut classifications = Vec::new();
         for record in pull_records {
-            classifications.push(Classification::try_from(record)?);
+            classifications.push(DeviceClassification::try_from(record)?);
         }
 
         Ok(classifications)
@@ -391,58 +386,64 @@ impl Database {
         Ok(devices)
     }
 
-    /// Adds a manufacturer to the database, merging it with an existing record if needed.
-    async fn add_manufacturer(&self, mut manufacturer: Manufacturer) -> anyhow::Result<()> {
-        if let Some(existing_record) = self.get_manufacturer(&manufacturer.id).await? {
+    /// Adds a deivice manufacturer to the database, merging it with an existing record if needed.
+    async fn add_device_manufacturer(
+        &self,
+        mut manufacturer: DeviceManufacturer,
+    ) -> anyhow::Result<()> {
+        if let Some(existing_record) = self.get_device_manufacturer(&manufacturer.id).await? {
             manufacturer.merge(existing_record.try_into()?);
         }
 
         self.connection
-            .create::<Vec<GenericPullRecord>>(MANUFACTURER_TABLE_NAME)
-            .content(ManufacturerPushRecord::from(&manufacturer))
+            .create::<Vec<GenericPullRecord>>(DEVICE_MANUFACTURER_TABLE_NAME)
+            .content(DeviceManufacturerPushRecord::from(&manufacturer))
             .await?;
 
         Ok(())
     }
 
-    /// Adds a classification to the database, merging it with an existing record if needed.
-    async fn add_classification(&self, mut classification: Classification) -> anyhow::Result<()> {
-        if let Some(existing_record) = self.get_classification(&classification.id).await? {
+    /// Adds a device classification to the database, merging it with an existing record if needed.
+    async fn add_device_classification(
+        &self,
+        mut classification: DeviceClassification,
+    ) -> anyhow::Result<()> {
+        if let Some(existing_record) = self.get_device_classification(&classification.id).await? {
             classification.merge(existing_record.try_into()?);
         }
 
         self.connection
-            .create::<Vec<GenericPullRecord>>(CLASSIFICATION_TABLE_NAME)
-            .content(ClassificationPushRecord::from(&classification))
+            .create::<Vec<GenericPullRecord>>(DEVICE_CLASSIFICATION_TABLE_NAME)
+            .content(DeviceClassificationPushRecord::from(&classification))
             .await?;
 
         Ok(())
     }
 
-    // ? Can this be combined with `get_classification()` into a single function?
-    /// Gets a manufacturer from the database, if it exists.
-    async fn get_manufacturer(
+    // ? Can this be combined with `get_device_classification()` into a single function?
+    /// Gets a device manufacturer from the database, if it exists.
+    async fn get_device_manufacturer(
         &self,
-        id: &ManufacturerID,
-    ) -> anyhow::Result<Option<ManufacturerPullRecord>> {
+        id: &DeviceManufacturerID,
+    ) -> anyhow::Result<Option<DeviceManufacturerPullRecord>> {
         Ok(self
             .connection
-            .select::<Option<ManufacturerPullRecord>>((
-                MANUFACTURER_TABLE_NAME,
+            .select::<Option<DeviceManufacturerPullRecord>>((
+                DEVICE_MANUFACTURER_TABLE_NAME,
                 id.to_non_namespaced_string(),
             ))
             .await?)
     }
 
-    /// Gets a classification from the database, if it exists.
-    async fn get_classification(
+    /// Gets a device classification from the database, if it exists.
+    async fn get_device_classification(
         &self,
-        id: &ClassificationID,
-    ) -> anyhow::Result<Option<ClassificationPullRecord>> {
+        id: &DeviceClassificationID,
+    ) -> anyhow::Result<Option<DeviceClassificationPullRecord>> {
         Ok(self
             .connection
-            .select::<Option<ClassificationPullRecord>>((
-                CLASSIFICATION_TABLE_NAME,
+            .select::<Option<DeviceClassificationPullRecord>>((
+                DEVICE_CLASSIFICATION_TABLE_NAME,
                 id.to_non_namespaced_string(),
             ))
             .await?)
@@ -454,14 +455,17 @@ impl Database {
     #[allow(dead_code)]
     pub async fn only_contains(&self, extension: &InventoryExtension) {
         let loaded_extensions = self.list_extensions().await.unwrap();
-        let loaded_manufacturers = self.list_manufacturers().await.unwrap();
-        let loaded_classifications = self.list_classifications().await.unwrap();
+        let loaded_device_manufacturers = self.list_devie_manufacturers().await.unwrap();
+        let loaded_device_classifications = self.list_device_classifications().await.unwrap();
         let loaded_devices = self.list_devices().await.unwrap();
 
         assert_eq!(loaded_extensions.len(), 1);
         assert_eq!(loaded_extensions[0], extension.metadata);
-        assert_eq!(loaded_manufacturers, extension.manufacturers);
-        assert_eq!(loaded_classifications, extension.classifications);
+        assert_eq!(loaded_device_manufacturers, extension.device_manufacturers);
+        assert_eq!(
+            loaded_device_classifications,
+            extension.device_classifications
+        );
         assert_eq!(loaded_devices, extension.devices);
     }
 }

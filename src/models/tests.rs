@@ -1,29 +1,29 @@
 use std::collections::HashSet;
 
 use super::common::{
-    Classification, ClassificationID, Device, DeviceID, InventoryExtensionID, Manufacturer,
-    ManufacturerID,
+    Device, DeviceClassification, DeviceClassificationID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerID, InventoryExtensionID,
 };
 
-impl Manufacturer {
-    /// Creates a basic manufacturer for testing purposes.
+impl DeviceManufacturer {
+    /// Creates a basic device manufacturer for testing purposes.
     /// Can be modified to test different scenarios.
     pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
         Self {
-            id: ManufacturerID::new(&format!("test_{num}")),
-            common_name: format!("Test Manufacturer {num}"),
+            id: DeviceManufacturerID::new(&format!("test_{num}")),
+            common_name: format!("Test Device Manufacturer {num}"),
             extensions: HashSet::from([extension_id.clone()]),
         }
     }
 }
 
-impl Classification {
-    /// Creates a basic classification for testing purposes.
+impl DeviceClassification {
+    /// Creates a basic device classification for testing purposes.
     /// Can be modified to test different scenarios.
     pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
         Self {
-            id: ClassificationID::new(&format!("test_{num}")),
-            common_name: format!("Test Classification {num}"),
+            id: DeviceClassificationID::new(&format!("test_{num}")),
+            common_name: format!("Test Device Classification {num}"),
             extensions: HashSet::from([extension_id.clone()]),
         }
     }
@@ -35,8 +35,8 @@ impl Device {
     pub fn test(
         num: u32,
         extension_id: &InventoryExtensionID,
-        manufacturer_id: &ManufacturerID,
-        classification_id: &ClassificationID,
+        manufacturer_id: &DeviceManufacturerID,
+        classification_id: &DeviceClassificationID,
     ) -> Self {
         Self {
             id: DeviceID::new(

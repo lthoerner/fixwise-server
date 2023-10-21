@@ -3,7 +3,7 @@ extension_common_name = 'iPhones ALL'
 extension_version = '0.1.0'
 load_override = true
 
-[[manufacturers]]
+[[device_manufacturers]]
 id = 'apple'
 common_name = 'Apple'
 

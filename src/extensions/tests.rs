@@ -3,7 +3,7 @@ use semver::Version;
 use super::conflicts::{LoadConflict, StageConflict, VersionChange};
 use super::{ExtensionID, ExtensionManager as Manager, InventoryExtension as Extension, Metadata};
 use crate::database::Database;
-use crate::models::common::{Classification, Device, Manufacturer};
+use crate::models::common::{Device, DeviceClassification, DeviceManufacturer};
 
 #[tokio::test]
 /// Tests that an extension which does not already exist in the database will be loaded without
@@ -195,8 +195,8 @@ impl Extension {
                 common_name: format!("Test Extension {num}"),
                 version: Version::new(1, 0, 0),
             },
-            manufacturers: Vec::new(),
-            classifications: Vec::new(),
+            device_manufacturers: Vec::new(),
+            device_classifications: Vec::new(),
             devices: Vec::new(),
         }
     }
@@ -207,18 +207,19 @@ impl Extension {
         // Create an empty extension.
         let mut extension = Self::test(extension_num);
 
-        // Populate the extension with one manufacturer, classification, and device.
-        let manufacturer = Manufacturer::test(contents_num, &extension.metadata.id);
-        let classification = Classification::test(contents_num, &extension.metadata.id);
+        // Populate the extension with one device manufacturer, device classification, and device.
+        let device_manufacturer = DeviceManufacturer::test(contents_num, &extension.metadata.id);
+        let device_classification =
+            DeviceClassification::test(contents_num, &extension.metadata.id);
         let device = Device::test(
             contents_num,
             &extension.metadata.id,
-            &manufacturer.id,
-            &classification.id,
+            &device_manufacturer.id,
+            &device_classification.id,
         );
 
-        extension.manufacturers.push(manufacturer);
-        extension.classifications.push(classification);
+        extension.device_manufacturers.push(device_manufacturer);
+        extension.device_classifications.push(device_classification);
         extension.devices.push(device);
 
         extension

@@ -15,16 +15,17 @@ use serde::Deserialize;
 use self::conflicts::{LoadConflict, StageConflict};
 use crate::database::Database;
 use crate::models::common::{
-    Classification, ClassificationID, Device, DeviceID, InventoryExtensionID as ExtensionID,
-    InventoryExtensionMetadata as Metadata, Manufacturer, ManufacturerID,
+    Device, DeviceClassification, DeviceClassificationID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerID, InventoryExtensionID as ExtensionID,
+    InventoryExtensionMetadata as Metadata,
 };
 
 /// An extension of the database inventory system.
 #[derive(Debug, Clone)]
 pub struct InventoryExtension {
     pub metadata: Metadata,
-    pub manufacturers: Vec<Manufacturer>,
-    pub classifications: Vec<Classification>,
+    pub device_manufacturers: Vec<DeviceManufacturer>,
+    pub device_classifications: Vec<DeviceClassification>,
     pub devices: Vec<Device>,
 }
 
@@ -36,23 +37,23 @@ struct InventoryExtensionToml {
     extension_id: String,
     extension_common_name: String,
     extension_version: String,
-    manufacturers: Vec<ManufacturerToml>,
-    classifications: Option<Vec<ClassificationToml>>,
+    device_manufacturers: Option<Vec<DeviceManufacturerToml>>,
+    device_classifications: Option<Vec<DeviceClassificationToml>>,
     devices: Vec<DeviceToml>,
 }
 
 /// A device manufacturer as read from a TOML extension.
-/// This must be converted into a [`Manufacturer`] before adding it to the database.
+/// This must be converted into a [`DeviceManufacturer`] before adding it to the database.
 #[derive(Debug, Deserialize)]
-struct ManufacturerToml {
+struct DeviceManufacturerToml {
     id: String,
     common_name: String,
 }
 
 /// A classification of device as read from a TOML extension.
-/// This must be converted into a [`Classification`] before adding it to the database.
+/// This must be converted into a [`DeviceClassification`] before adding it to the database.
 #[derive(Debug, Deserialize)]
-struct ClassificationToml {
+struct DeviceClassificationToml {
     id: String,
     common_name: String,
 }
@@ -183,26 +184,28 @@ impl ExtensionManager {
 }
 
 // TODO: Remove unwraps
-// * Inner types here ([`Manufacturer`], [`Classification`], [`Device`]) must be converted with
-// *  context provided by the [`ExtensionToml`] itself, so they cannot be converted directly.
+// * Inner types here ([`DeviceManufacturer`], [`DeviceClassification`], [`Device`]) must be
+// * converted with context provided by the [`ExtensionToml`] itself, so they cannot be converted
+// * directly.
 impl From<InventoryExtensionToml> for InventoryExtension {
     fn from(toml: InventoryExtensionToml) -> Self {
-        let manufacturers = toml
-            .manufacturers
+        let device_manufacturers = toml
+            .device_manufacturers
+            .unwrap_or_default()
             .into_iter()
-            .map(|m| Manufacturer {
-                id: ManufacturerID::new(&m.id),
+            .map(|m| DeviceManufacturer {
+                id: DeviceManufacturerID::new(&m.id),
                 common_name: m.common_name,
                 extensions: HashSet::from([ExtensionID::new(&toml.extension_id)]),
             })
             .collect();
 
-        let classifications = toml
-            .classifications
+        let device_classifications = toml
+            .device_classifications
             .unwrap_or_default()
             .into_iter()
-            .map(|c| Classification {
-                id: ClassificationID::new(&c.id),
+            .map(|c| DeviceClassification {
+                id: DeviceClassificationID::new(&c.id),
                 common_name: c.common_name,
                 extensions: HashSet::from([ExtensionID::new(&toml.extension_id)]),
             })
@@ -220,8 +223,8 @@ impl From<InventoryExtensionToml> for InventoryExtension {
                     &d.true_name,
                 ),
                 common_name: d.common_name,
-                manufacturer: ManufacturerID::new(&d.manufacturer),
-                classification: ClassificationID::new(&d.classification),
+                manufacturer: DeviceManufacturerID::new(&d.manufacturer),
+                classification: DeviceClassificationID::new(&d.classification),
                 extension: ExtensionID::new(&toml.extension_id),
                 primary_model_identifiers: d.primary_model_identifiers,
                 extended_model_identifiers: d.extended_model_identifiers,
@@ -234,8 +237,8 @@ impl From<InventoryExtensionToml> for InventoryExtension {
                 common_name: toml.extension_common_name,
                 version: Version::from_str(&toml.extension_version).unwrap(),
             },
-            manufacturers,
-            classifications,
+            device_manufacturers,
+            device_classifications,
             devices,
         }
     }

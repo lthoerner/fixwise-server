@@ -19,7 +19,7 @@ pub struct InventoryExtensionMetadataPullRecord {
 
 /// A device manufacturer which can be added to the database.
 #[derive(Debug, Serialize)]
-pub struct ManufacturerPushRecord<'a> {
+pub struct DeviceManufacturerPushRecord<'a> {
     pub id: Thing,
     pub common_name: &'a str,
     pub extensions: Vec<Thing>,
@@ -27,7 +27,7 @@ pub struct ManufacturerPushRecord<'a> {
 
 /// A device manufacturer as read from the database.
 #[derive(Debug, Deserialize)]
-pub struct ManufacturerPullRecord {
+pub struct DeviceManufacturerPullRecord {
     pub id: Thing,
     pub common_name: String,
     pub extensions: Vec<Thing>,
@@ -35,7 +35,7 @@ pub struct ManufacturerPullRecord {
 
 /// A classification of device which can be added to the database.
 #[derive(Debug, Serialize)]
-pub struct ClassificationPushRecord<'a> {
+pub struct DeviceClassificationPushRecord<'a> {
     pub id: Thing,
     pub common_name: &'a str,
     pub extensions: Vec<Thing>,
@@ -43,7 +43,7 @@ pub struct ClassificationPushRecord<'a> {
 
 /// A classification of device as read from the database.
 #[derive(Debug, Deserialize)]
-pub struct ClassificationPullRecord {
+pub struct DeviceClassificationPullRecord {
     pub id: Thing,
     pub common_name: String,
     pub extensions: Vec<Thing>,

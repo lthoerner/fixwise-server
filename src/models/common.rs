@@ -3,7 +3,8 @@ use std::collections::HashSet;
 use semver::Version;
 
 use crate::database::{
-    CLASSIFICATION_TABLE_NAME, DEVICE_TABLE_NAME, EXTENSION_TABLE_NAME, MANUFACTURER_TABLE_NAME,
+    DEVICE_CLASSIFICATION_TABLE_NAME, DEVICE_MANUFACTURER_TABLE_NAME, DEVICE_TABLE_NAME,
+    EXTENSION_TABLE_NAME,
 };
 
 /// An explicitly-namespaced extension ID.
@@ -12,15 +13,15 @@ pub struct InventoryExtensionID {
     non_namespaced_id: String,
 }
 
-/// An explicitly-namespaced manufacturer ID.
+/// An explicitly-namespaced device manufacturer ID.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ManufacturerID {
+pub struct DeviceManufacturerID {
     non_namespaced_id: String,
 }
 
-/// An explicitly-namespaced classification ID.
+/// An explicitly-namespaced device classification ID.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ClassificationID {
+pub struct DeviceClassificationID {
     non_namespaced_id: String,
 }
 
@@ -28,12 +29,13 @@ pub struct ClassificationID {
 /// `<extension>/<manufacturer>/<classification>/<device>`.
 /// This allows for devices which have different extensions, manufacturers, or classifications to
 /// share the same name, and for duplicates to be easily identified.
-/// The extension and classification IDs are not namespaced to their respective tables in this form.
+/// The extension, device manufacturer, and device classification IDs are not namespaced to their
+/// respective tables in this form.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceID {
     pub extension_id: InventoryExtensionID,
-    pub manufacturer_id: ManufacturerID,
-    pub classification_id: ClassificationID,
+    pub manufacturer_id: DeviceManufacturerID,
+    pub classification_id: DeviceClassificationID,
     non_namespaced_id: String,
 }
 
@@ -50,16 +52,16 @@ pub struct InventoryExtensionMetadata {
 
 /// A device manufacturer.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Manufacturer {
-    pub id: ManufacturerID,
+pub struct DeviceManufacturer {
+    pub id: DeviceManufacturerID,
     pub common_name: String,
     pub extensions: HashSet<InventoryExtensionID>,
 }
 
 /// A classification of device, such as a phone, tablet, or gaming console.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Classification {
-    pub id: ClassificationID,
+pub struct DeviceClassification {
+    pub id: DeviceClassificationID,
     pub common_name: String,
     pub extensions: HashSet<InventoryExtensionID>,
 }
@@ -69,8 +71,8 @@ pub struct Classification {
 pub struct Device {
     pub id: DeviceID,
     pub common_name: String,
-    pub manufacturer: ManufacturerID,
-    pub classification: ClassificationID,
+    pub manufacturer: DeviceManufacturerID,
+    pub classification: DeviceClassificationID,
     pub extension: InventoryExtensionID,
     pub primary_model_identifiers: Vec<String>,
     pub extended_model_identifiers: Vec<String>,
@@ -92,7 +94,7 @@ impl InventoryExtensionID {
     }
 }
 
-impl ManufacturerID {
+impl DeviceManufacturerID {
     pub fn new(id: &str) -> Self {
         Self {
             non_namespaced_id: id.to_owned(),
@@ -104,11 +106,11 @@ impl ManufacturerID {
     }
 
     pub fn to_namespaced_string(&self) -> String {
-        [MANUFACTURER_TABLE_NAME, &self.non_namespaced_id].join(":")
+        [DEVICE_MANUFACTURER_TABLE_NAME, &self.non_namespaced_id].join(":")
     }
 }
 
-impl ClassificationID {
+impl DeviceClassificationID {
     pub fn new(id: &str) -> Self {
         Self {
             non_namespaced_id: id.to_owned(),
@@ -120,7 +122,7 @@ impl ClassificationID {
     }
 
     pub fn to_namespaced_string(&self) -> String {
-        [CLASSIFICATION_TABLE_NAME, &self.non_namespaced_id].join(":")
+        [DEVICE_CLASSIFICATION_TABLE_NAME, &self.non_namespaced_id].join(":")
     }
 }
 
@@ -135,8 +137,8 @@ impl DeviceID {
     ) -> Self {
         Self {
             extension_id: InventoryExtensionID::new(extension_id),
-            manufacturer_id: ManufacturerID::new(manufacturer_id),
-            classification_id: ClassificationID::new(classification_id),
+            manufacturer_id: DeviceManufacturerID::new(manufacturer_id),
+            classification_id: DeviceClassificationID::new(classification_id),
             non_namespaced_id: id.to_owned(),
         }
     }
@@ -156,18 +158,18 @@ impl DeviceID {
     }
 }
 
-impl Manufacturer {
-    /// Merges the extensions field of another manufacturer into this one.
-    /// Does not check whether the two manufacturers share the same ID and other metadata.
-    pub fn merge(&mut self, other: Manufacturer) {
+impl DeviceManufacturer {
+    /// Merges the extensions field of another device manufacturer into this one.
+    /// Does not check whether the two device manufacturers share the same ID and other metadata.
+    pub fn merge(&mut self, other: DeviceManufacturer) {
         self.extensions.extend(other.extensions);
     }
 }
 
-impl Classification {
-    /// Merges the extensions field of another classification into this one.
-    /// Does not check whether the two classifications share the same ID and other metadata.
-    pub fn merge(&mut self, other: Classification) {
+impl DeviceClassification {
+    /// Merges the extensions field of another device classification into this one.
+    /// Does not check whether the two device classifications share the same ID and other metadata.
+    pub fn merge(&mut self, other: DeviceClassification) {
         self.extensions.extend(other.extensions);
     }
 }
