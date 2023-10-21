@@ -5,6 +5,7 @@ use super::{ExtensionID, InventoryExtension as Extension, Metadata};
 
 /// Indicator that the manager encountered an error when staging an extension.
 pub struct StageConflict {
+    #[allow(dead_code)]
     id: ExtensionID,
 }
 
