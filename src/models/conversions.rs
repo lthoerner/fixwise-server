@@ -5,8 +5,8 @@ use semver::Version;
 use surrealdb::sql::{Id, Thing};
 
 use super::common::{
-    Device, DeviceClassification, DeviceClassificationID, DeviceID, DeviceManufacturer,
-    DeviceManufacturerID, InventoryExtensionID, InventoryExtensionMetadata,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerUniqueID, InventoryExtensionMetadata, InventoryExtensionUniqueID, UniqueID,
 };
 use super::database::{
     DeviceClassificationPullRecord, DeviceClassificationPushRecord, DeviceManufacturerPullRecord,
@@ -32,7 +32,7 @@ impl TryFrom<InventoryExtensionMetadataPullRecord> for InventoryExtensionMetadat
     type Error = anyhow::Error;
     fn try_from(extension: InventoryExtensionMetadataPullRecord) -> Result<Self, anyhow::Error> {
         Ok(InventoryExtensionMetadata {
-            id: InventoryExtensionID::try_from(extension.id)?,
+            id: InventoryExtensionUniqueID::try_from(extension.id)?,
             common_name: extension.common_name,
             version: Version::parse(&extension.version)?,
         })
@@ -53,12 +53,12 @@ impl TryFrom<DeviceManufacturerPullRecord> for DeviceManufacturer {
     type Error = anyhow::Error;
     fn try_from(manufacturer: DeviceManufacturerPullRecord) -> Result<Self, anyhow::Error> {
         Ok(DeviceManufacturer {
-            id: DeviceManufacturerID::try_from(manufacturer.id)?,
+            id: DeviceManufacturerUniqueID::try_from(manufacturer.id)?,
             common_name: manufacturer.common_name,
             extensions: manufacturer
                 .extensions
                 .into_iter()
-                .map(InventoryExtensionID::try_from)
+                .map(InventoryExtensionUniqueID::try_from)
                 .collect::<Result<HashSet<_>, _>>()?,
         })
     }
@@ -78,12 +78,12 @@ impl TryFrom<DeviceClassificationPullRecord> for DeviceClassification {
     type Error = anyhow::Error;
     fn try_from(classification: DeviceClassificationPullRecord) -> Result<Self, anyhow::Error> {
         Ok(DeviceClassification {
-            id: DeviceClassificationID::try_from(classification.id)?,
+            id: DeviceClassificationUniqueID::try_from(classification.id)?,
             common_name: classification.common_name,
             extensions: classification
                 .extensions
                 .into_iter()
-                .map(InventoryExtensionID::try_from)
+                .map(InventoryExtensionUniqueID::try_from)
                 .collect::<Result<HashSet<_>, _>>()?,
         })
     }
@@ -109,69 +109,69 @@ impl TryFrom<DevicePullRecord> for Device {
         Ok(Device {
             id: DeviceID::try_from(device.id)?,
             common_name: device.common_name,
-            manufacturer: DeviceManufacturerID::try_from(device.manufacturer)?,
-            classification: DeviceClassificationID::try_from(device.classification)?,
-            extension: InventoryExtensionID::try_from(device.extension)?,
+            manufacturer: DeviceManufacturerUniqueID::try_from(device.manufacturer)?,
+            classification: DeviceClassificationUniqueID::try_from(device.classification)?,
+            extension: InventoryExtensionUniqueID::try_from(device.extension)?,
             primary_model_identifiers: device.primary_model_identifiers,
             extended_model_identifiers: device.extended_model_identifiers,
         })
     }
 }
 
-impl From<&InventoryExtensionID> for Thing {
-    fn from(id: &InventoryExtensionID) -> Self {
+impl From<&InventoryExtensionUniqueID> for Thing {
+    fn from(id: &InventoryExtensionUniqueID) -> Self {
         Thing {
             tb: EXTENSION_TABLE_NAME.to_owned(),
-            id: Id::String(id.to_non_namespaced_string()),
+            id: Id::String(id.unnamespaced().to_owned()),
         }
     }
 }
 
-impl TryFrom<Thing> for InventoryExtensionID {
+impl TryFrom<Thing> for InventoryExtensionUniqueID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(InventoryExtensionID::new(&id))
+            Ok(InventoryExtensionUniqueID::new(id))
         } else {
             Err(anyhow!("Non-string ID for extension"))
         }
     }
 }
 
-impl From<&DeviceManufacturerID> for Thing {
-    fn from(id: &DeviceManufacturerID) -> Self {
+impl From<&DeviceManufacturerUniqueID> for Thing {
+    fn from(id: &DeviceManufacturerUniqueID) -> Self {
         Thing {
             tb: DEVICE_MANUFACTURER_TABLE_NAME.to_owned(),
-            id: Id::String(id.to_non_namespaced_string()),
+            id: Id::String(id.unnamespaced().to_owned()),
         }
     }
 }
 
-impl TryFrom<Thing> for DeviceManufacturerID {
+impl TryFrom<Thing> for DeviceManufacturerUniqueID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(DeviceManufacturerID::new(&id))
+            Ok(DeviceManufacturerUniqueID::new(id))
         } else {
             Err(anyhow!("Non-string ID for device manufacturer"))
         }
     }
 }
 
-impl From<&DeviceClassificationID> for Thing {
-    fn from(id: &DeviceClassificationID) -> Self {
+impl From<&DeviceClassificationUniqueID> for Thing {
+    fn from(id: &DeviceClassificationUniqueID) -> Self {
         Thing {
             tb: DEVICE_CLASSIFICATION_TABLE_NAME.to_owned(),
-            id: Id::String(id.to_non_namespaced_string()),
+            id: Id::String(id.unnamespaced().to_owned()),
         }
     }
 }
 
-impl TryFrom<Thing> for DeviceClassificationID {
+impl TryFrom<Thing> for DeviceClassificationUniqueID {
     type Error = anyhow::Error;
     fn try_from(thing: Thing) -> Result<Self, Self::Error> {
         if let Id::String(id) = thing.id {
-            Ok(DeviceClassificationID::new(&id))
+            Ok(DeviceClassificationUniqueID::new(id))
         } else {
             Err(anyhow!("Non-string ID for device classification"))
         }

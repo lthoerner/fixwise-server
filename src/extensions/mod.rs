@@ -15,9 +15,9 @@ use serde::Deserialize;
 use self::conflicts::{LoadConflict, StageConflict};
 use crate::database::Database;
 use crate::models::common::{
-    Device, DeviceClassification, DeviceClassificationID, DeviceID, DeviceManufacturer,
-    DeviceManufacturerID, InventoryExtensionID as ExtensionID,
-    InventoryExtensionMetadata as Metadata,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerUniqueID, InventoryExtensionMetadata as Metadata,
+    InventoryExtensionUniqueID as ExtensionID, UniqueID,
 };
 
 /// An extension of the database inventory system.
@@ -109,14 +109,14 @@ impl ExtensionManager {
         if !self.already_contains(&extension) {
             info!(
                 "Staging extension '{}'.",
-                extension.metadata.id.to_non_namespaced_string()
+                extension.metadata.id.unnamespaced()
             );
             self.staged_extensions.push(extension);
         } else {
             // $ NOTIFICATION OR PROMPT HERE
             error!(
                 "Extension with ID '{}' already staged, skipping.",
-                extension.metadata.id.to_non_namespaced_string()
+                extension.metadata.id.unnamespaced()
             );
             return Ok(Some(StageConflict::new(&extension.metadata)));
         }
@@ -150,7 +150,7 @@ impl ExtensionManager {
         let mut conflicts = Vec::new();
         'current_extension: for staged_extension in self.staged_extensions.into_iter() {
             let staged_extension_metadata = &staged_extension.metadata;
-            let staged_extension_id = staged_extension_metadata.id.to_non_namespaced_string();
+            let staged_extension_id = staged_extension_metadata.id.unnamespaced();
 
             let Some(conflict) = LoadConflict::new(&staged_extension, &mut loaded_extensions)
             else {
@@ -194,7 +194,7 @@ impl From<InventoryExtensionToml> for InventoryExtension {
             .unwrap_or_default()
             .into_iter()
             .map(|m| DeviceManufacturer {
-                id: DeviceManufacturerID::new(&m.id),
+                id: DeviceManufacturerUniqueID::new(&m.id),
                 common_name: m.common_name,
                 extensions: HashSet::from([ExtensionID::new(&toml.extension_id)]),
             })
@@ -205,7 +205,7 @@ impl From<InventoryExtensionToml> for InventoryExtension {
             .unwrap_or_default()
             .into_iter()
             .map(|c| DeviceClassification {
-                id: DeviceClassificationID::new(&c.id),
+                id: DeviceClassificationUniqueID::new(&c.id),
                 common_name: c.common_name,
                 extensions: HashSet::from([ExtensionID::new(&toml.extension_id)]),
             })
@@ -223,8 +223,8 @@ impl From<InventoryExtensionToml> for InventoryExtension {
                     &d.true_name,
                 ),
                 common_name: d.common_name,
-                manufacturer: DeviceManufacturerID::new(&d.manufacturer),
-                classification: DeviceClassificationID::new(&d.classification),
+                manufacturer: DeviceManufacturerUniqueID::new(&d.manufacturer),
+                classification: DeviceClassificationUniqueID::new(&d.classification),
                 extension: ExtensionID::new(&toml.extension_id),
                 primary_model_identifiers: d.primary_model_identifiers,
                 extended_model_identifiers: d.extended_model_identifiers,

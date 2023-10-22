@@ -9,8 +9,8 @@ use surrealdb::Surreal;
 
 use crate::extensions::InventoryExtension;
 use crate::models::common::{
-    Device, DeviceClassification, DeviceClassificationID, DeviceManufacturer, DeviceManufacturerID,
-    InventoryExtensionID, InventoryExtensionMetadata,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceManufacturer,
+    DeviceManufacturerUniqueID, InventoryExtensionMetadata, InventoryExtensionUniqueID, UniqueID,
 };
 use crate::models::database::{
     DeviceClassificationPullRecord, DeviceClassificationPushRecord, DeviceManufacturerPullRecord,
@@ -295,9 +295,9 @@ impl Database {
     /// Removes an extension and its contents from the database.
     pub async fn unload_extension(
         &self,
-        extension_id: &InventoryExtensionID,
+        extension_id: &InventoryExtensionUniqueID,
     ) -> anyhow::Result<()> {
-        if &extension_id.to_non_namespaced_string() == "builtin" {
+        if extension_id.unnamespaced() == "builtin" {
             return Err(anyhow::anyhow!("Cannot unload built-in extension"));
         }
 
@@ -309,7 +309,7 @@ impl Database {
                 DELETE {DEVICE_TABLE_NAME} WHERE extension = \"{0}\";
                 DELETE {EXTENSION_TABLE_NAME} WHERE id = \"{0}\";
                 ",
-                extension_id.to_namespaced_string()
+                extension_id.namespaced()
             ))
             .await?;
 
@@ -424,13 +424,13 @@ impl Database {
     /// Gets a device manufacturer from the database, if it exists.
     async fn get_device_manufacturer(
         &self,
-        id: &DeviceManufacturerID,
+        id: &DeviceManufacturerUniqueID,
     ) -> anyhow::Result<Option<DeviceManufacturerPullRecord>> {
         Ok(self
             .connection
             .select::<Option<DeviceManufacturerPullRecord>>((
                 DEVICE_MANUFACTURER_TABLE_NAME,
-                id.to_non_namespaced_string(),
+                id.unnamespaced(),
             ))
             .await?)
     }
@@ -438,13 +438,13 @@ impl Database {
     /// Gets a device classification from the database, if it exists.
     async fn get_device_classification(
         &self,
-        id: &DeviceClassificationID,
+        id: &DeviceClassificationUniqueID,
     ) -> anyhow::Result<Option<DeviceClassificationPullRecord>> {
         Ok(self
             .connection
             .select::<Option<DeviceClassificationPullRecord>>((
                 DEVICE_CLASSIFICATION_TABLE_NAME,
-                id.to_non_namespaced_string(),
+                id.unnamespaced(),
             ))
             .await?)
     }

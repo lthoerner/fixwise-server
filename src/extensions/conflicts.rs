@@ -2,6 +2,7 @@ use log::warn;
 use semver::Version;
 
 use super::{ExtensionID, InventoryExtension as Extension, Metadata};
+use crate::models::common::UniqueID;
 
 /// Indicator that the manager encountered an error when staging an extension.
 pub struct StageConflict {
@@ -92,7 +93,7 @@ impl LoadConflict {
 
     /// Logs the appropriate message for a conflict.
     pub fn log(&self, load_override: bool) {
-        let id_string = self.id.to_non_namespaced_string();
+        let id_string = self.id.unnamespaced();
 
         if let Some(name_change) = &self.name_change {
             warn!(

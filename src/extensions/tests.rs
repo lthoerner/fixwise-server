@@ -3,7 +3,7 @@ use semver::Version;
 use super::conflicts::{LoadConflict, StageConflict, VersionChange};
 use super::{ExtensionID, ExtensionManager as Manager, InventoryExtension as Extension, Metadata};
 use crate::database::Database;
-use crate::models::common::{Device, DeviceClassification, DeviceManufacturer};
+use crate::models::common::{Device, DeviceClassification, DeviceManufacturer, UniqueID};
 
 #[tokio::test]
 /// Tests that an extension which does not already exist in the database will be loaded without
@@ -191,7 +191,7 @@ impl Extension {
     fn test(num: u32) -> Self {
         Self {
             metadata: Metadata {
-                id: ExtensionID::new(&format!("test_{num}")),
+                id: ExtensionID::new(format!("test_{num}")),
                 common_name: format!("Test Extension {num}"),
                 version: Version::new(1, 0, 0),
             },

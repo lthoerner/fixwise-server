@@ -1,16 +1,16 @@
 use std::collections::HashSet;
 
 use super::common::{
-    Device, DeviceClassification, DeviceClassificationID, DeviceID, DeviceManufacturer,
-    DeviceManufacturerID, InventoryExtensionID,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerUniqueID, InventoryExtensionUniqueID, UniqueID,
 };
 
 impl DeviceManufacturer {
     /// Creates a basic device manufacturer for testing purposes.
     /// Can be modified to test different scenarios.
-    pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
+    pub fn test(num: u32, extension_id: &InventoryExtensionUniqueID) -> Self {
         Self {
-            id: DeviceManufacturerID::new(&format!("test_{num}")),
+            id: DeviceManufacturerUniqueID::new(format!("test_{num}")),
             common_name: format!("Test Device Manufacturer {num}"),
             extensions: HashSet::from([extension_id.clone()]),
         }
@@ -20,9 +20,9 @@ impl DeviceManufacturer {
 impl DeviceClassification {
     /// Creates a basic device classification for testing purposes.
     /// Can be modified to test different scenarios.
-    pub fn test(num: u32, extension_id: &InventoryExtensionID) -> Self {
+    pub fn test(num: u32, extension_id: &InventoryExtensionUniqueID) -> Self {
         Self {
-            id: DeviceClassificationID::new(&format!("test_{num}")),
+            id: DeviceClassificationUniqueID::new(format!("test_{num}")),
             common_name: format!("Test Device Classification {num}"),
             extensions: HashSet::from([extension_id.clone()]),
         }
@@ -34,15 +34,15 @@ impl Device {
     /// Can be modified to test different scenarios.
     pub fn test(
         num: u32,
-        extension_id: &InventoryExtensionID,
-        manufacturer_id: &DeviceManufacturerID,
-        classification_id: &DeviceClassificationID,
+        extension_id: &InventoryExtensionUniqueID,
+        manufacturer_id: &DeviceManufacturerUniqueID,
+        classification_id: &DeviceClassificationUniqueID,
     ) -> Self {
         Self {
             id: DeviceID::new(
-                &extension_id.to_non_namespaced_string(),
-                &manufacturer_id.to_non_namespaced_string(),
-                &classification_id.to_non_namespaced_string(),
+                extension_id.unnamespaced(),
+                manufacturer_id.unnamespaced(),
+                classification_id.unnamespaced(),
                 &format!("test_{num}"),
             ),
             common_name: format!("Test Device {num}"),
