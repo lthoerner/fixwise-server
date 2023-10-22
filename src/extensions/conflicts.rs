@@ -2,7 +2,7 @@ use log::warn;
 use semver::Version;
 
 use super::{ExtensionID, InventoryExtension as Extension, Metadata};
-use crate::models::common::UniqueID;
+use crate::models::common::ids::UniqueID;
 
 /// Indicator that the manager encountered an error when staging an extension.
 pub struct StageConflict {

@@ -8,9 +8,11 @@ use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 
 use crate::extensions::InventoryExtension;
+use crate::models::common::ids::{
+    DeviceClassificationUniqueID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID, UniqueID,
+};
 use crate::models::common::{
-    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceManufacturer,
-    DeviceManufacturerUniqueID, InventoryExtensionMetadata, InventoryExtensionUniqueID, UniqueID,
+    Device, DeviceClassification, DeviceManufacturer, InventoryExtensionMetadata,
 };
 use crate::models::database::{
     DeviceClassificationPullRecord, DeviceClassificationPushRecord, DeviceManufacturerPullRecord,

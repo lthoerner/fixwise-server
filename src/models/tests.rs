@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
-use super::common::{
-    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
-    DeviceManufacturerUniqueID, InventoryExtensionUniqueID, UniqueID,
+use super::common::ids::{
+    DeviceClassificationUniqueID, DeviceID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID,
+    UniqueID,
 };
+use super::common::{Device, DeviceClassification, DeviceManufacturer};
 
 impl DeviceManufacturer {
     /// Creates a basic device manufacturer for testing purposes.
