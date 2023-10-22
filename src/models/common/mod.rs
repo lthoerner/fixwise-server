@@ -1,12 +1,13 @@
-pub mod ids;
+mod ids;
+
+pub use ids::{
+    DeviceClassificationUniqueID, DeviceID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID,
+    UniqueID,
+};
 
 use std::collections::HashSet;
 
 use semver::Version;
-
-use self::ids::{
-    DeviceClassificationUniqueID, DeviceID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID,
-};
 
 /// The metadata of an inventory extension.
 /// This does not include the extension contents, such as devices or manufacturers.

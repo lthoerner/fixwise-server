@@ -4,11 +4,10 @@ use anyhow::anyhow;
 use semver::Version;
 use surrealdb::sql::{Id, Thing};
 
-use super::common::ids::{
-    DeviceClassificationUniqueID, DeviceID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID,
-    UniqueID,
+use super::common::{
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerUniqueID, InventoryExtensionMetadata, InventoryExtensionUniqueID, UniqueID,
 };
-use super::common::{Device, DeviceClassification, DeviceManufacturer, InventoryExtensionMetadata};
 use super::database::{
     DeviceClassificationPullRecord, DeviceClassificationPushRecord, DeviceManufacturerPullRecord,
     DeviceManufacturerPushRecord, DevicePullRecord, DevicePushRecord,

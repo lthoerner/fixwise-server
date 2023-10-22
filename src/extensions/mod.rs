@@ -14,12 +14,10 @@ use serde::Deserialize;
 
 use self::conflicts::{LoadConflict, StageConflict};
 use crate::database::Database;
-use crate::models::common::ids::{
-    DeviceClassificationUniqueID, DeviceID, DeviceManufacturerUniqueID,
-    InventoryExtensionUniqueID as ExtensionID, UniqueID,
-};
 use crate::models::common::{
-    Device, DeviceClassification, DeviceManufacturer, InventoryExtensionMetadata as Metadata,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    DeviceManufacturerUniqueID, InventoryExtensionMetadata as Metadata,
+    InventoryExtensionUniqueID as ExtensionID, UniqueID,
 };
 
 /// An extension of the database inventory system.
