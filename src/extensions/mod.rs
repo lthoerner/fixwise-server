@@ -15,7 +15,7 @@ use serde::Deserialize;
 use self::conflicts::{LoadConflict, StageConflict};
 use crate::database::Database;
 use crate::models::common::{
-    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceManufacturer,
     DeviceManufacturerUniqueID, InventoryExtensionMetadata as Metadata,
     InventoryExtensionUniqueID as ExtensionID, UniqueID,
 };
@@ -62,8 +62,7 @@ struct DeviceClassificationToml {
 /// This must be converted into a [`Device`] before adding it to the database.
 #[derive(Debug, Deserialize)]
 pub struct DeviceToml {
-    // TODO: Figure out a better name for this
-    true_name: String,
+    internal_id: String,
     common_name: String,
     manufacturer: String,
     classification: String,
@@ -216,12 +215,7 @@ impl From<InventoryExtensionToml> for InventoryExtension {
             .into_iter()
             // ? Is there a more conventional way to do this conversion?
             .map(|d| Device {
-                id: DeviceID::new(
-                    &toml.extension_id,
-                    &d.manufacturer,
-                    &d.classification,
-                    &d.true_name,
-                ),
+                internal_id: d.internal_id,
                 common_name: d.common_name,
                 manufacturer: DeviceManufacturerUniqueID::new(&d.manufacturer),
                 classification: DeviceClassificationUniqueID::new(&d.classification),

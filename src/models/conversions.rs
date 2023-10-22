@@ -5,7 +5,7 @@ use semver::Version;
 use surrealdb::sql::{Id, Thing};
 
 use super::common::{
-    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceManufacturer,
     DeviceManufacturerUniqueID, InventoryExtensionMetadata, InventoryExtensionUniqueID, UniqueID,
 };
 use super::database::{
@@ -14,8 +14,7 @@ use super::database::{
     InventoryExtensionMetadataPullRecord, InventoryExtensionMetadataPushRecord,
 };
 use crate::database::{
-    DEVICE_CLASSIFICATION_TABLE_NAME, DEVICE_MANUFACTURER_TABLE_NAME, DEVICE_TABLE_NAME,
-    EXTENSION_TABLE_NAME,
+    DEVICE_CLASSIFICATION_TABLE_NAME, DEVICE_MANUFACTURER_TABLE_NAME, EXTENSION_TABLE_NAME,
 };
 
 impl<'a> From<&'a InventoryExtensionMetadata> for InventoryExtensionMetadataPushRecord<'a> {
@@ -92,7 +91,7 @@ impl TryFrom<DeviceClassificationPullRecord> for DeviceClassification {
 impl<'a> From<&'a Device> for DevicePushRecord<'a> {
     fn from(device: &'a Device) -> Self {
         DevicePushRecord {
-            id: Thing::from(&device.id),
+            internal_id: &device.internal_id,
             common_name: &device.common_name,
             manufacturer: Thing::from(&device.manufacturer),
             classification: Thing::from(&device.classification),
@@ -107,7 +106,7 @@ impl TryFrom<DevicePullRecord> for Device {
     type Error = anyhow::Error;
     fn try_from(device: DevicePullRecord) -> Result<Self, Self::Error> {
         Ok(Device {
-            id: DeviceID::try_from(device.id)?,
+            internal_id: device.internal_id,
             common_name: device.common_name,
             manufacturer: DeviceManufacturerUniqueID::try_from(device.manufacturer)?,
             classification: DeviceClassificationUniqueID::try_from(device.classification)?,
@@ -174,48 +173,6 @@ impl TryFrom<Thing> for DeviceClassificationUniqueID {
             Ok(DeviceClassificationUniqueID::new(id))
         } else {
             Err(anyhow!("Non-string ID for device classification"))
-        }
-    }
-}
-
-impl From<&DeviceID> for Thing {
-    fn from(id: &DeviceID) -> Self {
-        Thing {
-            tb: DEVICE_TABLE_NAME.to_owned(),
-            id: Id::String(id.to_non_namespaced_string()),
-        }
-    }
-}
-
-impl TryFrom<Thing> for DeviceID {
-    type Error = anyhow::Error;
-    fn try_from(thing: Thing) -> Result<Self, Self::Error> {
-        let id = match thing.id {
-            Id::String(id) => id,
-            _ => return Err(anyhow!("Non-string ID for device")),
-        };
-
-        let mut tokens = id.split('/');
-        match (
-            tokens.next(),
-            tokens.next(),
-            tokens.next(),
-            tokens.next(),
-            tokens.next(),
-        ) {
-            (
-                Some(extension_id),
-                Some(manufacturer_id),
-                Some(classification_id),
-                Some(id),
-                None,
-            ) => Ok(DeviceID::new(
-                extension_id,
-                manufacturer_id,
-                classification_id,
-                id,
-            )),
-            _ => Err(anyhow!("Improperly-formatted namespaced device ID")),
         }
     }
 }

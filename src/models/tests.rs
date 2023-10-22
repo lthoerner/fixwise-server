@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use super::common::{
-    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceID, DeviceManufacturer,
+    Device, DeviceClassification, DeviceClassificationUniqueID, DeviceManufacturer,
     DeviceManufacturerUniqueID, InventoryExtensionUniqueID, UniqueID,
 };
 
@@ -39,12 +39,7 @@ impl Device {
         classification_id: &DeviceClassificationUniqueID,
     ) -> Self {
         Self {
-            id: DeviceID::new(
-                extension_id.unnamespaced(),
-                manufacturer_id.unnamespaced(),
-                classification_id.unnamespaced(),
-                &format!("test_{num}"),
-            ),
+            internal_id: format!("test_{num}"),
             common_name: format!("Test Device {num}"),
             manufacturer: manufacturer_id.clone(),
             classification: classification_id.clone(),

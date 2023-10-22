@@ -1,8 +1,7 @@
 mod ids;
 
 pub use ids::{
-    DeviceClassificationUniqueID, DeviceID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID,
-    UniqueID,
+    DeviceClassificationUniqueID, DeviceManufacturerUniqueID, InventoryExtensionUniqueID, UniqueID,
 };
 
 use std::collections::HashSet;
@@ -39,7 +38,7 @@ pub struct DeviceClassification {
 /// A device and all of its relevant metadata, such as its make and model.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Device {
-    pub id: DeviceID,
+    pub internal_id: String,
     pub common_name: String,
     pub manufacturer: DeviceManufacturerUniqueID,
     pub classification: DeviceClassificationUniqueID,
