@@ -182,6 +182,92 @@ impl ExtensionManager {
     }
 }
 
+impl InventoryExtension {
+    /// Creates the builtin extension, which is added to the database to set up reserved items.
+    pub fn builtin() -> Self {
+        let id = ExtensionID::new("builtin");
+
+        let metadata = Metadata {
+            id: ExtensionID::new("builtin"),
+            common_name: "Built-in".to_owned(),
+            version: Version::new(0, 0, 0),
+        };
+
+        let device_manufacturers = vec![
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("apple"),
+                common_name: "Apple".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("samsung"),
+                common_name: "Samsung".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("google"),
+                common_name: "Google".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("motorola"),
+                common_name: "Motorola".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("dell"),
+                common_name: "Dell".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("hp"),
+                common_name: "HP".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceManufacturer {
+                id: DeviceManufacturerUniqueID::new("lenovo"),
+                common_name: "Lenovo".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+        ];
+
+        let device_classifications = vec![
+            DeviceClassification {
+                id: DeviceClassificationUniqueID::new("phone"),
+                common_name: "Phone".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceClassification {
+                id: DeviceClassificationUniqueID::new("tablet"),
+                common_name: "Tablet".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceClassification {
+                id: DeviceClassificationUniqueID::new("console"),
+                common_name: "console".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceClassification {
+                id: DeviceClassificationUniqueID::new("laptop"),
+                common_name: "Laptop".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+            DeviceClassification {
+                id: DeviceClassificationUniqueID::new("desktop"),
+                common_name: "Desktop".to_owned(),
+                extensions: HashSet::from([id.clone()]),
+            },
+        ];
+
+        Self {
+            metadata,
+            device_manufacturers,
+            device_classifications,
+            devices: Vec::new(),
+        }
+    }
+}
+
 // TODO: Remove unwraps
 // * Inner types here ([`DeviceManufacturer`], [`DeviceClassification`], [`Device`]) must be
 // * converted with context provided by the [`ExtensionToml`] itself, so they cannot be converted

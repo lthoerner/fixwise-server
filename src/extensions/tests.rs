@@ -171,10 +171,24 @@ async fn reload_extension_override() {
 }
 
 #[tokio::test]
+/// Tests that the builtin extension is loaded correctly.
+async fn load_builtin_extension() {
+    let db = Database::connect_with_name("load_builtin_extension").await;
+    db.setup_tables().await.unwrap();
+
+    // Add the builtin extension to the database.
+    db.add_builtins().await.unwrap();
+
+    // Make sure the builtin extension was loaded correctly.
+    db.only_contains(&Extension::builtin()).await;
+}
+
+#[tokio::test]
+/// Tests that the builtin extension cannot be removed from the database.
 async fn unload_builtin_extension() {
     let db = Database::connect_with_name("unload_builtin_extension").await;
     db.setup_tables().await.unwrap();
-    db.setup_reserved_items().await.unwrap();
+    db.add_builtins().await.unwrap();
 
     // TODO: Match on error variant once custom errors are added
     assert!(db

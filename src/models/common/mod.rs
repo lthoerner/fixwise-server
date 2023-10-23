@@ -20,7 +20,7 @@ pub struct InventoryExtensionMetadata {
 }
 
 /// A device manufacturer.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeviceManufacturer {
     pub id: DeviceManufacturerUniqueID,
     pub common_name: String,

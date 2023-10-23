@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Database connection established.");
 
     db.setup_tables().await?;
-    db.setup_reserved_items().await?;
+    db.add_builtins().await?;
 
     info!("Loading inventory extensions...");
     let manager = ExtensionManager::new()?;

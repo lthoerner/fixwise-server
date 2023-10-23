@@ -150,79 +150,9 @@ impl Database {
     }
 
     /// Sets up IDs for "built-in" manufacturers and device classifications.
-    pub async fn setup_reserved_items(&self) -> anyhow::Result<()> {
+    pub async fn add_builtins(&self) -> anyhow::Result<()> {
         info!("Setting up reserved/built-in items...");
-
-        // * The double braces are required to escape their meaning in a formatting literal.
-        self.connection
-            .query(&format!(
-                "
-                INSERT INTO {EXTENSION_TABLE_NAME} {{
-                    id: \"builtin\",
-                    common_name: \"Built-in\",
-                    version: \"0.0.0\"
-                }};
-
-                INSERT INTO {DEVICE_MANUFACTURER_TABLE_NAME} [
-                    {{
-                        id: \"apple\",
-                        common_name: \"Apple\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"samsung\",
-                        common_name: \"Samsung\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"google\",
-                        common_name: \"Google\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"motorola\",
-                        common_name: \"Motorola\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"lg\",
-                        common_name: \"LG\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                ];
-
-                INSERT INTO {DEVICE_CLASSIFICATION_TABLE_NAME} [
-                    {{
-                        id: \"phone\",
-                        common_name: \"Phone\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"tablet\",
-                        common_name: \"Tablet\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"console\",
-                        common_name: \"Console\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"laptop\",
-                        common_name: \"Laptop\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                    {{
-                        id: \"desktop\",
-                        common_name: \"Desktop\",
-                        extensions: [\"{EXTENSION_TABLE_NAME}:builtin\"]
-                    }},
-                ];
-                ",
-            ))
-            .await?;
-
-        Ok(())
+        self.load_extension(InventoryExtension::builtin()).await
     }
 
     /// Deletes all items from the database, but leaves the schema intact.
@@ -462,11 +392,27 @@ impl Database {
 
         assert_eq!(loaded_extensions.len(), 1);
         assert_eq!(loaded_extensions[0], extension.metadata);
-        assert_eq!(loaded_device_manufacturers, extension.device_manufacturers);
+
         assert_eq!(
-            loaded_device_classifications,
-            extension.device_classifications
+            loaded_device_manufacturers.len(),
+            extension.device_manufacturers.len()
         );
-        assert_eq!(loaded_devices, extension.devices);
+        assert_eq!(
+            loaded_device_classifications.len(),
+            extension.device_classifications.len()
+        );
+        assert_eq!(loaded_devices.len(), extension.devices.len());
+
+        for manufacturer in &extension.device_manufacturers {
+            assert!(loaded_device_manufacturers.contains(manufacturer));
+        }
+
+        for classification in &extension.device_classifications {
+            assert!(loaded_device_classifications.contains(classification));
+        }
+
+        for device in &extension.devices {
+            assert!(loaded_devices.contains(device));
+        }
     }
 }
