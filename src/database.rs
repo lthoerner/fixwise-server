@@ -2,7 +2,7 @@ use std::future::IntoFuture;
 use std::net::{Ipv4Addr, SocketAddr};
 
 use futures_util::future;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
@@ -151,8 +151,26 @@ impl Database {
 
     /// Sets up IDs for "built-in" manufacturers and device classifications.
     pub async fn add_builtins(&self) -> anyhow::Result<()> {
+        use surrealdb::{error::Api, Error};
         info!("Setting up reserved/built-in items...");
-        self.load_extension(InventoryExtension::builtin()).await
+        match self.load_extension(InventoryExtension::builtin()).await {
+            Ok(_) => Ok(()),
+            Err(e) => match e {
+                Error::Db(e) => Err(e.into()),
+                Error::Api(e) => match e {
+                    Api::Query(s)
+                        if s == "There was a problem with the database: Database record \
+                        `extensions:builtin` already exists" =>
+                    {
+                        warn!(
+                            "Cannot re-add built-in items because they have already been loaded."
+                        );
+                        Ok(())
+                    }
+                    _ => Err(e.into()),
+                },
+            },
+        }
     }
 
     /// Deletes all items from the database, but leaves the schema intact.
@@ -189,7 +207,7 @@ impl Database {
     }
 
     /// Loads the contents of an inventory extension into the database.
-    pub async fn load_extension(&self, extension: InventoryExtension) -> anyhow::Result<()> {
+    pub async fn load_extension(&self, extension: InventoryExtension) -> surrealdb::Result<()> {
         self.connection
             .create::<Vec<GenericPullRecord>>(EXTENSION_TABLE_NAME)
             .content(InventoryExtensionMetadataPushRecord::from(
@@ -218,7 +236,7 @@ impl Database {
                     .into_future(),
             )
         }
-        future::try_join_all(futures).await?;
+        future::join_all(futures).await;
 
         Ok(())
     }

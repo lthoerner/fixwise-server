@@ -181,6 +181,8 @@ async fn load_builtin_extension() {
 
     // Make sure the builtin extension was loaded correctly.
     db.only_contains(&Extension::builtin()).await;
+
+    db.teardown().await;
 }
 
 #[tokio::test]
