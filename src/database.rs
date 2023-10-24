@@ -286,7 +286,7 @@ impl Database {
 
     /// Lists all the device manufacturers in the database.
     #[allow(dead_code)]
-    pub async fn list_devie_manufacturers(&self) -> anyhow::Result<Vec<DeviceManufacturer>> {
+    pub async fn list_device_manufacturers(&self) -> anyhow::Result<Vec<DeviceManufacturer>> {
         let pull_records = self
             .connection
             .select::<Vec<DeviceManufacturerPullRecord>>(DEVICE_MANUFACTURER_TABLE_NAME)
@@ -400,7 +400,7 @@ impl Database {
     #[allow(dead_code)]
     pub async fn only_contains(&self, extension: &InventoryExtension) {
         let loaded_extensions = self.list_extensions().await.unwrap();
-        let loaded_device_manufacturers = self.list_devie_manufacturers().await.unwrap();
+        let loaded_device_manufacturers = self.list_device_manufacturers().await.unwrap();
         let loaded_device_classifications = self.list_device_classifications().await.unwrap();
         let loaded_devices = self.list_devices().await.unwrap();
 
