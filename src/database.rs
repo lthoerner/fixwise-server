@@ -121,12 +121,10 @@ impl Database {
                 DEFINE TABLE {DEVICE_MANUFACTURER_TABLE_NAME} SCHEMAFUL;
                 DEFINE FIELD common_name ON TABLE {DEVICE_MANUFACTURER_TABLE_NAME} TYPE string;
                 DEFINE FIELD extensions ON TABLE {DEVICE_MANUFACTURER_TABLE_NAME} TYPE array<record({EXTENSION_TABLE_NAME})>;
-                DEFINE FIELD extensions.* ON TABLE {DEVICE_MANUFACTURER_TABLE_NAME} TYPE record({EXTENSION_TABLE_NAME});
 
                 DEFINE TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} SCHEMAFUL;
                 DEFINE FIELD common_name ON TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} TYPE string;
                 DEFINE FIELD extensions ON TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} TYPE array<record({EXTENSION_TABLE_NAME})>;
-                DEFINE FIELD extensions.* ON TABLE {DEVICE_CLASSIFICATION_TABLE_NAME} TYPE record({EXTENSION_TABLE_NAME});
 
                 DEFINE TABLE {DEVICE_TABLE_NAME} SCHEMAFUL;
                 DEFINE FIELD internal_id ON TABLE {DEVICE_TABLE_NAME} TYPE string;
@@ -135,9 +133,7 @@ impl Database {
                 DEFINE FIELD classification ON TABLE {DEVICE_TABLE_NAME} TYPE record({DEVICE_CLASSIFICATION_TABLE_NAME});
                 DEFINE FIELD extension ON TABLE {DEVICE_TABLE_NAME} TYPE record({EXTENSION_TABLE_NAME});
                 DEFINE FIELD primary_model_identifiers ON TABLE {DEVICE_TABLE_NAME} TYPE array<string>;
-                DEFINE FIELD primary_model_identifiers.* ON TABLE {DEVICE_TABLE_NAME} TYPE string;
                 DEFINE FIELD extended_model_identifiers ON TABLE {DEVICE_TABLE_NAME} TYPE array<string>;
-                DEFINE FIELD extended_model_identifiers.* ON TABLE {DEVICE_TABLE_NAME} TYPE string;
                 ",
             ))
             .await
