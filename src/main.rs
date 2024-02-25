@@ -1,24 +1,24 @@
-#![allow(unused)]
-
-use std::future::{Future, IntoFuture};
 use std::sync::OnceLock;
 
-use axum::response::{Html, IntoResponse, Json};
+use axum::response::Json;
 use axum::routing::get;
 use axum::Router;
+use http::Method;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, Mem};
-// use surrealdb::opt::auth::Root;
 use surrealdb::{sql, Surreal};
 use tokio::net::TcpListener;
-
-const NBSP: char = '\u{00A0}';
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct InventoryItem {
     id: sql::Thing,
-    sku: i64,
     display_name: String,
+    sku: i64,
+    count: i64,
+    cost: Decimal,
+    price: Decimal,
 }
 
 static DB: OnceLock<Surreal<Db>> = OnceLock::new();
@@ -42,7 +42,13 @@ async fn main() {
         }
     }
 
-    let routes = Router::new().route("/inventory", get(query_inventory));
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any);
+
+    let routes = Router::new()
+        .route("/inventory", get(query_inventory))
+        .layer(cors);
 
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
     println!("Listening on {}", listener.local_addr().unwrap());
@@ -53,11 +59,13 @@ async fn main() {
 
 async fn query_inventory() -> Json<Vec<InventoryItem>> {
     let inventory_items: Vec<InventoryItem> = get_db!()
-        .query("SELECT * FROM inventory")
+        .query("SELECT * FROM inventory ORDER BY sku ASC")
         .await
         .unwrap()
         .take(0)
         .unwrap();
+
+    println!("{:#?}", inventory_items);
 
     Json(inventory_items)
 }
