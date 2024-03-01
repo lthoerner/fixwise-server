@@ -1,5 +1,6 @@
 use std::sync::OnceLock;
 
+use axum::extract::Query;
 use axum::response::Json;
 use axum::routing::get;
 use axum::Router;
@@ -21,6 +22,12 @@ struct InventoryItem {
     price: Decimal,
 }
 
+#[derive(Debug, Deserialize)]
+struct InventoryOrderParams {
+    column: Option<String>,
+    direction: Option<String>,
+}
+
 static DB: OnceLock<Surreal<Db>> = OnceLock::new();
 
 macro_rules! get_db {
@@ -37,7 +44,7 @@ async fn main() {
 
     let statements = include_str!("../database/setup.surql");
     for statement in statements.lines() {
-        if !statement.is_empty() {
+        if !statement.is_empty() && !statement.starts_with("--") {
             get_db!().query(statement).await.unwrap();
         }
     }
@@ -57,15 +64,31 @@ async fn main() {
         .unwrap();
 }
 
-async fn query_inventory() -> Json<Vec<InventoryItem>> {
+async fn query_inventory(Query(params): Query<InventoryOrderParams>) -> Json<Vec<InventoryItem>> {
+    let column = match params.column.unwrap_or_default().to_lowercase().as_str() {
+        "sku" => "sku",
+        "display_name" => "display_name",
+        "count" => "count",
+        "cost" => "cost",
+        "price" => "price",
+        _ => "sku",
+    };
+
+    let direction = match params.direction.unwrap_or_default().to_lowercase().as_str() {
+        "asc" => "ASC",
+        "desc" => "DESC",
+        _ => "ASC",
+    };
+
     let inventory_items: Vec<InventoryItem> = get_db!()
-        .query("SELECT * FROM inventory ORDER BY sku ASC")
+        .query(format!(
+            "SELECT * FROM inventory ORDER BY {} {}",
+            column, direction
+        ))
         .await
         .unwrap()
         .take(0)
         .unwrap();
-
-    println!("{:#?}", inventory_items);
 
     Json(inventory_items)
 }
