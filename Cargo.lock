@@ -3128,6 +3128,7 @@ dependencies = [
  "axum",
  "http 1.0.0",
  "http-body-util",
+ "rand",
  "rust_decimal",
  "serde",
  "surrealdb",

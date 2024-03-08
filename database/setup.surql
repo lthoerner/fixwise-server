@@ -1,21 +1,26 @@
+DEFINE TABLE schema SCHEMAFULL;
+DEFINE FIELD table_fields ON schema TYPE array<object>;
+DEFINE FIELD table_fields.* ON schema TYPE object;
+DEFINE FIELD table_fields.*.true_name ON schema TYPE string;
+DEFINE FIELD table_fields.*.display_name ON schema TYPE string;
+DEFINE FIELD table_fields.*.search_weight ON schema TYPE int;
+DEFINE FIELD table_fields.*.data_type ON schema TYPE string;
+DEFINE FIELD table_fields.*.formatting ON schema TYPE option<object>;
+DEFINE FIELD table_fields.*.formatting.prefix ON schema TYPE option<string>;
+DEFINE FIELD table_fields.*.formatting.suffix ON schema TYPE option<string>;
+DEFINE FIELD table_fields.*.formatting.pad_length ON schema TYPE option<int>;
+
 DEFINE TABLE inventory SCHEMAFULL;
-DEFINE FIELD display_name ON inventory TYPE string;
 DEFINE FIELD sku ON inventory TYPE int;
+DEFINE FIELD display_name ON inventory TYPE string;
 DEFINE FIELD count ON inventory TYPE int;
 DEFINE FIELD cost ON inventory TYPE decimal;
 DEFINE FIELD price ON inventory TYPE decimal;
 
-CREATE inventory SET display_name = 'iPhone 15 Pro Max', sku = 5462103, count = 25, cost = 950.0, price = 1199.99;
-CREATE inventory SET display_name = 'Samsung Galaxy S21+', sku = 8299125, count = 3, cost = 250.0, price = 499.99;
-CREATE inventory SET display_name = 'Google Pixel 5a 5G', sku = 9521166, count = 9, cost = 375.0, price = 429.99;
-CREATE inventory SET display_name = 'iPhone 6S+', sku = 2389565, count = 1, cost = 50.0, price = 199.99;
-CREATE inventory SET display_name = 'LG Wing', sku = 5096721, count = 892, cost = 290.0, price = 349.99;
-CREATE inventory SET display_name = 'Nokia 3310', sku = 9256159, count = 15, cost = 15.0, price = 199.99;
-CREATE inventory SET display_name = 'Fairphone 4', sku = 0175296, count = 33, cost = 480.0, price = 599.99;
-CREATE inventory SET display_name = 'Samsung Galaxy Z Flip 5', sku = 7582163, count = 2, cost = 3.0, price = 899.99;
-CREATE inventory SET display_name = 'Samsung Galaxy Note 7', sku = 8356192, count = 15302, cost = 300.0, price = 99.99;
-CREATE inventory SET display_name = 'iPad Pro 12.9" 4th Gen', sku = 6552282, count = 4, cost = 425.0, price = 599.99;
-CREATE inventory SET display_name = 'Samsung Galaxy A52 5G', sku = 5837286, count = 9, cost = 150.0, price = 174.99;
-CREATE inventory SET display_name = 'Samsung Galaxy S20 FE', sku = 0986353, count = 27, cost = 480.0, price = 179.99;
-CREATE inventory SET display_name = 'Samsung Galaxy S10e', sku = 2592601, count = 1, cost = 85.0, price = 149.99;
-CREATE inventory SET display_name = 'Google Pixel 6 Pro', sku = 9582103, count = 22, cost = 300.0, price = 399.99;
+CREATE schema:inventory SET table_fields = [
+  { "true_name": "sku", "display_name": "SKU", "search_weight": 1, "data_type": "int", "formatting": { "prefix": "#", "pad_length": 7 } },
+  { "true_name": "display_name", "display_name": "Name", "search_weight": 1, "data_type": "string" },
+  { "true_name": "count", "display_name": "Count", "search_weight": 1, "data_type": "int" },
+  { "true_name": "cost", "display_name": "Cost", "search_weight": 1, "data_type": "decimal", "formatting": { "prefix": "$" } },
+  { "true_name": "price", "display_name": "Price", "search_weight": 1, "data_type": "decimal", "formatting": { "prefix": "$" } }
+];
