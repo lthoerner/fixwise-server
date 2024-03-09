@@ -12,6 +12,7 @@ use rand::Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+use tokio_postgres::config;
 use tokio_postgres::{Client, Config, NoTls};
 use tower_http::cors::{Any, CorsLayer};
 
@@ -72,8 +73,8 @@ async fn main() {
         }
     });
 
-    let setup_script = include_str!("../database/setup.sql");
-    get_db!().batch_execute(setup_script).await.unwrap();
+    let setup_script = create_setup_script();
+    get_db!().batch_execute(&setup_script).await.unwrap();
 
     let mut inventory_items = Vec::new();
     let items = 3;
@@ -142,6 +143,89 @@ async fn main() {
     // axum::serve(listener, routes.into_make_service())
     //     .await
     //     .unwrap();
+}
+
+fn create_setup_script() -> String {
+    #[derive(Debug, Deserialize)]
+    struct Config {
+        tables: Vec<Table>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Table {
+        name: String,
+        columns: Vec<Column>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Column {
+        name: String,
+        display_name: String,
+        data_type: String,
+        nullable: Option<bool>,
+    }
+
+    let config: Config = toml::from_str(include_str!("../database/schema.toml")).unwrap();
+
+    let mut script = String::new();
+
+    for table in &config.tables {
+        script.push_str(&format!("DROP TABLE IF EXISTS {} CASCADE;", table.name));
+    }
+
+    println!();
+
+    for table in config.tables {
+        let column_declarations = table
+            .columns
+            .into_iter()
+            .enumerate()
+            .map(|(i, col)| generate_column(i, col))
+            .collect::<Vec<String>>();
+
+        script.push_str(&format!(
+            "CREATE TABLE {} (\n{}\n);\n",
+            table.name,
+            column_declarations.join(",\n")
+        ));
+    }
+
+    fn generate_column(index: usize, column: Column) -> String {
+        let name = column.name;
+        let data_type = map_type(index, &column.data_type);
+        let primary_key = index == 0;
+        let nullable = column.nullable.unwrap_or(false);
+
+        format!(
+            "    {:<16}{}{}",
+            name,
+            data_type,
+            if primary_key {
+                " PRIMARY KEY"
+            } else if !nullable {
+                " NOT NULL"
+            } else {
+                ""
+            }
+        )
+        .to_owned()
+    }
+
+    fn map_type(index: usize, type_name: &str) -> String {
+        if index == 0 && type_name == "integer" {
+            return "serial".to_owned();
+        }
+
+        match type_name {
+            "integer" => "integer",
+            "decimal" => "numeric(1000, 2)",
+            "string" => "text",
+            _ => panic!("Unknown type in schema config"),
+        }
+        .to_owned()
+    }
+
+    script
 }
 
 // async fn query_inventory() -> Json<Vec<InventoryItem>> {
