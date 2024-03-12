@@ -61,7 +61,7 @@ async fn main() {
         .user("techtriage")
         .password("techtriage")
         .host("localhost")
-        .port(55094);
+        .port(63786);
 
     let (client, connection) = connection_config.connect(NoTls).await.unwrap();
 
@@ -74,7 +74,8 @@ async fn main() {
     });
 
     let setup_script = create_setup_script();
-    get_db!().batch_execute(&setup_script).await.unwrap();
+    println!("{setup_script}");
+    // get_db!().batch_execute(&setup_script).await.unwrap();
 
     let mut inventory_items = Vec::new();
     let items = 3;
@@ -154,6 +155,7 @@ fn create_setup_script() -> String {
     #[derive(Debug, Deserialize)]
     struct Table {
         name: String,
+        primary_column: Column,
         columns: Vec<Column>,
     }
 
@@ -162,7 +164,7 @@ fn create_setup_script() -> String {
         name: String,
         display_name: String,
         data_type: String,
-        nullable: Option<bool>,
+        required: Option<bool>,
     }
 
     let config: Config = toml::from_str(include_str!("../database/schema.toml")).unwrap();
@@ -170,39 +172,36 @@ fn create_setup_script() -> String {
     let mut script = String::new();
 
     for table in &config.tables {
-        script.push_str(&format!("DROP TABLE IF EXISTS {} CASCADE;", table.name));
+        script.push_str(&format!("DROP TABLE IF EXISTS {} CASCADE;\n", table.name));
     }
 
-    println!();
-
     for table in config.tables {
-        let column_declarations = table
+        let mut column_declarations = table
             .columns
             .into_iter()
-            .enumerate()
-            .map(|(i, col)| generate_column(i, col))
+            .map(|col| generate_column(col, false))
             .collect::<Vec<String>>();
+        column_declarations.insert(0, generate_column(table.primary_column, true));
 
         script.push_str(&format!(
-            "CREATE TABLE {} (\n{}\n);\n",
+            "\nCREATE TABLE {} (\n{}\n);\n",
             table.name,
             column_declarations.join(",\n")
         ));
     }
 
-    fn generate_column(index: usize, column: Column) -> String {
+    fn generate_column(column: Column, primary_column: bool) -> String {
         let name = column.name;
-        let data_type = map_type(index, &column.data_type);
-        let primary_key = index == 0;
-        let nullable = column.nullable.unwrap_or(false);
+        let data_type = map_type(&column.data_type, primary_column);
+        let required = column.required.unwrap_or(true);
 
         format!(
             "    {:<16}{}{}",
             name,
             data_type,
-            if primary_key {
+            if primary_column {
                 " PRIMARY KEY"
-            } else if !nullable {
+            } else if required {
                 " NOT NULL"
             } else {
                 ""
@@ -211,8 +210,8 @@ fn create_setup_script() -> String {
         .to_owned()
     }
 
-    fn map_type(index: usize, type_name: &str) -> String {
-        if index == 0 && type_name == "integer" {
+    fn map_type(type_name: &str, primary_column: bool) -> String {
+        if primary_column && type_name == "integer" {
             return "serial".to_owned();
         }
 

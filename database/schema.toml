@@ -1,9 +1,9 @@
 [[tables]]
+primary_column = { name = "sku", display_name = "SKU", data_type = "integer" }
 name = "inventory"
 columns = [
-    { name = "sku", display_name = "SKU", data_type = "integer" },
-    { name = "display_name", display_name = "Name", data_type = "string" },
-    { name = "count", display_name = "Count", data_type = "integer" },
-    { name = "cost", display_name = "Cost", data_type = "decimal" },
-    { name = "price", display_name = "Price", data_type = "decimal" },
+    { name = "display_name", display_name = "Name", data_type = "string", required = true },
+    { name = "count", display_name = "Count", data_type = "integer", required = true },
+    { name = "cost", display_name = "Cost", data_type = "decimal", required = true },
+    { name = "price", display_name = "Price", data_type = "decimal", required = true },
 ]
