@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use std::sync::OnceLock;
 
@@ -12,11 +12,10 @@ use rand::Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
-use tokio_postgres::config;
 use tokio_postgres::{Client, Config, NoTls};
 use tower_http::cors::{Any, CorsLayer};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct InventoryItem {
     sku: i64,
     display_name: String,
@@ -25,28 +24,36 @@ struct InventoryItem {
     price: Decimal,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct TableSchema {
-    table_fields: Vec<ColumnSchema>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DatabaseConfig {
+    tables: Vec<TableConfig>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct ColumnSchema {
-    true_name: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TableConfig {
+    name: String,
+    columns: Vec<ColumnConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ColumnConfig {
+    name: String,
     display_name: String,
-    search_weight: i64,
     data_type: String,
-    formatting: Option<ColumnFormatting>,
+    #[serde(skip_serializing)]
+    required: Option<bool>,
+    formatting: Option<ColumnFormattingConfig>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct ColumnFormatting {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ColumnFormattingConfig {
     prefix: Option<String>,
     suffix: Option<String>,
     pad_length: Option<i64>,
 }
 
 static DB: OnceLock<Client> = OnceLock::new();
+static CONFIG: OnceLock<DatabaseConfig> = OnceLock::new();
 
 macro_rules! get_db {
     () => {
@@ -61,7 +68,7 @@ async fn main() {
         .user("techtriage")
         .password("techtriage")
         .host("localhost")
-        .port(63786);
+        .port(57589);
 
     let (client, connection) = connection_config.connect(NoTls).await.unwrap();
 
@@ -75,7 +82,7 @@ async fn main() {
 
     let setup_script = create_setup_script();
     println!("{setup_script}");
-    // get_db!().batch_execute(&setup_script).await.unwrap();
+    get_db!().batch_execute(&setup_script).await.unwrap();
 
     let mut inventory_items = Vec::new();
     let items = 3;
@@ -115,59 +122,24 @@ async fn main() {
         start_time.elapsed().as_millis()
     );
 
-    for item in get_db!()
-        .query("SELECT * FROM inventory ORDER BY sku", &[])
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any);
+
+    let routes = Router::new()
+        .route("/inventory", get(query_inventory))
+        .route("/inventory/schema", get(get_inventory_schema))
+        .layer(cors);
+
+    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+    println!("Listening on {}", listener.local_addr().unwrap());
+    axum::serve(listener, routes.into_make_service())
         .await
-        .unwrap()
-    {
-        println!(
-            "{} {} {} {} {}",
-            item.get::<_, i32>("sku"),
-            item.get::<_, String>("display_name"),
-            item.get::<_, i32>("count"),
-            item.get::<_, Decimal>("cost"),
-            item.get::<_, Decimal>("price")
-        );
-    }
-
-    // let cors = CorsLayer::new()
-    //     .allow_methods([Method::GET, Method::POST])
-    //     .allow_origin(Any);
-
-    // let routes = Router::new()
-    //     .route("/inventory", get(query_inventory))
-    //     .route("/inventory/schema", get(query_inventory_schema))
-    //     .layer(cors);
-
-    // let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    // println!("Listening on {}", listener.local_addr().unwrap());
-    // axum::serve(listener, routes.into_make_service())
-    //     .await
-    //     .unwrap();
+        .unwrap();
 }
 
 fn create_setup_script() -> String {
-    #[derive(Debug, Deserialize)]
-    struct Config {
-        tables: Vec<Table>,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Table {
-        name: String,
-        primary_column: Column,
-        columns: Vec<Column>,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Column {
-        name: String,
-        display_name: String,
-        data_type: String,
-        required: Option<bool>,
-    }
-
-    let config: Config = toml::from_str(include_str!("../database/schema.toml")).unwrap();
+    let config: DatabaseConfig = toml::from_str(include_str!("../database/schema.toml")).unwrap();
 
     let mut script = String::new();
 
@@ -175,13 +147,13 @@ fn create_setup_script() -> String {
         script.push_str(&format!("DROP TABLE IF EXISTS {} CASCADE;\n", table.name));
     }
 
-    for table in config.tables {
-        let mut column_declarations = table
+    for table in &config.tables {
+        let column_declarations = table
             .columns
-            .into_iter()
-            .map(|col| generate_column(col, false))
+            .iter()
+            .enumerate()
+            .map(|(i, col)| generate_column(col, i == 0))
             .collect::<Vec<String>>();
-        column_declarations.insert(0, generate_column(table.primary_column, true));
 
         script.push_str(&format!(
             "\nCREATE TABLE {} (\n{}\n);\n",
@@ -190,8 +162,8 @@ fn create_setup_script() -> String {
         ));
     }
 
-    fn generate_column(column: Column, primary_column: bool) -> String {
-        let name = column.name;
+    fn generate_column(column: &ColumnConfig, primary_column: bool) -> String {
+        let name = column.name.to_owned();
         let data_type = map_type(&column.data_type, primary_column);
         let required = column.required.unwrap_or(true);
 
@@ -224,37 +196,48 @@ fn create_setup_script() -> String {
         .to_owned()
     }
 
+    CONFIG.get_or_init(|| config);
+
     script
 }
 
-// async fn query_inventory() -> Json<Vec<InventoryItem>> {
-//     let inventory_items: Vec<InventoryItem> = get_db!()
-//         .query("SELECT * FROM inventory")
-//         .await
-//         .unwrap()
-//         .take(0)
-//         .unwrap();
+async fn query_inventory() -> Json<Vec<InventoryItem>> {
+    let inventory_rows = get_db!()
+        .query("SELECT * FROM inventory ORDER BY sku", &[])
+        .await
+        .unwrap();
 
-//     Json(inventory_items)
-// }
+    let mut inventory_items = Vec::new();
+    for item in inventory_rows {
+        inventory_items.push(InventoryItem {
+            sku: item.get::<_, i32>("sku") as i64,
+            display_name: item.get::<_, String>("display_name"),
+            count: item.get::<_, i32>("count") as i64,
+            cost: item.get::<_, Decimal>("cost"),
+            price: item.get::<_, Decimal>("price"),
+        });
+    }
 
-// async fn query_inventory_schema() -> Json<TableSchema> {
-//     let inventory_schema: Option<TableSchema> = get_db!()
-//         .query("SELECT table_fields FROM schema:inventory")
-//         .await
-//         .unwrap()
-//         .take(0)
-//         .unwrap();
+    Json(inventory_items)
+}
 
-//     Json(inventory_schema.unwrap())
-// }
+async fn get_inventory_schema() -> Json<TableConfig> {
+    get_schema("inventory")
+}
+
+fn get_schema(table: &str) -> Json<TableConfig> {
+    let schema = CONFIG.get().unwrap();
+    let table = schema.tables.iter().find(|t| t.name == table).unwrap();
+
+    Json(table.to_owned())
+}
 
 impl InventoryItem {
     fn generate(existing_items: &[Self]) -> Self {
         let mut sku: i64 = 0;
         let mut first_roll = true;
         while first_roll || existing_items.iter().any(|item| item.sku == sku) {
-            sku = thread_rng().gen_range(0..=9999999);
+            sku = thread_rng().gen_range(0..=99999999);
             first_roll = false;
         }
 

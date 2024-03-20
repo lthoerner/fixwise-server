@@ -1172,6 +1172,7 @@ dependencies = [
  "rand",
  "rust_decimal",
  "serde",
+ "serde_json",
  "tokio",
  "tokio-postgres",
  "toml",
