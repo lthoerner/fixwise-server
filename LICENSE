@@ -1,13 +1,38 @@
 All Rights Reserved
 
-Copyright (c) 2023 Lowell Thoerner
+Copyright (c) 2024 Lowell Thoerner
 
 Created by Lowell Thoerner
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+This software is provided "as-is", without warranty of any kind, expressed
+or implied, including but not limited to the warranties of metchantability,
+fitness for a particular purpose and noninfringement. In no event shall the
+authors or copyright holder be liable for any claim, damages or other
+liability, whether in an action of contract, tort or otherwise, arising from,
+out of or in connection with the software or the sue or other dealings in the
+software.
+
+No third party is permitted to download, install, use, or modify this
+software in any way whatsoever, except in cases specifically enumerated in
+this document, or with explicit written approval from the copyright holder.
+Approval to use this software may be provided either via the issuance of a
+license to the software, or as otherwise deemed appropriate by the copyright
+holder.
+
+Contributions to this software's codebase by third parties are permitted,
+and all third-party contributors acknowledge that any legal and intellectual
+rights over their contribution or contributions are forfeit to the copyright
+holder upon submission. Contributors furthermore acknowledge that, once
+submitted, all restrictions enumerated or implied by this license are
+applied to their contribution or contributions, and the contributor retains
+no additional rights to their contribution or contributions.
+
+Third parties are permitted to download, install, use, and modify this
+software for the purpose of functionality and security testing, so long
+as such testing does not serve any commercial enterprise.
+
+Any users who download, install, use, or modify this software, either as
+enumerated in this document or through other means, acknowledge that this
+license may be modified in any way whatsoever by the copyright holder at
+any time, and that, except as impermissible by law, such changes may be
+applied retroactively to any and all previous versions of the software.
