@@ -1,11 +1,16 @@
 // #![allow(unused)]
 
+use std::io::Write;
 use std::sync::OnceLock;
 
-// use axum::extract::Query;
 use axum::response::Json;
 use axum::routing::get;
 use axum::Router;
+use fake::faker::address::en::{CityName, StateAbbr, StreetName, StreetSuffix};
+use fake::faker::internet::en::FreeEmail;
+use fake::faker::name::en::Name;
+use fake::faker::phone_number::en::PhoneNumber;
+use fake::{Dummy, Fake, Faker};
 use http::Method;
 use rand::thread_rng;
 use rand::Rng;
@@ -22,6 +27,70 @@ struct InventoryItem {
     count: i64,
     cost: Decimal,
     price: Decimal,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
+struct Customer {
+    id: i32,
+    #[dummy(faker = "Name()")]
+    name: String,
+    #[dummy(faker = "FreeEmail()")]
+    email: String,
+    #[dummy(faker = "PhoneNumber()")]
+    phone: String,
+    address: String,
+}
+
+#[derive(Dummy)]
+struct StreetAddress {
+    #[dummy(faker = "1..10000")]
+    number: u32,
+    #[dummy(faker = "StreetName()")]
+    street: String,
+    #[dummy(faker = "StreetSuffix()")]
+    street_suffix: String,
+    #[dummy(faker = "CityName()")]
+    city: String,
+    #[dummy(faker = "StateAbbr()")]
+    state: String,
+    #[dummy(faker = "10000..99999")]
+    zip: u32,
+}
+
+impl Customer {
+    fn generate() -> Self {
+        let address: StreetAddress = Faker.fake();
+        let customer: Customer = Faker.fake();
+
+        Customer {
+            id: generate_random_i32(1000000000),
+            address: format!(
+                "{} {} {}, {}, {} {}",
+                address.number,
+                address.street,
+                address.street_suffix,
+                address.city,
+                address.state,
+                address.zip
+            ),
+            ..customer
+        }
+    }
+
+    fn build_query(&self) -> String {
+        format!(
+            "INSERT INTO customers (id, name, email, phone, address) VALUES ({}, $1, $2, $3, $4)",
+            self.id
+        )
+    }
+}
+
+fn generate_random_i32(min: i32) -> i32 {
+    thread_rng().gen_range(min..=i32::MAX)
+}
+
+fn generate_random_i64(min: i64) -> i64 {
+    thread_rng().gen_range(min..=i64::MAX)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,7 +137,7 @@ async fn main() {
         .user("techtriage")
         .password("techtriage")
         .host("localhost")
-        .port(57589);
+        .port(54206);
 
     let (client, connection) = connection_config.connect(NoTls).await.unwrap();
 
@@ -85,18 +154,19 @@ async fn main() {
     get_db!().batch_execute(&setup_script).await.unwrap();
 
     let mut inventory_items = Vec::new();
-    let items = 3;
+    let inventory_item_count = 1234;
 
     let loading_bar_size = 20;
+
     let mut previous_print_percent = 0.0;
     let mut percent;
+    println!("Creating {} dummy inventory items", inventory_item_count);
     print!("[{}]", " ".repeat(loading_bar_size));
     print!("\x1B[2G");
-    use std::io::Write;
     std::io::stdout().flush().unwrap();
 
-    for i in 1..=items {
-        percent = i as f32 * 100.0 / items as f32;
+    for i in 1..=inventory_item_count {
+        percent = i as f32 * 100.0 / inventory_item_count as f32;
         let normalized_percent = percent.ceil();
         if normalized_percent - previous_print_percent == (100 / loading_bar_size) as f32
             && percent != 100.0
@@ -111,14 +181,53 @@ async fn main() {
 
     println!();
 
+    let mut customers = Vec::new();
+    let customer_count = 1234;
+
+    previous_print_percent = 0.0;
+    println!("Creating {} dummy customers", customer_count);
+    print!("[{}]", " ".repeat(loading_bar_size));
+    print!("\x1B[2G");
+
+    for i in 1..=customer_count {
+        percent = i as f32 * 100.0 / customer_count as f32;
+        let normalized_percent = percent.ceil();
+        if normalized_percent - previous_print_percent == (100 / loading_bar_size) as f32
+            && percent != 100.0
+        {
+            previous_print_percent = normalized_percent;
+            print!("=");
+            std::io::stdout().flush().unwrap();
+        }
+
+        customers.push(Customer::generate());
+    }
+
+    println!();
+
     let start_time = std::time::Instant::now();
     for item in inventory_items {
-        get_db!().query(&item.into_query(), &[]).await.unwrap();
+        get_db!().query(&item.build_query(), &[]).await.unwrap();
+    }
+
+    for customer in customers {
+        get_db!()
+            .query(
+                &customer.build_query(),
+                &[
+                    &customer.name,
+                    &customer.email,
+                    &customer.phone,
+                    &customer.address,
+                ],
+            )
+            .await
+            .unwrap();
     }
 
     println!(
         "Inserted {} items in {}ms",
-        items,
+        (inventory_item_count + customer_count),
         start_time.elapsed().as_millis()
     );
 
@@ -127,8 +236,10 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/inventory", get(query_inventory))
+        .route("/inventory", get(get_inventory))
         .route("/inventory/schema", get(get_inventory_schema))
+        .route("/customers", get(get_customers))
+        .route("/customers/schema", get(get_customers_schema))
         .layer(cors);
 
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
@@ -201,7 +312,7 @@ fn create_setup_script() -> String {
     script
 }
 
-async fn query_inventory() -> Json<Vec<InventoryItem>> {
+async fn get_inventory() -> Json<Vec<InventoryItem>> {
     let inventory_rows = get_db!()
         .query("SELECT * FROM inventory ORDER BY sku", &[])
         .await
@@ -223,6 +334,30 @@ async fn query_inventory() -> Json<Vec<InventoryItem>> {
 
 async fn get_inventory_schema() -> Json<TableConfig> {
     get_schema("inventory")
+}
+
+async fn get_customers() -> Json<Vec<Customer>> {
+    let customer_rows = get_db!()
+        .query("SELECT * FROM customers ORDER BY id", &[])
+        .await
+        .unwrap();
+
+    let mut customers = Vec::new();
+    for customer in customer_rows {
+        customers.push(Customer {
+            id: customer.get::<_, i32>("id"),
+            name: customer.get::<_, String>("name"),
+            email: customer.get::<_, String>("email"),
+            phone: customer.get::<_, String>("phone"),
+            address: customer.get::<_, String>("address"),
+        });
+    }
+
+    Json(customers)
+}
+
+async fn get_customers_schema() -> Json<TableConfig> {
+    get_schema("customers")
 }
 
 fn get_schema(table: &str) -> Json<TableConfig> {
@@ -275,7 +410,7 @@ impl InventoryItem {
         format!("{} {} {}", phone, generation, modifier)
     }
 
-    fn into_query(self) -> String {
+    fn build_query(&self) -> String {
         format!(
             "INSERT INTO inventory (sku, display_name, count, cost, price) VALUES ({}, '{}', {}, {}, {})",
             self.sku, self.display_name, self.count, self.cost, self.price
