@@ -1,0 +1,42 @@
+[[tables]]
+name = "inventory"
+primary_column = { name = "sku", data_type = "integer" }
+required_columns = [
+    { name = "display_name", data_type = "string" },
+    { name = "count", data_type = "integer" },
+    { name = "cost", data_type = "decimal" },
+    { name = "price", data_type = "decimal" },
+]
+optional_columns = []
+
+[[tables]]
+name = "customers"
+primary_column = { name = "id", data_type = "integer" }
+required_columns = [
+    { name = "name", data_type = "string" },
+    { name = "email", data_type = "string" },
+    { name = "phone", data_type = "string" },
+]
+optional_columns = [{ name = "address", data_type = "string" }]
+
+[[views]]
+name = "inventory_view"
+table = "inventory"
+columns = [
+    { name = "sku", display_name = "SKU", precedence = 0, formatting = { prefix = "#", pad_length = 10 } },
+    { name = "display_name", display_name = "Name", precedence = 1 },
+    { name = "count", display_name = "Count", precedence = 0 },
+    { name = "cost", display_name = "Cost", precedence = 0, formatting = { prefix = "$" } },
+    { name = "price", display_name = "Price", precedence = 0, formatting = { prefix = "$" } },
+]
+
+[[views]]
+name = "customers_view"
+table = "customers"
+columns = [
+    { name = "id", display_name = "ID", precedence = 0, formatting = { prefix = "#", pad_length = 10 } },
+    { name = "name", display_name = "Name", precedence = 0 },
+    { name = "email", display_name = "Email", precedence = 2 },
+    { name = "phone", display_name = "Phone", precedence = 1 },
+    { name = "address", display_name = "Address", precedence = 3 },
+]
