@@ -1,4 +1,6 @@
-// #![allow(unused)]
+#![allow(unused)]
+
+mod database;
 
 use std::io::Write;
 use std::sync::OnceLock;
@@ -6,6 +8,7 @@ use std::sync::OnceLock;
 use axum::response::Json;
 use axum::routing::get;
 use axum::Router;
+use database::FrontendTableView;
 use fake::faker::address::en::{CityName, StateAbbr, StreetName, StreetSuffix};
 use fake::faker::internet::en::FreeEmail;
 use fake::faker::name::en::Name;
@@ -93,36 +96,7 @@ fn generate_random_i64(min: i64) -> i64 {
     thread_rng().gen_range(min..=i64::MAX)
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct DatabaseConfig {
-    tables: Vec<TableConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct TableConfig {
-    name: String,
-    columns: Vec<ColumnConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ColumnConfig {
-    name: String,
-    display_name: String,
-    data_type: String,
-    #[serde(skip_serializing)]
-    required: Option<bool>,
-    formatting: Option<ColumnFormattingConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ColumnFormattingConfig {
-    prefix: Option<String>,
-    suffix: Option<String>,
-    pad_length: Option<i64>,
-}
-
 static DB: OnceLock<Client> = OnceLock::new();
-static CONFIG: OnceLock<DatabaseConfig> = OnceLock::new();
 
 macro_rules! get_db {
     () => {
@@ -149,7 +123,7 @@ async fn main() {
         }
     });
 
-    let setup_script = create_setup_script();
+    let setup_script = database::create_setup_script();
     println!("{setup_script}");
     get_db!().batch_execute(&setup_script).await.unwrap();
 
@@ -237,9 +211,9 @@ async fn main() {
 
     let routes = Router::new()
         .route("/inventory", get(get_inventory))
-        .route("/inventory/schema", get(get_inventory_schema))
+        .route("/views/inventory", get(get_inventory_view))
         .route("/customers", get(get_customers))
-        .route("/customers/schema", get(get_customers_schema))
+        .route("/views/customers", get(get_customers_view))
         .layer(cors);
 
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
@@ -247,69 +221,6 @@ async fn main() {
     axum::serve(listener, routes.into_make_service())
         .await
         .unwrap();
-}
-
-fn create_setup_script() -> String {
-    let config: DatabaseConfig = toml::from_str(include_str!("../database/schema.toml")).unwrap();
-
-    let mut script = String::new();
-
-    for table in &config.tables {
-        script.push_str(&format!("DROP TABLE IF EXISTS {} CASCADE;\n", table.name));
-    }
-
-    for table in &config.tables {
-        let column_declarations = table
-            .columns
-            .iter()
-            .enumerate()
-            .map(|(i, col)| generate_column(col, i == 0))
-            .collect::<Vec<String>>();
-
-        script.push_str(&format!(
-            "\nCREATE TABLE {} (\n{}\n);\n",
-            table.name,
-            column_declarations.join(",\n")
-        ));
-    }
-
-    fn generate_column(column: &ColumnConfig, primary_column: bool) -> String {
-        let name = column.name.to_owned();
-        let data_type = map_type(&column.data_type, primary_column);
-        let required = column.required.unwrap_or(true);
-
-        format!(
-            "    {:<16}{}{}",
-            name,
-            data_type,
-            if primary_column {
-                " PRIMARY KEY"
-            } else if required {
-                " NOT NULL"
-            } else {
-                ""
-            }
-        )
-        .to_owned()
-    }
-
-    fn map_type(type_name: &str, primary_column: bool) -> String {
-        if primary_column && type_name == "integer" {
-            return "serial".to_owned();
-        }
-
-        match type_name {
-            "integer" => "integer",
-            "decimal" => "numeric(1000, 2)",
-            "string" => "text",
-            _ => panic!("Unknown type in schema config"),
-        }
-        .to_owned()
-    }
-
-    CONFIG.get_or_init(|| config);
-
-    script
 }
 
 async fn get_inventory() -> Json<Vec<InventoryItem>> {
@@ -332,10 +243,6 @@ async fn get_inventory() -> Json<Vec<InventoryItem>> {
     Json(inventory_items)
 }
 
-async fn get_inventory_schema() -> Json<TableConfig> {
-    get_schema("inventory")
-}
-
 async fn get_customers() -> Json<Vec<Customer>> {
     let customer_rows = get_db!()
         .query("SELECT * FROM customers ORDER BY id", &[])
@@ -356,15 +263,12 @@ async fn get_customers() -> Json<Vec<Customer>> {
     Json(customers)
 }
 
-async fn get_customers_schema() -> Json<TableConfig> {
-    get_schema("customers")
+async fn get_inventory_view() -> Json<FrontendTableView> {
+    database::get_frontend_view("inventory")
 }
 
-fn get_schema(table: &str) -> Json<TableConfig> {
-    let schema = CONFIG.get().unwrap();
-    let table = schema.tables.iter().find(|t| t.name == table).unwrap();
-
-    Json(table.to_owned())
+async fn get_customers_view() -> Json<FrontendTableView> {
+    database::get_frontend_view("customers")
 }
 
 impl InventoryItem {
