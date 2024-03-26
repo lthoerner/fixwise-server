@@ -7,3 +7,13 @@ columns = [
     { name = "cost", display_name = "Cost", data_type = "decimal", required = true, formatting = { prefix = "$" } },
     { name = "price", display_name = "Price", data_type = "decimal", required = true, formatting = { prefix = "$" } },
 ]
+
+[[tables]]
+name = "customers"
+columns = [
+    { name = "id", display_name = "ID", data_type = "integer" },
+    { name = "name", display_name = "Name", data_type = "string", required = true },
+    { name = "email", display_name = "Email", data_type = "string", required = true },
+    { name = "phone", display_name = "Phone", data_type = "string", required = true },
+    { name = "address", display_name = "Address", data_type = "string", required = false },
+]

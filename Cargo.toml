@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.7.4"
+fake = { version = "2.9.2", features = ["derive"] }
 http = "1.0.0"
 http-body-util = "0.1.0"
 rand = "0.8.5"
