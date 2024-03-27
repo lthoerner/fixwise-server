@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 mod database;
 
@@ -9,92 +9,16 @@ use axum::response::Json;
 use axum::routing::get;
 use axum::Router;
 use database::FrontendTableView;
-use fake::faker::address::en::{CityName, StateAbbr, StreetName, StreetSuffix};
-use fake::faker::internet::en::FreeEmail;
-use fake::faker::name::en::Name;
-use fake::faker::phone_number::en::PhoneNumber;
-use fake::{Dummy, Fake, Faker};
 use http::Method;
 use rand::thread_rng;
 use rand::Rng;
 use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tokio_postgres::{Client, Config, NoTls};
 use tower_http::cors::{Any, CorsLayer};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct InventoryItem {
-    sku: i64,
-    display_name: String,
-    count: i64,
-    cost: Decimal,
-    price: Decimal,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
-struct Customer {
-    id: i32,
-    #[dummy(faker = "Name()")]
-    name: String,
-    #[dummy(faker = "FreeEmail()")]
-    email: String,
-    #[dummy(faker = "PhoneNumber()")]
-    phone: String,
-    address: String,
-}
-
-#[derive(Dummy)]
-struct StreetAddress {
-    #[dummy(faker = "1..10000")]
-    number: u32,
-    #[dummy(faker = "StreetName()")]
-    street: String,
-    #[dummy(faker = "StreetSuffix()")]
-    street_suffix: String,
-    #[dummy(faker = "CityName()")]
-    city: String,
-    #[dummy(faker = "StateAbbr()")]
-    state: String,
-    #[dummy(faker = "10000..99999")]
-    zip: u32,
-}
-
-impl Customer {
-    fn generate() -> Self {
-        let address: StreetAddress = Faker.fake();
-        let customer: Customer = Faker.fake();
-
-        Customer {
-            id: generate_random_i32(1000000000),
-            address: format!(
-                "{} {} {}, {}, {} {}",
-                address.number,
-                address.street,
-                address.street_suffix,
-                address.city,
-                address.state,
-                address.zip
-            ),
-            ..customer
-        }
-    }
-
-    fn build_query(&self) -> String {
-        format!(
-            "INSERT INTO customers (id, name, email, phone, address) VALUES ({}, $1, $2, $3, $4)",
-            self.id
-        )
-    }
-}
-
-fn generate_random_i32(min: i32) -> i32 {
-    thread_rng().gen_range(min..=i32::MAX)
-}
-
-fn generate_random_i64(min: i64) -> i64 {
-    thread_rng().gen_range(min..=i64::MAX)
-}
+use database::customers::Customer;
+use database::inventory::InventoryItem;
 
 static DB: OnceLock<Client> = OnceLock::new();
 
@@ -271,53 +195,6 @@ async fn get_customers_view() -> Json<FrontendTableView> {
     database::get_frontend_view("customers")
 }
 
-impl InventoryItem {
-    fn generate(existing_items: &[Self]) -> Self {
-        let mut sku: i64 = 0;
-        let mut first_roll = true;
-        while first_roll || existing_items.iter().any(|item| item.sku == sku) {
-            sku = thread_rng().gen_range(0..=99999999);
-            first_roll = false;
-        }
-
-        let count: i64 = thread_rng().gen_range(1..=9999);
-        let cost = Decimal::new(thread_rng().gen_range(10000..=999999), 2);
-        let price = cost * Decimal::new(thread_rng().gen_range(2..=5), 0);
-
-        InventoryItem {
-            sku,
-            display_name: Self::generate_display_name(),
-            count,
-            cost,
-            price,
-        }
-    }
-
-    fn generate_display_name() -> String {
-        const PHONE_LINES: [&str; 8] = [
-            "iPhone",
-            "Samsung Galaxy",
-            "Google Pixel",
-            "Motorola G",
-            "LG",
-            "Nokia",
-            "Sony Xperia",
-            "OnePlus",
-        ];
-
-        const MODIFIERS: [&str; 8] = ["Pro", "Max", "Ultra", "Plus", "Lite", "Mini", "X", "Z"];
-
-        let phone = PHONE_LINES[thread_rng().gen_range(0..PHONE_LINES.len())];
-        let generation = thread_rng().gen_range(1..=50);
-        let modifier = MODIFIERS[thread_rng().gen_range(0..MODIFIERS.len())];
-
-        format!("{} {} {}", phone, generation, modifier)
-    }
-
-    fn build_query(&self) -> String {
-        format!(
-            "INSERT INTO inventory (sku, display_name, count, cost, price) VALUES ({}, '{}', {}, {}, {})",
-            self.sku, self.display_name, self.count, self.cost, self.price
-        )
-    }
+fn generate_random_i32(min: i32) -> i32 {
+    thread_rng().gen_range(min..=i32::MAX)
 }
