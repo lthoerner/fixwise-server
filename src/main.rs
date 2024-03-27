@@ -47,7 +47,7 @@ async fn main() {
         }
     });
 
-    let setup_script = database::create_setup_script();
+    let setup_script = database::config::create_setup_script();
     println!("{setup_script}");
     get_db!().batch_execute(&setup_script).await.unwrap();
 
