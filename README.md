@@ -3,7 +3,7 @@ TechTriage is an inventory, ticket, and customer management software designed fo
 repair businesses. It is currently in active development.
 
 ## Goals
-Here is (non-exhaustive) a list of goals for the project:
+Here is a (non-exhaustive) list of goals for the project:
 - Competitive pricing compared to other cloud repair management software
 - Perpetual licensing model for clients who wish to self-host
 - Robust, auditable codebase (source-available)
