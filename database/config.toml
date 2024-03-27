@@ -23,20 +23,20 @@ optional_columns = [{ name = "address", data_type = "string" }]
 name = "inventory_view"
 table = "inventory"
 columns = [
-    { name = "sku", display_name = "SKU", precedence = 0, formatting = { prefix = "#", pad_length = 10 } },
-    { name = "display_name", display_name = "Name", precedence = 1 },
-    { name = "count", display_name = "Count", precedence = 0 },
-    { name = "cost", display_name = "Cost", precedence = 0, formatting = { prefix = "$" } },
-    { name = "price", display_name = "Price", precedence = 0, formatting = { prefix = "$" } },
+    { name = "sku", display_name = "SKU", trimmable = false, formatting = { prefix = "#", pad_length = 10 } },
+    { name = "display_name", display_name = "Name", trimmable = true },
+    { name = "count", display_name = "Count", trimmable = false },
+    { name = "cost", display_name = "Cost", trimmable = false, formatting = { prefix = "$" } },
+    { name = "price", display_name = "Price", trimmable = false, formatting = { prefix = "$" } },
 ]
 
 [[views]]
 name = "customers_view"
 table = "customers"
 columns = [
-    { name = "id", display_name = "ID", precedence = 0, formatting = { prefix = "#", pad_length = 10 } },
-    { name = "name", display_name = "Name", precedence = 0 },
-    { name = "email", display_name = "Email", precedence = 2 },
-    { name = "phone", display_name = "Phone", precedence = 1 },
-    { name = "address", display_name = "Address", precedence = 3 },
+    { name = "id", display_name = "ID", trimmable = false, formatting = { prefix = "#", pad_length = 10 } },
+    { name = "name", display_name = "Name", trimmable = false },
+    { name = "email", display_name = "Email", trimmable = true },
+    { name = "phone", display_name = "Phone", trimmable = true },
+    { name = "address", display_name = "Address", trimmable = true },
 ]
