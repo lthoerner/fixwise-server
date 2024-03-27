@@ -36,7 +36,7 @@ struct ViewConfig {
 struct ColumnViewConfig {
     name: String,
     display_name: String,
-    precedence: u32,
+    trimmable: bool,
     formatting: Option<ColumnFormattingConfig>,
 }
 
@@ -55,7 +55,7 @@ pub struct FrontendColumnView {
     name: String,
     data_type: String,
     display_name: String,
-    precedence: u32,
+    trimmable: bool,
     formatting: Option<ColumnFormattingConfig>,
 }
 
@@ -82,7 +82,7 @@ pub fn get_frontend_view(table_name: &str) -> Json<FrontendTableView> {
                 .data_type
                 .clone(),
             display_name: col.display_name.clone(),
-            precedence: col.precedence,
+            trimmable: col.trimmable,
             formatting: col.formatting.clone(),
         })
         .collect::<Vec<FrontendColumnView>>();
