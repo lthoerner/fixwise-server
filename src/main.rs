@@ -2,6 +2,7 @@
 
 mod database;
 
+use std::collections::HashSet;
 use std::io::Write;
 
 use axum::response::Json;
@@ -22,6 +23,7 @@ async fn main() {
     database::connect().await;
 
     let mut inventory_items = Vec::new();
+    let mut existing = HashSet::new();
     let inventory_item_count = 123456;
 
     let loading_bar_size = 20;
@@ -44,12 +46,13 @@ async fn main() {
             std::io::stdout().flush().unwrap();
         }
 
-        inventory_items.push(InventoryItem::generate(&inventory_items));
+        inventory_items.push(InventoryItem::generate(&mut existing));
     }
 
     println!();
 
     let mut customers = Vec::new();
+    existing.clear();
     let customer_count = 123456;
 
     previous_print_percent = 0.0;
@@ -68,7 +71,7 @@ async fn main() {
             std::io::stdout().flush().unwrap();
         }
 
-        customers.push(Customer::generate(&customers));
+        customers.push(Customer::generate(&mut existing));
     }
 
     println!();
@@ -108,6 +111,15 @@ async fn get_customers_view() -> Json<FrontendTableView> {
     database::get_frontend_view("customers")
 }
 
-fn generate_random_i32(min: i32) -> i32 {
-    thread_rng().gen_range(min..=i32::MAX)
+fn generate_unique_random_i32(min: i32, existing: &mut HashSet<i32>) -> i32 {
+    let mut val = 0;
+    let mut first_roll = true;
+    while first_roll || existing.get(&val).is_some() {
+        val = thread_rng().gen_range(min..=i32::MAX);
+        first_roll = false;
+    }
+
+    existing.insert(val);
+
+    val
 }

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use axum::Json;
 use fake::faker::address::en::{CityName, StateAbbr, StreetName, StreetSuffix};
 use fake::faker::internet::en::FreeEmail;
@@ -35,14 +37,8 @@ struct StreetAddress {
 }
 
 impl Customer {
-    pub fn generate(existing: &[Customer]) -> Self {
-        let mut id: i32 = 0;
-        let mut first_roll = true;
-        while first_roll || existing.iter().any(|e| e.id == id) {
-            id = crate::generate_random_i32(0);
-            first_roll = false;
-        }
-
+    pub fn generate(existing: &mut HashSet<i32>) -> Self {
+        let id = crate::generate_unique_random_i32(0, existing);
         let address: StreetAddress = Faker.fake();
         let customer: Customer = Faker.fake();
 
