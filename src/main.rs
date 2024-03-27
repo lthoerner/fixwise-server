@@ -22,66 +22,20 @@ use database::inventory::InventoryItem;
 async fn main() {
     database::connect().await;
 
-    let mut inventory_items = Vec::new();
-    let mut existing = HashSet::new();
-    let inventory_item_count = 123456;
-
-    let loading_bar_size = 20;
-
-    let mut previous_print_percent = 0.0;
-    let mut percent;
-    println!("Creating {} dummy inventory items", inventory_item_count);
-    print!("[{}]", " ".repeat(loading_bar_size));
-    print!("\x1B[2G");
-    std::io::stdout().flush().unwrap();
-
-    for i in 1..=inventory_item_count {
-        percent = i as f32 * 100.0 / inventory_item_count as f32;
-        let normalized_percent = percent.ceil();
-        if normalized_percent - previous_print_percent == (100 / loading_bar_size) as f32
-            && percent != 100.0
-        {
-            previous_print_percent = normalized_percent;
-            print!("=");
-            std::io::stdout().flush().unwrap();
-        }
-
-        inventory_items.push(InventoryItem::generate(&mut existing));
-    }
-
-    println!();
-
-    let mut customers = Vec::new();
-    existing.clear();
-    let customer_count = 123456;
-
-    previous_print_percent = 0.0;
-    println!("Creating {} dummy customers", customer_count);
-    print!("[{}]", " ".repeat(loading_bar_size));
-    print!("\x1B[2G");
-
-    for i in 1..=customer_count {
-        percent = i as f32 * 100.0 / customer_count as f32;
-        let normalized_percent = percent.ceil();
-        if normalized_percent - previous_print_percent == (100 / loading_bar_size) as f32
-            && percent != 100.0
-        {
-            previous_print_percent = normalized_percent;
-            print!("=");
-            std::io::stdout().flush().unwrap();
-        }
-
-        customers.push(Customer::generate(&mut existing));
-    }
-
-    println!();
+    let bar_length = 20;
+    let num_inventory_items = 12345;
+    let num_customers = 12345;
+    println!("Generating {num_inventory_items} inventory items");
+    let inventory_items = generate_items(bar_length, num_inventory_items, InventoryItem::generate);
+    println!("Generating {num_customers} customers");
+    let customers = generate_items(bar_length, num_customers, Customer::generate);
 
     let start_time = std::time::Instant::now();
     database::add_items(&inventory_items, &customers).await;
 
     println!(
         "Inserted {} items in {}ms",
-        (inventory_item_count + customer_count),
+        (num_inventory_items + num_customers),
         start_time.elapsed().as_millis()
     );
 
@@ -109,6 +63,38 @@ async fn get_inventory_view() -> Json<FrontendTableView> {
 
 async fn get_customers_view() -> Json<FrontendTableView> {
     database::get_frontend_view("customers")
+}
+
+fn generate_items<T>(
+    bar_length: usize,
+    count: usize,
+    add_function: impl Fn(&mut HashSet<i32>) -> T,
+) -> Vec<T> {
+    let mut existing = HashSet::new();
+    let mut elements = Vec::new();
+
+    let mut percent;
+    let mut previous_print_percent = 0.0;
+    print!("[{}]", " ".repeat(bar_length));
+    print!("\x1B[2G");
+
+    for i in 1..=count {
+        percent = i as f32 * 100.0 / count as f32;
+        let normalized_percent = percent.ceil();
+        if normalized_percent - previous_print_percent == (100 / bar_length) as f32
+            && percent != 100.0
+        {
+            previous_print_percent = normalized_percent;
+            print!("=");
+            std::io::stdout().flush().unwrap();
+        }
+
+        elements.push(add_function(&mut existing));
+    }
+
+    println!();
+
+    elements
 }
 
 fn generate_unique_random_i32(min: i32, existing: &mut HashSet<i32>) -> i32 {
