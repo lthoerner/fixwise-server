@@ -3,7 +3,6 @@
 mod database;
 
 use std::io::Write;
-use std::sync::OnceLock;
 
 use axum::response::Json;
 use axum::routing::get;
@@ -12,47 +11,18 @@ use database::FrontendTableView;
 use http::Method;
 use rand::thread_rng;
 use rand::Rng;
-use rust_decimal::Decimal;
 use tokio::net::TcpListener;
-use tokio_postgres::{Client, Config, NoTls};
 use tower_http::cors::{Any, CorsLayer};
 
 use database::customers::Customer;
 use database::inventory::InventoryItem;
 
-static DB: OnceLock<Client> = OnceLock::new();
-
-macro_rules! get_db {
-    () => {
-        DB.get().unwrap()
-    };
-}
-
 #[tokio::main]
 async fn main() {
-    let mut connection_config = Config::new();
-    connection_config
-        .user("techtriage")
-        .password("techtriage")
-        .host("localhost")
-        .port(54206);
-
-    let (client, connection) = connection_config.connect(NoTls).await.unwrap();
-
-    DB.get_or_init(|| client);
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("Connection error: {e}");
-        }
-    });
-
-    let setup_script = database::config::create_setup_script();
-    println!("{setup_script}");
-    get_db!().batch_execute(&setup_script).await.unwrap();
+    database::connect().await;
 
     let mut inventory_items = Vec::new();
-    let inventory_item_count = 1234;
+    let inventory_item_count = 123456;
 
     let loading_bar_size = 20;
 
@@ -80,7 +50,7 @@ async fn main() {
     println!();
 
     let mut customers = Vec::new();
-    let customer_count = 1234;
+    let customer_count = 123456;
 
     previous_print_percent = 0.0;
     println!("Creating {} dummy customers", customer_count);
@@ -98,30 +68,13 @@ async fn main() {
             std::io::stdout().flush().unwrap();
         }
 
-        customers.push(Customer::generate());
+        customers.push(Customer::generate(&customers));
     }
 
     println!();
 
     let start_time = std::time::Instant::now();
-    for item in inventory_items {
-        get_db!().query(&item.build_query(), &[]).await.unwrap();
-    }
-
-    for customer in customers {
-        get_db!()
-            .query(
-                &customer.build_query(),
-                &[
-                    &customer.name,
-                    &customer.email,
-                    &customer.phone,
-                    &customer.address,
-                ],
-            )
-            .await
-            .unwrap();
-    }
+    database::add_items(&inventory_items, &customers).await;
 
     println!(
         "Inserted {} items in {}ms",
@@ -134,9 +87,9 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/inventory", get(get_inventory))
+        .route("/inventory", get(database::inventory::get_inventory))
+        .route("/customers", get(database::customers::get_customers))
         .route("/views/inventory", get(get_inventory_view))
-        .route("/customers", get(get_customers))
         .route("/views/customers", get(get_customers_view))
         .layer(cors);
 
@@ -145,46 +98,6 @@ async fn main() {
     axum::serve(listener, routes.into_make_service())
         .await
         .unwrap();
-}
-
-async fn get_inventory() -> Json<Vec<InventoryItem>> {
-    let inventory_rows = get_db!()
-        .query("SELECT * FROM inventory ORDER BY sku", &[])
-        .await
-        .unwrap();
-
-    let mut inventory_items = Vec::new();
-    for item in inventory_rows {
-        inventory_items.push(InventoryItem {
-            sku: item.get::<_, i32>("sku") as i64,
-            display_name: item.get::<_, String>("display_name"),
-            count: item.get::<_, i32>("count") as i64,
-            cost: item.get::<_, Decimal>("cost"),
-            price: item.get::<_, Decimal>("price"),
-        });
-    }
-
-    Json(inventory_items)
-}
-
-async fn get_customers() -> Json<Vec<Customer>> {
-    let customer_rows = get_db!()
-        .query("SELECT * FROM customers ORDER BY id", &[])
-        .await
-        .unwrap();
-
-    let mut customers = Vec::new();
-    for customer in customer_rows {
-        customers.push(Customer {
-            id: customer.get::<_, i32>("id"),
-            name: customer.get::<_, String>("name"),
-            email: customer.get::<_, String>("email"),
-            phone: customer.get::<_, String>("phone"),
-            address: customer.get::<_, String>("address"),
-        });
-    }
-
-    Json(customers)
 }
 
 async fn get_inventory_view() -> Json<FrontendTableView> {

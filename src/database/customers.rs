@@ -1,3 +1,4 @@
+use axum::Json;
 use fake::faker::address::en::{CityName, StateAbbr, StreetName, StreetSuffix};
 use fake::faker::internet::en::FreeEmail;
 use fake::faker::name::en::Name;
@@ -34,12 +35,19 @@ struct StreetAddress {
 }
 
 impl Customer {
-    pub fn generate() -> Self {
+    pub fn generate(existing: &[Customer]) -> Self {
+        let mut id: i32 = 0;
+        let mut first_roll = true;
+        while first_roll || existing.iter().any(|e| e.id == id) {
+            id = crate::generate_random_i32(0);
+            first_roll = false;
+        }
+
         let address: StreetAddress = Faker.fake();
         let customer: Customer = Faker.fake();
 
         Customer {
-            id: crate::generate_random_i32(1000000000),
+            id,
             address: format!(
                 "{} {} {}, {}, {} {}",
                 address.number,
@@ -59,4 +67,24 @@ impl Customer {
             self.id
         )
     }
+}
+
+pub async fn get_customers() -> Json<Vec<Customer>> {
+    let customer_rows = crate::get_db!()
+        .query("SELECT * FROM customers ORDER BY id", &[])
+        .await
+        .unwrap();
+
+    let mut customers = Vec::new();
+    for customer in customer_rows {
+        customers.push(Customer {
+            id: customer.get::<_, i32>("id"),
+            name: customer.get::<_, String>("name"),
+            email: customer.get::<_, String>("email"),
+            phone: customer.get::<_, String>("phone"),
+            address: customer.get::<_, String>("address"),
+        });
+    }
+
+    Json(customers)
 }

@@ -46,7 +46,7 @@ pub(super) struct ColumnFormattingConfig {
     pad_length: Option<u32>,
 }
 
-pub fn create_setup_script() -> String {
+pub(super) fn create_setup_script() -> String {
     let config: DatabaseConfig =
         toml::from_str(include_str!("../../database/config.toml")).unwrap();
 
