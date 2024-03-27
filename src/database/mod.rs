@@ -1,3 +1,7 @@
+mod config;
+pub mod customers;
+pub mod inventory;
+
 use std::iter;
 use std::sync::OnceLock;
 
@@ -91,7 +95,8 @@ pub fn get_frontend_view(table_name: &str) -> Json<FrontendTableView> {
 }
 
 pub fn create_setup_script() -> String {
-    let config: DatabaseConfig = toml::from_str(include_str!("../database/config.toml")).unwrap();
+    let config: DatabaseConfig =
+        toml::from_str(include_str!("../../database/config.toml")).unwrap();
 
     let mut script = String::new();
 
