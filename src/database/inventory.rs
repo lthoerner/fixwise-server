@@ -51,13 +51,6 @@ impl InventoryItem {
 
         format!("{} {} {}", phone, generation, modifier)
     }
-
-    pub fn build_query(&self) -> String {
-        format!(
-            "INSERT INTO inventory (sku, display_name, count, cost, price) VALUES ({}, $1, {}, {}, {})",
-            self.sku, self.count, self.cost, self.price
-        )
-    }
 }
 
 pub async fn get_inventory() -> Json<Vec<InventoryItem>> {

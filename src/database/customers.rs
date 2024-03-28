@@ -56,13 +56,6 @@ impl Customer {
             ..customer
         }
     }
-
-    pub fn build_query(&self) -> String {
-        format!(
-            "INSERT INTO customers (id, name, email, phone, address) VALUES ({}, $1, $2, $3, $4)",
-            self.id
-        )
-    }
 }
 
 pub async fn get_customers() -> Json<Vec<Customer>> {

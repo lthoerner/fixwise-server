@@ -23,15 +23,15 @@ async fn main() {
     database::connect().await;
 
     let bar_length = 20;
-    let num_inventory_items = 12345;
-    let num_customers = 12345;
+    let num_inventory_items = 123456;
+    let num_customers = 123456;
     println!("Generating {num_inventory_items} inventory items");
     let inventory_items = generate_items(bar_length, num_inventory_items, InventoryItem::generate);
     println!("Generating {num_customers} customers");
     let customers = generate_items(bar_length, num_customers, Customer::generate);
 
     let start_time = std::time::Instant::now();
-    database::add_items(&inventory_items, &customers).await;
+    database::add_items(inventory_items, customers).await;
 
     println!(
         "Inserted {} items in {}ms",
