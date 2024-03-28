@@ -41,7 +41,7 @@ pub async fn connect() {
         .user("techtriage")
         .password("techtriage")
         .host("localhost")
-        .port(50589);
+        .port(5432);
 
     let (client, connection) = connection_config.connect(NoTls).await.unwrap();
 
