@@ -1,0 +1,40 @@
+{
+    "name": "inventory",
+    "columns": [
+        {
+            "name": "sku",
+            "display_name": "SKU",
+            "trimmable": false,
+            "formatting": {
+                "prefix": "#",
+                "pad_length": 10
+            }
+        },
+        {
+            "name": "display_name",
+            "display_name": "Name",
+            "trimmable": false
+        },
+        {
+            "name": "count",
+            "display_name": "Count",
+            "trimmable": false
+        },
+        {
+            "name": "cost",
+            "display_name": "Cost",
+            "trimmable": false,
+            "formatting": {
+                "prefix": "$"
+            }
+        },
+        {
+            "name": "price",
+            "display_name": "Price",
+            "trimmable": false,
+            "formatting": {
+                "prefix": "$"
+            }
+        }
+    ]
+}

@@ -7,6 +7,7 @@ use fake::faker::name::en::Name;
 use fake::faker::phone_number::en::PhoneNumber;
 use fake::{Dummy, Fake, Faker};
 use serde::{Deserialize, Serialize};
+use sqlx::{query, Row};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
 pub struct Customer {
@@ -59,19 +60,19 @@ impl Customer {
 }
 
 pub async fn get_customers() -> Json<Vec<Customer>> {
-    let customer_rows = crate::get_db!()
-        .query("SELECT * FROM customers ORDER BY id", &[])
+    let customer_rows = query("SELECT * FROM test.customers ORDER BY id")
+        .fetch_all(crate::get_db!())
         .await
         .unwrap();
 
     let mut customers = Vec::new();
     for customer in customer_rows {
         customers.push(Customer {
-            id: customer.get::<_, i32>("id"),
-            name: customer.get::<_, String>("name"),
-            email: customer.get::<_, String>("email"),
-            phone: customer.get::<_, String>("phone"),
-            address: customer.get::<_, String>("address"),
+            id: customer.get("id"),
+            name: customer.get("name"),
+            email: customer.get("email"),
+            phone: customer.get("phone"),
+            address: customer.get("address"),
         });
     }
 

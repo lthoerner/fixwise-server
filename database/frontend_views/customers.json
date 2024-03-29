@@ -1,0 +1,34 @@
+{
+    "name": "customers",
+    "columns": [
+        {
+            "name": "id",
+            "display_name": "ID",
+            "trimmable": false,
+            "formatting": {
+                "prefix": "#",
+                "pad_length": 10
+            }
+        },
+        {
+            "name": "name",
+            "display_name": "Name",
+            "trimmable": false
+        },
+        {
+            "name": "email",
+            "display_name": "Email",
+            "trimmable": true
+        },
+        {
+            "name": "phone",
+            "display_name": "Phone",
+            "trimmable": true
+        },
+        {
+            "name": "address",
+            "display_name": "Address",
+            "trimmable": true
+        }
+    ]
+}

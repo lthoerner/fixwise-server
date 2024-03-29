@@ -8,7 +8,6 @@ use std::io::Write;
 use axum::response::Json;
 use axum::routing::get;
 use axum::Router;
-use database::FrontendTableView;
 use http::Method;
 use rand::thread_rng;
 use rand::Rng;
@@ -46,8 +45,18 @@ async fn main() {
     let routes = Router::new()
         .route("/inventory", get(database::inventory::get_inventory))
         .route("/customers", get(database::customers::get_customers))
-        .route("/views/inventory", get(get_inventory_view))
-        .route("/views/customers", get(get_customers_view))
+        .route(
+            "/views/inventory",
+            get(Json(include_str!(
+                "../database/frontend_views/inventory.json"
+            ))),
+        )
+        .route(
+            "/views/customers",
+            get(Json(include_str!(
+                "../database/frontend_views/customers.json"
+            ))),
+        )
         .layer(cors);
 
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
@@ -55,14 +64,6 @@ async fn main() {
     axum::serve(listener, routes.into_make_service())
         .await
         .unwrap();
-}
-
-async fn get_inventory_view() -> Json<FrontendTableView> {
-    database::get_frontend_view("inventory")
-}
-
-async fn get_customers_view() -> Json<FrontendTableView> {
-    database::get_frontend_view("customers")
 }
 
 fn generate_items<T>(

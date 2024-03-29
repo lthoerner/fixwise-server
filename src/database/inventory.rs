@@ -5,6 +5,7 @@ use rand::thread_rng;
 use rand::Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use sqlx::{query, Row};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InventoryItem {
@@ -54,19 +55,19 @@ impl InventoryItem {
 }
 
 pub async fn get_inventory() -> Json<Vec<InventoryItem>> {
-    let inventory_rows = crate::get_db!()
-        .query("SELECT * FROM inventory ORDER BY sku", &[])
+    let inventory_rows = query("SELECT * FROM test.inventory ORDER BY sku")
+        .fetch_all(crate::get_db!())
         .await
         .unwrap();
 
     let mut inventory_items = Vec::new();
     for item in inventory_rows {
         inventory_items.push(InventoryItem {
-            sku: item.get::<_, i32>("sku"),
-            display_name: item.get::<_, String>("display_name"),
-            count: item.get::<_, i32>("count"),
-            cost: item.get::<_, Decimal>("cost"),
-            price: item.get::<_, Decimal>("price"),
+            sku: item.get("sku"),
+            display_name: item.get("display_name"),
+            count: item.get("count"),
+            cost: item.get("cost"),
+            price: item.get("price"),
         });
     }
 

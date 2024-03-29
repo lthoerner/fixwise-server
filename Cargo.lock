@@ -1907,7 +1907,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tokio-postgres",
  "toml",
  "tower-http",
 ]
