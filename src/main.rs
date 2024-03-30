@@ -3,6 +3,8 @@
 mod database;
 
 use std::collections::HashSet;
+use std::fs::File;
+use std::io::BufReader;
 use std::io::Write;
 
 use axum::response::Json;
@@ -14,6 +16,7 @@ use rand::Rng;
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 
+use database::config::FrontendTableView;
 use database::customers::Customer;
 use database::inventory::InventoryItem;
 
@@ -45,18 +48,8 @@ async fn main() {
     let routes = Router::new()
         .route("/inventory", get(database::inventory::get_inventory))
         .route("/customers", get(database::customers::get_customers))
-        .route(
-            "/views/inventory",
-            get(Json(include_str!(
-                "../database/frontend_views/inventory.json"
-            ))),
-        )
-        .route(
-            "/views/customers",
-            get(Json(include_str!(
-                "../database/frontend_views/customers.json"
-            ))),
-        )
+        .route("/views/inventory", get(get_inventory_view))
+        .route("/views/customers", get(get_customers_view))
         .layer(cors);
 
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
@@ -109,4 +102,18 @@ fn generate_unique_random_i32(min: i32, existing: &mut HashSet<i32>) -> i32 {
     existing.insert(val);
 
     val
+}
+
+async fn get_inventory_view() -> Json<FrontendTableView> {
+    get_json_file("./database/frontend_views/inventory.json")
+}
+
+async fn get_customers_view() -> Json<FrontendTableView> {
+    get_json_file("./database/frontend_views/customers.json")
+}
+
+fn get_json_file(filename: &str) -> Json<FrontendTableView> {
+    let file = File::open(filename).unwrap();
+    let reader = BufReader::new(file);
+    Json(serde_json::from_reader(reader).unwrap())
 }

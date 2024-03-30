@@ -28,7 +28,7 @@
         {
             "name": "address",
             "display_name": "Address",
-            "trimmable": true
+                "trimmable": true
         }
     ]
 }

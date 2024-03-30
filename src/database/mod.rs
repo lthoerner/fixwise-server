@@ -1,10 +1,11 @@
+pub mod config;
 pub mod customers;
 pub mod inventory;
 
 use std::sync::OnceLock;
 
 use itertools::Itertools;
-use sqlx::{raw_sql, PgPool, Postgres, QueryBuilder};
+use sqlx::{PgPool, Postgres, QueryBuilder};
 
 use customers::Customer;
 use inventory::InventoryItem;
@@ -25,16 +26,7 @@ pub async fn connect() {
 
     DB.get_or_init(|| db);
 
-    configure_db().await;
-}
-
-async fn configure_db() {
-    const CONFIG_SCRIPT: &str = include_str!("../../database/config.sql");
-
-    raw_sql(CONFIG_SCRIPT)
-        .execute(crate::get_db!())
-        .await
-        .unwrap();
+    config::configure_db().await;
 }
 
 pub async fn add_items(inventory_items: Vec<InventoryItem>, customers: Vec<Customer>) {
