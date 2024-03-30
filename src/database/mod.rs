@@ -10,7 +10,7 @@ use sqlx::{PgPool, Postgres, QueryBuilder};
 use customers::Customer;
 use inventory::InventoryItem;
 
-static DB: OnceLock<PgPool> = OnceLock::new();
+pub static DB: OnceLock<PgPool> = OnceLock::new();
 
 #[macro_export]
 macro_rules! get_db {

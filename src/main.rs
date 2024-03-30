@@ -14,6 +14,7 @@ use http::Method;
 use rand::thread_rng;
 use rand::Rng;
 use tokio::net::TcpListener;
+use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
 use database::config::FrontendTableView;
@@ -24,9 +25,18 @@ use database::inventory::InventoryItem;
 async fn main() {
     database::connect().await;
 
-    let bar_length = 20;
-    let num_inventory_items = 123456;
-    let num_customers = 123456;
+    tokio::spawn(async {
+        signal::ctrl_c().await.unwrap();
+        println!();
+        println!("Server shutting down...");
+        get_db!().close().await;
+        println!("Database connection closed.");
+        std::process::exit(0);
+    });
+
+    let bar_length = 33;
+    let num_inventory_items = 12345;
+    let num_customers = 12345;
     println!("Generating {num_inventory_items} inventory items");
     let inventory_items = generate_items(bar_length, num_inventory_items, InventoryItem::generate);
     println!("Generating {num_customers} customers");
