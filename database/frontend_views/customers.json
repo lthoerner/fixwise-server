@@ -17,17 +17,17 @@
         },
         {
             "name": "email",
-            "display_name": "Email",
+            "display_name": "Email Address",
             "trimmable": true
         },
         {
             "name": "phone",
-            "display_name": "Phone",
+            "display_name": "Phone Number",
             "trimmable": true
         },
         {
             "name": "address",
-            "display_name": "Address",
+            "display_name": "Street Address",
                 "trimmable": true
         }
     ]
