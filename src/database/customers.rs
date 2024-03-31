@@ -43,7 +43,7 @@ impl Customer {
         let address: StreetAddress = Faker.fake();
         let customer: Customer = Faker.fake();
 
-        Customer {
+        Self {
             id,
             address: format!(
                 "{} {} {}, {}, {} {}",
@@ -60,7 +60,7 @@ impl Customer {
 }
 
 pub async fn get_customers() -> Json<Vec<Customer>> {
-    let customer_rows = query("SELECT * FROM test.customers ORDER BY id")
+    let customer_rows = query("SELECT * FROM test.customers_view ORDER BY id")
         .fetch_all(crate::get_db!())
         .await
         .unwrap();

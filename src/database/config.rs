@@ -11,6 +11,7 @@ pub struct FrontendTableView {
 pub struct FrontendColumnView {
     name: String,
     display_name: String,
+    data_type: String,
     trimmable: bool,
     formatting: Option<ColumnFormatting>,
 }

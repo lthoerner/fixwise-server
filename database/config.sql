@@ -20,6 +20,18 @@ CREATE TABLE
         address text
     );
 
+CREATE TABLE
+    test.tickets (
+        id serial PRIMARY KEY,
+        customer integer references test.customers (id) NOT NULL,
+        device text NOT NULL,
+        diagnostic text NOT NULL,
+        invoice_amount numeric(1000, 2) NOT NULL DEFAULT 0,
+        payment_amount numeric(1000, 2) NOT NULL DEFAULT 0,
+        created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
 CREATE VIEW
     test.inventory_view AS
 SELECT
@@ -43,5 +55,20 @@ SELECT
     address
 FROM
     test.customers
+ORDER BY
+    id ASC;
+
+CREATE VIEW
+    test.tickets_view AS
+SELECT
+    ticket.id,
+    customer.name AS customer_name,
+    ticket.device,
+    ticket.invoice_amount - ticket.payment_amount AS balance,
+    ticket.created_at,
+    ticket.updated_at
+FROM
+    test.tickets ticket
+    JOIN test.customers customer ON ticket.customer = customer.id
 ORDER BY
     id ASC;

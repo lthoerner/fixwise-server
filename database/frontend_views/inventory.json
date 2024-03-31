@@ -4,6 +4,7 @@
         {
             "name": "sku",
             "display_name": "SKU",
+            "data_type": "integer",
             "trimmable": false,
             "formatting": {
                 "prefix": "#",
@@ -13,16 +14,19 @@
         {
             "name": "display_name",
             "display_name": "Name",
+            "data_type": "string",
             "trimmable": false
         },
         {
             "name": "count",
             "display_name": "Count",
+            "data_type": "integer",
             "trimmable": false
         },
         {
             "name": "cost",
             "display_name": "Cost",
+            "data_type": "decimal",
             "trimmable": false,
             "formatting": {
                 "prefix": "$"
@@ -31,6 +35,7 @@
         {
             "name": "price",
             "display_name": "Price",
+            "data_type": "decimal",
             "trimmable": false,
             "formatting": {
                 "prefix": "$"

@@ -23,7 +23,7 @@ impl InventoryItem {
         let cost = Decimal::new(thread_rng().gen_range(10000..=99999), 2);
         let price = cost * Decimal::new(thread_rng().gen_range(2..=5), 0);
 
-        InventoryItem {
+        Self {
             sku,
             display_name: Self::generate_display_name(),
             count,
