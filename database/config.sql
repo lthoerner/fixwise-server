@@ -5,7 +5,7 @@ CREATE SCHEMA test;
 CREATE TABLE
     test.inventory (
         sku serial PRIMARY KEY,
-        display_name text NOT NULL,
+        name text NOT NULL,
         count integer NOT NULL,
         cost numeric(1000, 2) NOT NULL,
         price numeric(1000, 2) NOT NULL
@@ -23,7 +23,7 @@ CREATE TABLE
 CREATE TABLE
     test.tickets (
         id serial PRIMARY KEY,
-        customer integer references test.customers (id) NOT NULL,
+        customer_id integer references test.customers (id) NOT NULL,
         device text NOT NULL,
         diagnostic text NOT NULL,
         invoice_amount numeric(1000, 2) NOT NULL DEFAULT 0,
@@ -36,7 +36,7 @@ CREATE VIEW
     test.inventory_view AS
 SELECT
     sku,
-    display_name,
+    name,
     count,
     cost,
     price
@@ -69,6 +69,6 @@ SELECT
     ticket.updated_at
 FROM
     test.tickets ticket
-    JOIN test.customers customer ON ticket.customer = customer.id
+    JOIN test.customers customer ON ticket.customer_id = customer.id
 ORDER BY
     id ASC;

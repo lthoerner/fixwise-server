@@ -1,19 +1,35 @@
-pub mod api;
-pub mod customers;
-pub mod inventory;
-pub mod tickets;
+pub mod tables;
 pub mod views;
 
+use axum::extract::State;
 use itertools::Itertools;
-use sqlx::{raw_sql, PgPool, Postgres, QueryBuilder};
+use sqlx::postgres::PgRow;
+use sqlx::{raw_sql, FromRow, PgPool, Postgres, QueryBuilder};
 
-use customers::Customer;
-use inventory::InventoryItem;
-use tickets::Ticket;
+use crate::ServerState;
+use tables::customers::Customer;
+use tables::inventory::InventoryItem;
+use tables::tickets::Ticket;
 
 #[derive(Clone)]
 pub struct Database {
     pub connection: PgPool,
+}
+
+pub trait DatabaseEntity: for<'a> FromRow<'a, PgRow> + Send + Unpin {
+    const ENTITY_NAME: &'static str;
+    const PRIMARY_COLUMN_NAME: &'static str;
+
+    async fn query_all(State(state): State<ServerState>) -> Vec<Self> {
+        sqlx::query_as(&format!(
+            "SELECT * FROM test.{} ORDER BY {}",
+            Self::ENTITY_NAME,
+            Self::PRIMARY_COLUMN_NAME
+        ))
+        .fetch_all(&state.database.connection)
+        .await
+        .unwrap()
+    }
 }
 
 impl Database {
@@ -63,16 +79,16 @@ impl Database {
         let tickets_chunks = tickets.into_iter().chunks(num_tickets_chunks);
 
         for chunk in &inventory_chunks {
-            let mut inventory_insert_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-                "INSERT INTO test.inventory (sku, display_name, count, cost, price) ",
-            );
+            // TODO: Generate this query from a const list of fields or something
+            let mut inventory_insert_builder: QueryBuilder<Postgres> =
+                QueryBuilder::new("INSERT INTO test.inventory (sku, name, count, cost, price) ");
 
             inventory_insert_builder.push_values(chunk, |mut b, item| {
-                b.push_bind(item.sku.base)
-                    .push_bind(item.display_name.base)
-                    .push_bind(item.count.base)
-                    .push_bind(item.cost.base)
-                    .push_bind(item.price.base);
+                b.push_bind(item.sku)
+                    .push_bind(item.name)
+                    .push_bind(item.count)
+                    .push_bind(item.cost)
+                    .push_bind(item.price);
             });
 
             inventory_insert_builder
@@ -87,11 +103,11 @@ impl Database {
                 QueryBuilder::new("INSERT INTO test.customers (id, name, email, phone, address) ");
 
             customers_insert_builder.push_values(chunk, |mut b, customer| {
-                b.push_bind(customer.id.base)
-                    .push_bind(customer.name.base)
-                    .push_bind(customer.email.base)
-                    .push_bind(customer.phone.base)
-                    .push_bind(customer.address.base);
+                b.push_bind(customer.id)
+                    .push_bind(customer.name)
+                    .push_bind(customer.email)
+                    .push_bind(customer.phone)
+                    .push_bind(customer.address);
             });
 
             customers_insert_builder
@@ -103,7 +119,7 @@ impl Database {
 
         for chunk in &tickets_chunks {
             let mut tickets_insert_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-                "INSERT INTO test.tickets (id, customer, device, diagnostic, invoice_amount, payment_amount, created_at, updated_at) ",
+                "INSERT INTO test.tickets (id, customer_id, device, diagnostic, invoice_amount, payment_amount, created_at, updated_at) ",
             );
 
             tickets_insert_builder.push_values(chunk, |mut b, ticket| {

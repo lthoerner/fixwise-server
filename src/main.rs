@@ -1,14 +1,12 @@
-// #![allow(unused)]
-
+mod api;
 mod database;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::time::Instant;
 
 use axum::routing::get;
 use axum::Router;
-use database::views::ViewConfigurations;
 use http::Method;
 use rand::thread_rng;
 use rand::Rng;
@@ -16,22 +14,22 @@ use tokio::net::TcpListener;
 // use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use database::customers::Customer;
-use database::inventory::InventoryItem;
-use database::tickets::Ticket;
+use api::views::customers::Customer as CustomerViewRow;
+use api::views::inventory::InventoryItem as InventoryItemViewRow;
+use api::views::tickets::Ticket as TicketViewRow;
+use api::ServeJson;
+use database::tables::{Generate, IdentifiableRow};
 use database::Database;
 
 #[derive(Clone)]
 struct ServerState {
     database: Database,
-    view_configurations: ViewConfigurations,
 }
 
 #[tokio::main]
 async fn main() {
     let server_state = ServerState {
         database: Database::connect_and_configure().await,
-        view_configurations: ViewConfigurations::load(),
     };
 
     // tokio::spawn(async {
@@ -47,12 +45,18 @@ async fn main() {
     let num_inventory_items = 1234;
     let num_customers = 1234;
     let num_tickets = 1234;
+
+    let mut dependencies = HashMap::new();
+
     println!("Generating {num_inventory_items} inventory items");
-    let inventory_items = generate_items(bar_length, num_inventory_items, InventoryItem::generate);
+    let inventory_items = generate_items(bar_length, num_inventory_items, &dependencies);
+
     println!("Generating {num_customers} customers");
-    let customers = generate_items(bar_length, num_customers, Customer::generate);
+    let customers = generate_items(bar_length, num_customers, &dependencies);
+    dependencies.insert("customers", &customers);
+
     println!("Generating {num_tickets} tickets");
-    let tickets = generate_tickets(bar_length, num_tickets, &customers, Ticket::generate);
+    let tickets = generate_items(bar_length, num_tickets, &dependencies);
 
     let start_time = Instant::now();
     server_state
@@ -71,13 +75,13 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/inventory", get(database::inventory::get_inventory))
-        .route("/customers", get(database::customers::get_customers))
-        .route("/tickets", get(database::tickets::get_tickets))
+        .route("/inventory", get(InventoryItemViewRow::serve_json))
+        .route("/customers", get(CustomerViewRow::serve_json))
+        .route("/tickets", get(TicketViewRow::serve_json))
         // TODO: Maybe reconsider the routing here
-        .route("/views/inventory", get(database::views::get_inventory_view))
-        .route("/views/customers", get(database::views::get_customers_view))
-        .route("/views/tickets", get(database::views::get_tickets_view))
+        // .route("/views/inventory", get(database::views::get_inventory_view))
+        // .route("/views/customers", get(database::views::get_customers_view))
+        // .route("/views/tickets", get(database::views::get_tickets_view))
         .layer(cors)
         .with_state(server_state);
 
@@ -88,10 +92,10 @@ async fn main() {
         .unwrap();
 }
 
-fn generate_items<T>(
+fn generate_items<'a, T: Generate>(
     bar_length: usize,
     count: usize,
-    add_function: impl Fn(&mut HashSet<i32>) -> T,
+    dependencies: &'a HashMap<&'static str, &'a [impl IdentifiableRow]>,
 ) -> Vec<T> {
     let mut existing = HashSet::new();
     let mut elements = Vec::new();
@@ -112,40 +116,7 @@ fn generate_items<T>(
             std::io::stdout().flush().unwrap();
         }
 
-        elements.push(add_function(&mut existing));
-    }
-
-    println!();
-
-    elements
-}
-
-fn generate_tickets<T>(
-    bar_length: usize,
-    count: usize,
-    customers: &[Customer],
-    add_function: impl Fn(&mut HashSet<i32>, &[Customer]) -> T,
-) -> Vec<T> {
-    let mut existing = HashSet::new();
-    let mut elements = Vec::new();
-
-    let mut percent;
-    let mut previous_print_percent = 0.0;
-    print!("[{}]", " ".repeat(bar_length));
-    print!("\x1B[2G");
-
-    for i in 1..=count {
-        percent = i as f32 * 100.0 / count as f32;
-        let normalized_percent = percent.ceil();
-        if normalized_percent - previous_print_percent == (100 / bar_length) as f32
-            && percent != 100.0
-        {
-            previous_print_percent = normalized_percent;
-            print!("=");
-            std::io::stdout().flush().unwrap();
-        }
-
-        elements.push(add_function(&mut existing, customers));
+        elements.push(T::generate(&mut existing, dependencies));
     }
 
     println!();
