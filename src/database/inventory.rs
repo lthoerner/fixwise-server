@@ -1,19 +1,24 @@
 use std::collections::HashSet;
+use std::fmt::Debug;
 
+use axum::extract::State;
 use axum::Json;
 use rand::thread_rng;
 use rand::Rng;
 use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sqlx::{query, Row};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use super::api::CellValue;
+use crate::ServerState;
+
+#[derive(Debug, Clone, Serialize)]
 pub struct InventoryItem {
-    pub sku: i32,
-    pub display_name: String,
-    pub count: i32,
-    pub cost: Decimal,
-    pub price: Decimal,
+    pub(super) sku: CellValue<i32>,
+    pub(super) display_name: CellValue<String>,
+    pub(super) count: CellValue<i32>,
+    pub(super) cost: CellValue<Decimal>,
+    pub(super) price: CellValue<Decimal>,
 }
 
 impl InventoryItem {
@@ -24,11 +29,11 @@ impl InventoryItem {
         let price = cost * Decimal::new(thread_rng().gen_range(2..=5), 0);
 
         Self {
-            sku,
-            display_name: Self::generate_display_name(),
-            count,
-            cost,
-            price,
+            sku: CellValue::new(sku, None),
+            display_name: CellValue::new(Self::generate_display_name(), None),
+            count: CellValue::new(count, None),
+            cost: CellValue::new(cost, None),
+            price: CellValue::new(price, None),
         }
     }
 
@@ -54,20 +59,27 @@ impl InventoryItem {
     }
 }
 
-pub async fn get_inventory() -> Json<Vec<InventoryItem>> {
+pub async fn get_inventory(State(state): State<ServerState>) -> Json<Vec<InventoryItem>> {
     let inventory_rows = query("SELECT * FROM test.inventory ORDER BY sku")
-        .fetch_all(crate::get_db!())
+        .fetch_all(&state.database.connection)
         .await
         .unwrap();
+
+    let view_configuration = state.view_configurations.inventory.backend;
+    let sku_formatting = view_configuration.get_column_formatting("sku");
+    let display_name_formatting = view_configuration.get_column_formatting("display_name");
+    let count_formatting = view_configuration.get_column_formatting("count");
+    let cost_formatting = view_configuration.get_column_formatting("cost");
+    let price_formatting = view_configuration.get_column_formatting("price");
 
     let mut inventory_items = Vec::new();
     for item in inventory_rows {
         inventory_items.push(InventoryItem {
-            sku: item.get("sku"),
-            display_name: item.get("display_name"),
-            count: item.get("count"),
-            cost: item.get("cost"),
-            price: item.get("price"),
+            sku: CellValue::new(item.get("sku"), sku_formatting),
+            display_name: CellValue::new(item.get("display_name"), display_name_formatting),
+            count: CellValue::new(item.get("count"), count_formatting),
+            cost: CellValue::new(item.get("cost"), cost_formatting),
+            price: CellValue::new(item.get("price"), price_formatting),
         });
     }
 

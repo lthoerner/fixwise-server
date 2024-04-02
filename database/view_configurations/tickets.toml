@@ -1,0 +1,31 @@
+[[columns]]
+view_key = "id"
+data_type = "integer"
+display = { name = "ID", trimmable = false }
+formatting = { prefix = "#", pad_length = 10 }
+
+[[columns]]
+view_key = "customer_name"
+data_type = "string"
+display = { name = "Customer", trimmable = true }
+
+[[columns]]
+view_key = "device"
+data_type = "string"
+display = { name = "Device", trimmable = true }
+
+[[columns]]
+view_key = "balance"
+data_type = "decimal"
+display = { name = "Balance", trimmable = false }
+formatting = { prefix = "$" }
+
+[[columns]]
+view_key = "created_at"
+data_type = "timestamp"
+display = { name = "Created", trimmable = false }
+
+[[columns]]
+view_key = "updated_at"
+data_type = "timestamp"
+display = { name = "Updated", trimmable = false }

@@ -1,0 +1,25 @@
+[[columns]]
+view_key = "id"
+data_type = "integer"
+display = { name = "ID", trimmable = false }
+formatting = { prefix = "#", pad_length = 10 }
+
+[[columns]]
+view_key = "name"
+data_type = "string"
+display = { name = "Name", trimmable = false }
+
+[[columns]]
+view_key = "email"
+data_type = "string"
+display = { name = "Email Address", trimmable = true }
+
+[[columns]]
+view_key = "phone"
+data_type = "string"
+display = { name = "Phone Number", trimmable = true }
+
+[[columns]]
+view_key = "address"
+data_type = "string"
+display = { name = "Street Address", trimmable = true }

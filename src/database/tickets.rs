@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use axum::extract::State;
 use axum::Json;
 use chrono::NaiveTime;
 use chrono::{Duration, NaiveDate, NaiveDateTime};
@@ -9,35 +10,38 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, Row};
 
+use super::api::CellValue;
 use super::customers::Customer;
+use crate::ServerState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ticket {
-    pub id: i32,
-    pub customer_id: i32,
-    pub device: String,
-    pub diagnostic: String,
-    pub invoice_amount: Decimal,
-    pub payment_amount: Decimal,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    pub(super) id: i32,
+    pub(super) customer_id: i32,
+    pub(super) device: String,
+    pub(super) diagnostic: String,
+    pub(super) invoice_amount: Decimal,
+    pub(super) payment_amount: Decimal,
+    pub(super) created_at: NaiveDateTime,
+    pub(super) updated_at: NaiveDateTime,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TicketView {
-    pub id: i32,
-    pub customer_name: String,
-    pub device: String,
-    pub balance: Decimal,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    id: CellValue<i32>,
+    customer_name: CellValue<String>,
+    device: CellValue<String>,
+    balance: CellValue<Decimal>,
+    created_at: CellValue<NaiveDateTime>,
+    updated_at: CellValue<NaiveDateTime>,
 }
 
 impl Ticket {
     pub fn generate(existing: &mut HashSet<i32>, existing_customers: &[Customer]) -> Self {
         let id = crate::generate_unique_random_i32(0, existing);
-        let customer_id =
-            existing_customers[thread_rng().gen_range(0..existing_customers.len())].id;
+        let customer_id = existing_customers[thread_rng().gen_range(0..existing_customers.len())]
+            .id
+            .base;
         let device = Self::generate_device_name();
         let diagnostic = Self::generate_diagnostic();
         let invoice_amount = Decimal::new(thread_rng().gen_range(10000..=99999), 2);
@@ -118,21 +122,29 @@ impl Ticket {
     }
 }
 
-pub async fn get_tickets() -> Json<Vec<TicketView>> {
+pub async fn get_tickets(State(state): State<ServerState>) -> Json<Vec<TicketView>> {
     let ticket_rows = query("SELECT * FROM test.tickets_view ORDER BY id")
-        .fetch_all(crate::get_db!())
+        .fetch_all(&state.database.connection)
         .await
         .unwrap();
+
+    let view_configuration = state.view_configurations.tickets.backend;
+    let id_formatting = view_configuration.get_column_formatting("id");
+    let customer_name_formatting = view_configuration.get_column_formatting("customer_name");
+    let device_formatting = view_configuration.get_column_formatting("device");
+    let balance_formatting = view_configuration.get_column_formatting("balance");
+    let created_at_formatting = view_configuration.get_column_formatting("created_at");
+    let updated_at_formatting = view_configuration.get_column_formatting("updated_at");
 
     let mut tickets = Vec::new();
     for ticket in ticket_rows {
         tickets.push(TicketView {
-            id: ticket.get("id"),
-            customer_name: ticket.get("customer_name"),
-            device: ticket.get("device"),
-            balance: ticket.get("balance"),
-            created_at: ticket.get("created_at"),
-            updated_at: ticket.get("updated_at"),
+            id: CellValue::new(ticket.get("id"), id_formatting),
+            customer_name: CellValue::new(ticket.get("customer_name"), customer_name_formatting),
+            device: CellValue::new(ticket.get("device"), device_formatting),
+            balance: CellValue::new(ticket.get("balance"), balance_formatting),
+            created_at: CellValue::new(ticket.get("created_at"), created_at_formatting),
+            updated_at: CellValue::new(ticket.get("updated_at"), updated_at_formatting),
         });
     }
 
