@@ -29,8 +29,8 @@ impl TicketFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
-            customer_name: ColumnFormat::String,
-            device: ColumnFormat::String,
+            customer_name: ColumnFormat::None,
+            device: ColumnFormat::None,
             balance: ColumnFormat::Currency,
             created_at: ColumnFormat::Date,
             updated_at: ColumnFormat::Date,

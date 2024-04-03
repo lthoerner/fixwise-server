@@ -25,10 +25,10 @@ impl CustomerFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
-            name: ColumnFormat::String,
-            email: ColumnFormat::String,
-            phone: ColumnFormat::String,
-            address: ColumnFormat::String,
+            name: ColumnFormat::None,
+            email: ColumnFormat::None,
+            phone: ColumnFormat::None,
+            address: ColumnFormat::None,
         }
     }
 }

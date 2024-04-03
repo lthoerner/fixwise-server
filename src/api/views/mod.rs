@@ -10,10 +10,9 @@ use serde::Serialize;
 
 enum ColumnFormat {
     Id,
-    Integer,
     Currency,
-    String,
     Date,
+    None,
 }
 
 trait ViewFormat {
@@ -23,6 +22,7 @@ trait ViewFormat {
 #[derive(Debug, Clone, Serialize)]
 struct ViewCell<T: Debug + Clone + Serialize + ViewFormat> {
     base: T,
+    #[serde(skip_serializing_if = "Option::is_none")]
     formatted: Option<String>,
 }
 
@@ -36,29 +36,30 @@ impl<T: Debug + Clone + Serialize + ViewFormat> ViewCell<T> {
 
 impl ViewFormat for u32 {
     fn format(&self, column_formatting: ColumnFormat) -> Option<String> {
-        Some(match column_formatting {
-            ColumnFormat::Id => format!("#{:0>10}", self),
-            ColumnFormat::Integer => self.to_string(),
+        match column_formatting {
+            ColumnFormat::None => None,
+            ColumnFormat::Id => Some(format!("#{:0>10}", self)),
             _ => panic!("Invalid formatting specifier for u32"),
-        })
+        }
     }
 }
 
 impl ViewFormat for Decimal {
     fn format(&self, column_formatting: ColumnFormat) -> Option<String> {
-        Some(match column_formatting {
-            ColumnFormat::Currency => format!("${self}"),
+        match column_formatting {
+            ColumnFormat::None => None,
+            ColumnFormat::Currency => Some(format!("${self}")),
             _ => panic!("Invalid formatting specifier for Decimal"),
-        })
+        }
     }
 }
 
 impl ViewFormat for String {
     fn format(&self, column_formatting: ColumnFormat) -> Option<String> {
-        Some(match column_formatting {
-            ColumnFormat::String => self.to_owned(),
+        match column_formatting {
+            ColumnFormat::None => None,
             _ => panic!("Invalid formatting specifier for String"),
-        })
+        }
     }
 }
 

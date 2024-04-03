@@ -26,8 +26,8 @@ impl InventoryItemFormatting {
     const fn new() -> Self {
         Self {
             sku: ColumnFormat::Id,
-            name: ColumnFormat::String,
-            count: ColumnFormat::Integer,
+            name: ColumnFormat::None,
+            count: ColumnFormat::None,
             price: ColumnFormat::Currency,
             cost: ColumnFormat::Currency,
         }
