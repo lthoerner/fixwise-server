@@ -1,12 +1,15 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use super::{ColumnFormat, ViewCell};
+use super::{
+    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
+};
 use crate::api::{DatabaseEntity, FromDatabaseEntity};
 use crate::database::views::inventory::{InventoryDatabaseView, InventoryDatabaseViewRow};
 
 #[derive(Serialize)]
 pub struct InventoryApiView {
+    metadata: InventoryApiViewMetadata,
     rows: Vec<InventoryApiViewRow>,
 }
 
@@ -19,7 +22,7 @@ struct InventoryApiViewRow {
     cost: ViewCell<Decimal>,
 }
 
-struct InventoryFormatting {
+struct InventoryApiViewFormatting {
     sku: ColumnFormat,
     name: ColumnFormat,
     count: ColumnFormat,
@@ -27,7 +30,16 @@ struct InventoryFormatting {
     cost: ColumnFormat,
 }
 
-impl InventoryFormatting {
+#[derive(Serialize)]
+struct InventoryApiViewMetadata {
+    sku: FrontendColumnMetadata,
+    name: FrontendColumnMetadata,
+    count: FrontendColumnMetadata,
+    price: FrontendColumnMetadata,
+    cost: FrontendColumnMetadata,
+}
+
+impl InventoryApiViewFormatting {
     const fn new() -> Self {
         Self {
             sku: ColumnFormat::Id,
@@ -39,11 +51,54 @@ impl InventoryFormatting {
     }
 }
 
+impl InventoryApiViewMetadata {
+    const fn new() -> Self {
+        Self {
+            sku: FrontendColumnMetadata {
+                data_type: FrontendDataType::Integer,
+                display: FrontendColumnDisplay {
+                    name: "SKU",
+                    trimmable: false,
+                },
+            },
+            name: FrontendColumnMetadata {
+                data_type: FrontendDataType::String,
+                display: FrontendColumnDisplay {
+                    name: "Name",
+                    trimmable: false,
+                },
+            },
+            count: FrontendColumnMetadata {
+                data_type: FrontendDataType::Integer,
+                display: FrontendColumnDisplay {
+                    name: "Count",
+                    trimmable: false,
+                },
+            },
+            cost: FrontendColumnMetadata {
+                data_type: FrontendDataType::Decimal,
+                display: FrontendColumnDisplay {
+                    name: "Cost",
+                    trimmable: false,
+                },
+            },
+            price: FrontendColumnMetadata {
+                data_type: FrontendDataType::Decimal,
+                display: FrontendColumnDisplay {
+                    name: "Price",
+                    trimmable: false,
+                },
+            },
+        }
+    }
+}
+
 impl FromDatabaseEntity for InventoryApiView {
     type Entity = InventoryDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = InventoryFormatting::new();
+        let formatting = InventoryApiViewFormatting::new();
         Self {
+            metadata: InventoryApiViewMetadata::new(),
             rows: entity
                 .rows()
                 .into_iter()

@@ -1,11 +1,14 @@
 use serde::Serialize;
 
-use super::{ColumnFormat, ViewCell};
+use super::{
+    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
+};
 use crate::api::{DatabaseEntity, FromDatabaseEntity};
 use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
 
 #[derive(Serialize)]
 pub struct CustomersApiView {
+    metadata: CustomersApiViewMetadata,
     rows: Vec<CustomersApiViewRow>,
 }
 
@@ -18,7 +21,7 @@ struct CustomersApiViewRow {
     address: ViewCell<Option<String>>,
 }
 
-struct CustomersFormatting {
+struct CustomersApiViewFormatting {
     id: ColumnFormat,
     name: ColumnFormat,
     email: ColumnFormat,
@@ -26,7 +29,16 @@ struct CustomersFormatting {
     address: ColumnFormat,
 }
 
-impl CustomersFormatting {
+#[derive(Serialize)]
+struct CustomersApiViewMetadata {
+    id: FrontendColumnMetadata,
+    name: FrontendColumnMetadata,
+    email: FrontendColumnMetadata,
+    phone: FrontendColumnMetadata,
+    address: FrontendColumnMetadata,
+}
+
+impl CustomersApiViewFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -38,11 +50,54 @@ impl CustomersFormatting {
     }
 }
 
+impl CustomersApiViewMetadata {
+    const fn new() -> Self {
+        Self {
+            id: FrontendColumnMetadata {
+                data_type: FrontendDataType::Integer,
+                display: FrontendColumnDisplay {
+                    name: "ID",
+                    trimmable: false,
+                },
+            },
+            name: FrontendColumnMetadata {
+                data_type: FrontendDataType::String,
+                display: FrontendColumnDisplay {
+                    name: "Name",
+                    trimmable: false,
+                },
+            },
+            email: FrontendColumnMetadata {
+                data_type: FrontendDataType::String,
+                display: FrontendColumnDisplay {
+                    name: "Email Address",
+                    trimmable: true,
+                },
+            },
+            phone: FrontendColumnMetadata {
+                data_type: FrontendDataType::String,
+                display: FrontendColumnDisplay {
+                    name: "Phone Number",
+                    trimmable: true,
+                },
+            },
+            address: FrontendColumnMetadata {
+                data_type: FrontendDataType::String,
+                display: FrontendColumnDisplay {
+                    name: "Mailing Address",
+                    trimmable: true,
+                },
+            },
+        }
+    }
+}
+
 impl FromDatabaseEntity for CustomersApiView {
     type Entity = CustomersDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = CustomersFormatting::new();
+        let formatting = CustomersApiViewFormatting::new();
         Self {
+            metadata: CustomersApiViewMetadata::new(),
             rows: entity
                 .rows()
                 .into_iter()

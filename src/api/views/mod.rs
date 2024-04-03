@@ -15,22 +15,46 @@ enum ColumnFormat {
     None,
 }
 
+#[derive(Serialize)]
+struct FrontendColumnMetadata {
+    data_type: FrontendDataType,
+    display: FrontendColumnDisplay,
+}
+
+#[derive(Serialize)]
+struct FrontendColumnDisplay {
+    name: &'static str,
+    trimmable: bool,
+}
+
+#[derive(Serialize)]
+enum FrontendDataType {
+    #[serde(rename = "integer")]
+    Integer,
+    #[serde(rename = "decimal")]
+    Decimal,
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "timestamp")]
+    Timestamp,
+}
+
 trait ViewFormat {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String>;
 }
 
 #[derive(Debug, Clone, Serialize)]
 struct ViewCell<T: Debug + Clone + Serialize + ViewFormat> {
-    base: T,
+    value: T,
     #[serde(skip_serializing_if = "Option::is_none")]
     formatted: Option<String>,
 }
 
 impl<T: Debug + Clone + Serialize + ViewFormat> ViewCell<T> {
-    fn new(base: T, formatting: &ColumnFormat) -> Self {
-        let formatted = base.format(formatting);
+    fn new(value: T, formatting: &ColumnFormat) -> Self {
+        let formatted = value.format(formatting);
 
-        Self { base, formatted }
+        Self { value, formatted }
     }
 }
 

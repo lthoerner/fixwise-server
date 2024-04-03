@@ -42,9 +42,9 @@ async fn main() {
     // });
 
     let bar_length = 33;
-    let num_inventory_items = 1234;
-    let num_customers = 1234;
-    let num_tickets = 1234;
+    let num_inventory_items = 12345;
+    let num_customers = 12345;
+    let num_tickets = 12345;
 
     let mut dependencies = HashMap::new();
 
@@ -78,10 +78,6 @@ async fn main() {
         .route("/inventory", get(InventoryApiView::serve_json))
         .route("/customers", get(CustomersApiView::serve_json))
         .route("/tickets", get(TicketsApiView::serve_json))
-        // TODO: Maybe reconsider the routing here
-        // .route("/views/inventory", get(database::views::get_inventory_view))
-        // .route("/views/customers", get(database::views::get_customers_view))
-        // .route("/views/tickets", get(database::views::get_tickets_view))
         .layer(cors)
         .with_state(server_state);
 
