@@ -3,10 +3,10 @@ use serde::Serialize;
 
 use super::{ColumnFormat, ViewCell};
 use crate::api::FromDatabaseRow;
-use crate::database::views::inventory::InventoryItem as DatabaseInventoryItem;
+use crate::database::views::inventory::InventoryDatabaseViewRow;
 
 #[derive(Serialize)]
-pub struct InventoryItem {
+pub struct InventoryApiViewRow {
     sku: ViewCell<u32>,
     name: ViewCell<String>,
     count: ViewCell<u32>,
@@ -14,7 +14,7 @@ pub struct InventoryItem {
     cost: ViewCell<Decimal>,
 }
 
-struct InventoryItemFormatting {
+struct InventoryFormatting {
     sku: ColumnFormat,
     name: ColumnFormat,
     count: ColumnFormat,
@@ -22,7 +22,7 @@ struct InventoryItemFormatting {
     cost: ColumnFormat,
 }
 
-impl InventoryItemFormatting {
+impl InventoryFormatting {
     const fn new() -> Self {
         Self {
             sku: ColumnFormat::Id,
@@ -34,10 +34,10 @@ impl InventoryItemFormatting {
     }
 }
 
-impl FromDatabaseRow for InventoryItem {
-    type Entity = DatabaseInventoryItem;
+impl FromDatabaseRow for InventoryApiViewRow {
+    type Entity = InventoryDatabaseViewRow;
     fn from_database_row(row: Self::Entity) -> Self {
-        let formatting = InventoryItemFormatting::new();
+        let formatting = InventoryFormatting::new();
         let Self::Entity {
             sku,
             name,

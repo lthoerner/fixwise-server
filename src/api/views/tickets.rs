@@ -4,10 +4,10 @@ use serde::Serialize;
 
 use super::{ColumnFormat, ViewCell};
 use crate::api::FromDatabaseRow;
-use crate::database::views::tickets::Ticket as DatabaseTicket;
+use crate::database::views::tickets::TicketsDatabaseViewRow;
 
 #[derive(Serialize)]
-pub struct Ticket {
+pub struct TicketsApiViewRow {
     id: ViewCell<u32>,
     customer_name: ViewCell<String>,
     device: ViewCell<String>,
@@ -16,7 +16,7 @@ pub struct Ticket {
     updated_at: ViewCell<NaiveDateTime>,
 }
 
-struct TicketFormatting {
+struct TicketsFormatting {
     id: ColumnFormat,
     customer_name: ColumnFormat,
     device: ColumnFormat,
@@ -25,7 +25,7 @@ struct TicketFormatting {
     updated_at: ColumnFormat,
 }
 
-impl TicketFormatting {
+impl TicketsFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -38,11 +38,11 @@ impl TicketFormatting {
     }
 }
 
-impl FromDatabaseRow for Ticket {
-    type Entity = DatabaseTicket;
+impl FromDatabaseRow for TicketsApiViewRow {
+    type Entity = TicketsDatabaseViewRow;
     fn from_database_row(row: Self::Entity) -> Self {
-        let formatting = TicketFormatting::new();
-        let DatabaseTicket {
+        let formatting = TicketsFormatting::new();
+        let Self::Entity {
             id,
             customer_name,
             device,

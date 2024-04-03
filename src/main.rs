@@ -14,9 +14,9 @@ use tokio::net::TcpListener;
 // use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use api::views::customers::Customer as CustomerViewRow;
-use api::views::inventory::InventoryItem as InventoryItemViewRow;
-use api::views::tickets::Ticket as TicketViewRow;
+use api::views::customers::CustomersApiViewRow;
+use api::views::inventory::InventoryApiViewRow;
+use api::views::tickets::TicketsApiViewRow;
 use api::ServeJson;
 use database::tables::{Generate, IdentifiableRow};
 use database::Database;
@@ -75,9 +75,9 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/inventory", get(InventoryItemViewRow::serve_json))
-        .route("/customers", get(CustomerViewRow::serve_json))
-        .route("/tickets", get(TicketViewRow::serve_json))
+        .route("/inventory", get(InventoryApiViewRow::serve_json))
+        .route("/customers", get(CustomersApiViewRow::serve_json))
+        .route("/tickets", get(TicketsApiViewRow::serve_json))
         // TODO: Maybe reconsider the routing here
         // .route("/views/inventory", get(database::views::get_inventory_view))
         // .route("/views/customers", get(database::views::get_customers_view))

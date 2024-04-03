@@ -9,7 +9,7 @@ use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
 
 #[derive(FromRow)]
-pub struct Ticket {
+pub struct TicketsDatabaseTableRow {
     pub id: i32,
     pub customer_id: i32,
     pub device: String,
@@ -20,18 +20,18 @@ pub struct Ticket {
     pub updated_at: NaiveDateTime,
 }
 
-impl DatabaseEntity for Ticket {
+impl DatabaseEntity for TicketsDatabaseTableRow {
     const ENTITY_NAME: &'static str = "tickets";
     const PRIMARY_COLUMN_NAME: &'static str = "id";
 }
 
-impl IdentifiableRow for Ticket {
+impl IdentifiableRow for TicketsDatabaseTableRow {
     fn id(&self) -> i32 {
         self.id
     }
 }
 
-impl Generate for Ticket {
+impl Generate for TicketsDatabaseTableRow {
     fn generate<'a>(
         existing: &mut HashSet<i32>,
         dependencies: &'a HashMap<&'static str, &'a [impl IdentifiableRow]>,
@@ -58,7 +58,7 @@ impl Generate for Ticket {
     }
 }
 
-impl Ticket {
+impl TicketsDatabaseTableRow {
     fn generate_device_name() -> String {
         const PHONE_LINES: [&str; 8] = [
             "iPhone",

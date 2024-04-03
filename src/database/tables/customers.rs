@@ -12,7 +12,7 @@ use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
 
 #[derive(FromRow)]
-pub struct Customer {
+pub struct CustomersDatabaseTableRow {
     pub id: i32,
     pub name: String,
     pub email: String,
@@ -20,18 +20,18 @@ pub struct Customer {
     pub address: Option<String>,
 }
 
-impl DatabaseEntity for Customer {
+impl DatabaseEntity for CustomersDatabaseTableRow {
     const ENTITY_NAME: &'static str = "customers";
     const PRIMARY_COLUMN_NAME: &'static str = "id";
 }
 
-impl IdentifiableRow for Customer {
+impl IdentifiableRow for CustomersDatabaseTableRow {
     fn id(&self) -> i32 {
         self.id
     }
 }
 
-impl Generate for Customer {
+impl Generate for CustomersDatabaseTableRow {
     fn generate<'a>(
         existing: &mut HashSet<i32>,
         _dependencies: &'a HashMap<&'static str, &'a [impl IdentifiableRow]>,

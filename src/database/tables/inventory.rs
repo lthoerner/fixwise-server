@@ -9,7 +9,7 @@ use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
 
 #[derive(FromRow)]
-pub struct InventoryItem {
+pub struct InventoryDatabaseTableRow {
     pub sku: i32,
     pub name: String,
     pub count: i32,
@@ -17,18 +17,18 @@ pub struct InventoryItem {
     pub price: Decimal,
 }
 
-impl DatabaseEntity for InventoryItem {
+impl DatabaseEntity for InventoryDatabaseTableRow {
     const ENTITY_NAME: &'static str = "inventory";
     const PRIMARY_COLUMN_NAME: &'static str = "sku";
 }
 
-impl IdentifiableRow for InventoryItem {
+impl IdentifiableRow for InventoryDatabaseTableRow {
     fn id(&self) -> i32 {
         self.sku
     }
 }
 
-impl Generate for InventoryItem {
+impl Generate for InventoryDatabaseTableRow {
     fn generate<'a>(
         existing: &mut HashSet<i32>,
         _dependencies: &'a HashMap<&'static str, &'a [impl IdentifiableRow]>,
@@ -46,7 +46,7 @@ impl Generate for InventoryItem {
     }
 }
 
-impl InventoryItem {
+impl InventoryDatabaseTableRow {
     fn generate_name() -> String {
         const PHONE_LINES: [&str; 8] = [
             "iPhone",

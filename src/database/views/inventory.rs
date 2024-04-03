@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use crate::database::DatabaseEntity;
 
 #[derive(FromRow)]
-pub struct InventoryItem {
+pub struct InventoryDatabaseViewRow {
     pub sku: i32,
     pub name: String,
     pub count: i32,
@@ -12,7 +12,7 @@ pub struct InventoryItem {
     pub cost: Decimal,
 }
 
-impl DatabaseEntity for InventoryItem {
+impl DatabaseEntity for InventoryDatabaseViewRow {
     const ENTITY_NAME: &'static str = "inventory_view";
     const PRIMARY_COLUMN_NAME: &'static str = "sku";
 }

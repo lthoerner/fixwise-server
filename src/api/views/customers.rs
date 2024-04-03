@@ -2,10 +2,10 @@ use serde::Serialize;
 
 use super::{ColumnFormat, ViewCell};
 use crate::api::FromDatabaseRow;
-use crate::database::views::customers::Customer as DatabaseCustomer;
+use crate::database::views::customers::CustomersDatabaseViewRow;
 
 #[derive(Serialize)]
-pub struct Customer {
+pub struct CustomersApiViewRow {
     id: ViewCell<u32>,
     name: ViewCell<String>,
     email: ViewCell<String>,
@@ -13,7 +13,7 @@ pub struct Customer {
     address: ViewCell<Option<String>>,
 }
 
-struct CustomerFormatting {
+struct CustomersFormatting {
     id: ColumnFormat,
     name: ColumnFormat,
     email: ColumnFormat,
@@ -21,7 +21,7 @@ struct CustomerFormatting {
     address: ColumnFormat,
 }
 
-impl CustomerFormatting {
+impl CustomersFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -33,11 +33,11 @@ impl CustomerFormatting {
     }
 }
 
-impl FromDatabaseRow for Customer {
-    type Entity = DatabaseCustomer;
+impl FromDatabaseRow for CustomersApiViewRow {
+    type Entity = CustomersDatabaseViewRow;
     fn from_database_row(row: Self::Entity) -> Self {
-        let formatting = CustomerFormatting::new();
-        let DatabaseCustomer {
+        let formatting = CustomersFormatting::new();
+        let Self::Entity {
             id,
             name,
             email,

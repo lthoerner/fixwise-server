@@ -7,9 +7,9 @@ use sqlx::postgres::PgRow;
 use sqlx::{raw_sql, FromRow, PgPool, Postgres, QueryBuilder};
 
 use crate::ServerState;
-use tables::customers::Customer;
-use tables::inventory::InventoryItem;
-use tables::tickets::Ticket;
+use tables::customers::CustomersDatabaseTableRow;
+use tables::inventory::InventoryDatabaseTableRow;
+use tables::tickets::TicketsDatabaseTableRow;
 
 #[derive(Clone)]
 pub struct Database {
@@ -59,9 +59,9 @@ impl Database {
 
     pub async fn add_items(
         &self,
-        inventory_items: Vec<InventoryItem>,
-        customers: Vec<Customer>,
-        tickets: Vec<Ticket>,
+        inventory_items: Vec<InventoryDatabaseTableRow>,
+        customers: Vec<CustomersDatabaseTableRow>,
+        tickets: Vec<TicketsDatabaseTableRow>,
     ) {
         const BIND_LIMIT: usize = u16::MAX as usize;
         const INVENTORY_ITEM_PARAMETERS: usize = 5;
