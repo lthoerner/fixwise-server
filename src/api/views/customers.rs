@@ -1,11 +1,16 @@
 use serde::Serialize;
 
 use super::{ColumnFormat, ViewCell};
-use crate::api::FromDatabaseRow;
-use crate::database::views::customers::CustomersDatabaseViewRow;
+use crate::api::{DatabaseEntity, FromDatabaseEntity};
+use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
 
 #[derive(Serialize)]
-pub struct CustomersApiViewRow {
+pub struct CustomersApiView {
+    rows: Vec<CustomersApiViewRow>,
+}
+
+#[derive(Serialize)]
+struct CustomersApiViewRow {
     id: ViewCell<u32>,
     name: ViewCell<String>,
     email: ViewCell<String>,
@@ -33,24 +38,32 @@ impl CustomersFormatting {
     }
 }
 
-impl FromDatabaseRow for CustomersApiViewRow {
-    type Entity = CustomersDatabaseViewRow;
-    fn from_database_row(row: Self::Entity) -> Self {
+impl FromDatabaseEntity for CustomersApiView {
+    type Entity = CustomersDatabaseView;
+    fn from_database_entity(entity: Self::Entity) -> Self {
         let formatting = CustomersFormatting::new();
-        let Self::Entity {
-            id,
-            name,
-            email,
-            phone,
-            address,
-        } = row;
-
         Self {
-            id: ViewCell::new(id as u32, formatting.id),
-            name: ViewCell::new(name, formatting.name),
-            email: ViewCell::new(email, formatting.email),
-            phone: ViewCell::new(phone, formatting.phone),
-            address: ViewCell::new(address, formatting.address),
+            rows: entity
+                .rows()
+                .into_iter()
+                .map(|row| {
+                    let CustomersDatabaseViewRow {
+                        id,
+                        name,
+                        email,
+                        phone,
+                        address,
+                    } = row;
+
+                    CustomersApiViewRow {
+                        id: ViewCell::new(id as u32, &formatting.id),
+                        name: ViewCell::new(name, &formatting.name),
+                        email: ViewCell::new(email, &formatting.email),
+                        phone: ViewCell::new(phone, &formatting.phone),
+                        address: ViewCell::new(address, &formatting.address),
+                    }
+                })
+                .collect(),
         }
     }
 }

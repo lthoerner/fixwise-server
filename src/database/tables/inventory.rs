@@ -8,6 +8,24 @@ use sqlx::FromRow;
 use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
 
+struct InventoryDatabaseTable {
+    rows: Vec<InventoryDatabaseTableRow>,
+}
+
+impl DatabaseEntity for InventoryDatabaseTable {
+    type Row = InventoryDatabaseTableRow;
+    const ENTITY_NAME: &'static str = "inventory";
+    const PRIMARY_COLUMN_NAME: &'static str = "sku";
+
+    fn with_rows(rows: Vec<Self::Row>) -> Self {
+        Self { rows }
+    }
+
+    fn rows(self) -> Vec<Self::Row> {
+        self.rows
+    }
+}
+
 #[derive(FromRow)]
 pub struct InventoryDatabaseTableRow {
     pub sku: i32,
@@ -15,11 +33,6 @@ pub struct InventoryDatabaseTableRow {
     pub count: i32,
     pub cost: Decimal,
     pub price: Decimal,
-}
-
-impl DatabaseEntity for InventoryDatabaseTableRow {
-    const ENTITY_NAME: &'static str = "inventory";
-    const PRIMARY_COLUMN_NAME: &'static str = "sku";
 }
 
 impl IdentifiableRow for InventoryDatabaseTableRow {

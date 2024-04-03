@@ -3,11 +3,17 @@ use rust_decimal::Decimal;
 use serde::Serialize;
 
 use super::{ColumnFormat, ViewCell};
-use crate::api::FromDatabaseRow;
-use crate::database::views::tickets::TicketsDatabaseViewRow;
+use crate::api::FromDatabaseEntity;
+use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
+use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
-pub struct TicketsApiViewRow {
+pub struct TicketsApiView {
+    rows: Vec<TicketsApiViewRow>,
+}
+
+#[derive(Serialize)]
+struct TicketsApiViewRow {
     id: ViewCell<u32>,
     customer_name: ViewCell<String>,
     device: ViewCell<String>,
@@ -38,26 +44,34 @@ impl TicketsFormatting {
     }
 }
 
-impl FromDatabaseRow for TicketsApiViewRow {
-    type Entity = TicketsDatabaseViewRow;
-    fn from_database_row(row: Self::Entity) -> Self {
+impl FromDatabaseEntity for TicketsApiView {
+    type Entity = TicketsDatabaseView;
+    fn from_database_entity(entity: Self::Entity) -> Self {
         let formatting = TicketsFormatting::new();
-        let Self::Entity {
-            id,
-            customer_name,
-            device,
-            balance,
-            created_at,
-            updated_at,
-        } = row;
-
         Self {
-            id: ViewCell::new(id as u32, formatting.id),
-            customer_name: ViewCell::new(customer_name, formatting.customer_name),
-            device: ViewCell::new(device, formatting.device),
-            balance: ViewCell::new(balance, formatting.balance),
-            created_at: ViewCell::new(created_at, formatting.created_at),
-            updated_at: ViewCell::new(updated_at, formatting.updated_at),
+            rows: entity
+                .rows()
+                .into_iter()
+                .map(|row| {
+                    let TicketsDatabaseViewRow {
+                        id,
+                        customer_name,
+                        device,
+                        balance,
+                        created_at,
+                        updated_at,
+                    } = row;
+
+                    TicketsApiViewRow {
+                        id: ViewCell::new(id as u32, &formatting.id),
+                        customer_name: ViewCell::new(customer_name, &formatting.customer_name),
+                        device: ViewCell::new(device, &formatting.device),
+                        balance: ViewCell::new(balance, &formatting.balance),
+                        created_at: ViewCell::new(created_at, &formatting.created_at),
+                        updated_at: ViewCell::new(updated_at, &formatting.updated_at),
+                    }
+                })
+                .collect(),
         }
     }
 }

@@ -11,6 +11,24 @@ use sqlx::FromRow;
 use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
 
+struct CustomersDatabaseTable {
+    rows: Vec<CustomersDatabaseTableRow>,
+}
+
+impl DatabaseEntity for CustomersDatabaseTable {
+    type Row = CustomersDatabaseTableRow;
+    const ENTITY_NAME: &'static str = "customers";
+    const PRIMARY_COLUMN_NAME: &'static str = "id";
+
+    fn with_rows(rows: Vec<Self::Row>) -> Self {
+        Self { rows }
+    }
+
+    fn rows(self) -> Vec<Self::Row> {
+        self.rows
+    }
+}
+
 #[derive(FromRow)]
 pub struct CustomersDatabaseTableRow {
     pub id: i32,
@@ -18,11 +36,6 @@ pub struct CustomersDatabaseTableRow {
     pub email: String,
     pub phone: String,
     pub address: Option<String>,
-}
-
-impl DatabaseEntity for CustomersDatabaseTableRow {
-    const ENTITY_NAME: &'static str = "customers";
-    const PRIMARY_COLUMN_NAME: &'static str = "id";
 }
 
 impl IdentifiableRow for CustomersDatabaseTableRow {

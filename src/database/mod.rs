@@ -16,19 +16,26 @@ pub struct Database {
     pub connection: PgPool,
 }
 
-pub trait DatabaseEntity: for<'a> FromRow<'a, PgRow> + Send + Unpin {
+pub trait DatabaseEntity: Sized {
+    type Row: for<'a> FromRow<'a, PgRow> + Send + Unpin;
+
     const ENTITY_NAME: &'static str;
     const PRIMARY_COLUMN_NAME: &'static str;
 
-    async fn query_all(State(state): State<ServerState>) -> Vec<Self> {
-        sqlx::query_as(&format!(
-            "SELECT * FROM test.{} ORDER BY {}",
-            Self::ENTITY_NAME,
-            Self::PRIMARY_COLUMN_NAME
-        ))
-        .fetch_all(&state.database.connection)
-        .await
-        .unwrap()
+    fn with_rows(rows: Vec<Self::Row>) -> Self;
+    fn rows(self) -> Vec<Self::Row>;
+
+    async fn query_all(State(state): State<ServerState>) -> Self {
+        Self::with_rows(
+            sqlx::query_as(&format!(
+                "SELECT * FROM test.{} ORDER BY {}",
+                Self::ENTITY_NAME,
+                Self::PRIMARY_COLUMN_NAME
+            ))
+            .fetch_all(&state.database.connection)
+            .await
+            .unwrap(),
+        )
     }
 }
 

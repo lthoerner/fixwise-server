@@ -2,11 +2,16 @@ use rust_decimal::Decimal;
 use serde::Serialize;
 
 use super::{ColumnFormat, ViewCell};
-use crate::api::FromDatabaseRow;
-use crate::database::views::inventory::InventoryDatabaseViewRow;
+use crate::api::{DatabaseEntity, FromDatabaseEntity};
+use crate::database::views::inventory::{InventoryDatabaseView, InventoryDatabaseViewRow};
 
 #[derive(Serialize)]
-pub struct InventoryApiViewRow {
+pub struct InventoryApiView {
+    rows: Vec<InventoryApiViewRow>,
+}
+
+#[derive(Serialize)]
+struct InventoryApiViewRow {
     sku: ViewCell<u32>,
     name: ViewCell<String>,
     count: ViewCell<u32>,
@@ -34,24 +39,32 @@ impl InventoryFormatting {
     }
 }
 
-impl FromDatabaseRow for InventoryApiViewRow {
-    type Entity = InventoryDatabaseViewRow;
-    fn from_database_row(row: Self::Entity) -> Self {
+impl FromDatabaseEntity for InventoryApiView {
+    type Entity = InventoryDatabaseView;
+    fn from_database_entity(entity: Self::Entity) -> Self {
         let formatting = InventoryFormatting::new();
-        let Self::Entity {
-            sku,
-            name,
-            count,
-            price,
-            cost,
-        } = row;
-
         Self {
-            sku: ViewCell::new(sku as u32, formatting.sku),
-            name: ViewCell::new(name, formatting.name),
-            count: ViewCell::new(count as u32, formatting.count),
-            price: ViewCell::new(price, formatting.price),
-            cost: ViewCell::new(cost, formatting.cost),
+            rows: entity
+                .rows()
+                .into_iter()
+                .map(|row| {
+                    let InventoryDatabaseViewRow {
+                        sku,
+                        name,
+                        count,
+                        price,
+                        cost,
+                    } = row;
+
+                    InventoryApiViewRow {
+                        sku: ViewCell::new(sku as u32, &formatting.sku),
+                        name: ViewCell::new(name, &formatting.name),
+                        count: ViewCell::new(count as u32, &formatting.count),
+                        price: ViewCell::new(price, &formatting.price),
+                        cost: ViewCell::new(cost, &formatting.cost),
+                    }
+                })
+                .collect(),
         }
     }
 }
