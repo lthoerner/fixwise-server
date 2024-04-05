@@ -6,6 +6,7 @@ use super::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
 use crate::api::FromDatabaseEntity;
+use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
@@ -18,6 +19,7 @@ pub struct TicketsApiView {
 #[derive(Serialize)]
 struct TicketsApiViewRow {
     id: ViewCell<u32>,
+    status: ViewCell<TicketStatus>,
     customer_name: ViewCell<String>,
     device: ViewCell<String>,
     balance: ViewCell<Decimal>,
@@ -27,6 +29,7 @@ struct TicketsApiViewRow {
 
 struct TicketsApiViewFormatting {
     id: ColumnFormat,
+    status: ColumnFormat,
     customer_name: ColumnFormat,
     device: ColumnFormat,
     balance: ColumnFormat,
@@ -37,6 +40,7 @@ struct TicketsApiViewFormatting {
 #[derive(Serialize)]
 struct TicketsApiViewMetadata {
     id: FrontendColumnMetadata,
+    status: FrontendColumnMetadata,
     customer_name: FrontendColumnMetadata,
     device: FrontendColumnMetadata,
     balance: FrontendColumnMetadata,
@@ -48,6 +52,7 @@ impl TicketsApiViewFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
+            status: ColumnFormat::Tag,
             customer_name: ColumnFormat::None,
             device: ColumnFormat::None,
             balance: ColumnFormat::Currency,
@@ -64,6 +69,13 @@ impl TicketsApiViewMetadata {
                 data_type: FrontendDataType::Integer,
                 display: FrontendColumnDisplay {
                     name: "ID",
+                    trimmable: false,
+                },
+            },
+            status: FrontendColumnMetadata {
+                data_type: FrontendDataType::Tag,
+                display: FrontendColumnDisplay {
+                    name: "Status",
                     trimmable: false,
                 },
             },
@@ -118,6 +130,7 @@ impl FromDatabaseEntity for TicketsApiView {
                 .map(|row| {
                     let TicketsDatabaseViewRow {
                         id,
+                        status,
                         customer_name,
                         device,
                         balance,
@@ -127,6 +140,7 @@ impl FromDatabaseEntity for TicketsApiView {
 
                     TicketsApiViewRow {
                         id: ViewCell::new(id as u32, &formatting.id),
+                        status: ViewCell::new(status, &formatting.status),
                         customer_name: ViewCell::new(customer_name, &formatting.customer_name),
                         device: ViewCell::new(device, &formatting.device),
                         balance: ViewCell::new(balance, &formatting.balance),

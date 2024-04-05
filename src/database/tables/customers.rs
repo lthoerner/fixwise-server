@@ -6,7 +6,6 @@ use fake::faker::name::en::Name;
 use fake::faker::phone_number::en::PhoneNumber;
 use fake::Fake;
 use rand::{thread_rng, Rng};
-use sqlx::FromRow;
 
 use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
@@ -29,7 +28,7 @@ impl DatabaseEntity for CustomersDatabaseTable {
     }
 }
 
-#[derive(FromRow)]
+#[derive(sqlx::FromRow)]
 pub struct CustomersDatabaseTableRow {
     pub id: i32,
     pub name: String,

@@ -8,10 +8,13 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
+use crate::database::shared_models::tickets::TicketStatus;
+
 enum ColumnFormat {
     Id,
     Currency,
     Date,
+    Tag,
     None,
 }
 
@@ -28,15 +31,13 @@ struct FrontendColumnDisplay {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "lowercase")]
 enum FrontendDataType {
-    #[serde(rename = "integer")]
     Integer,
-    #[serde(rename = "decimal")]
     Decimal,
-    #[serde(rename = "string")]
     String,
-    #[serde(rename = "timestamp")]
     Timestamp,
+    Tag,
 }
 
 trait ViewFormat {
@@ -92,6 +93,15 @@ impl ViewFormat for NaiveDateTime {
         Some(match column_formatting {
             ColumnFormat::Date => self.format("%m/%d/%Y %H:%M").to_string(),
             _ => panic!("Invalid formatting specifier for NaiveDateTime"),
+        })
+    }
+}
+
+impl ViewFormat for TicketStatus {
+    fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
+        Some(match column_formatting {
+            ColumnFormat::Tag => self.to_string(),
+            _ => panic!("Invalid formatting specifier for TicketStatus"),
         })
     }
 }

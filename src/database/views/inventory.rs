@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use sqlx::FromRow;
 
 use crate::database::DatabaseEntity;
 
@@ -21,7 +20,7 @@ impl DatabaseEntity for InventoryDatabaseView {
     }
 }
 
-#[derive(FromRow)]
+#[derive(sqlx::FromRow)]
 pub struct InventoryDatabaseViewRow {
     pub sku: i32,
     pub name: String,

@@ -3,9 +3,9 @@ use std::collections::{HashMap, HashSet};
 use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
 use rand::{thread_rng, Rng};
 use rust_decimal::Decimal;
-use sqlx::FromRow;
 
 use super::{Generate, IdentifiableRow};
+use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::DatabaseEntity;
 
 pub struct TicketsDatabaseTable {
@@ -26,9 +26,10 @@ impl DatabaseEntity for TicketsDatabaseTable {
     }
 }
 
-#[derive(FromRow)]
+#[derive(sqlx::FromRow)]
 pub struct TicketsDatabaseTableRow {
     pub id: i32,
+    pub status: TicketStatus,
     pub customer_id: i32,
     pub device: String,
     pub diagnostic: String,
@@ -59,6 +60,7 @@ impl Generate for TicketsDatabaseTableRow {
 
         Self {
             id: crate::generate_unique_random_i32(0, existing),
+            status: TicketStatus::Open,
             customer_id: existing_customers[thread_rng().gen_range(0..existing_customers.len())]
                 .id(),
             device: Self::generate_device_name(),

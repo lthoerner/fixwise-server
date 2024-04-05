@@ -1,5 +1,3 @@
-use sqlx::FromRow;
-
 use crate::database::DatabaseEntity;
 
 pub struct CustomersDatabaseView {
@@ -20,7 +18,7 @@ impl DatabaseEntity for CustomersDatabaseView {
     }
 }
 
-#[derive(FromRow)]
+#[derive(sqlx::FromRow)]
 pub struct CustomersDatabaseViewRow {
     pub id: i32,
     pub name: String,

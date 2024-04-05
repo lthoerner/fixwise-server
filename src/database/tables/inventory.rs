@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 use rand::thread_rng;
 use rand::Rng;
 use rust_decimal::Decimal;
-use sqlx::FromRow;
 
 use super::{Generate, IdentifiableRow};
 use crate::database::DatabaseEntity;
@@ -26,7 +25,7 @@ impl DatabaseEntity for InventoryDatabaseTable {
     }
 }
 
-#[derive(FromRow)]
+#[derive(sqlx::FromRow)]
 pub struct InventoryDatabaseTableRow {
     pub sku: i32,
     pub name: String,

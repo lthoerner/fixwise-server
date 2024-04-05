@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
-use sqlx::FromRow;
 
+use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::DatabaseEntity;
 
 pub struct TicketsDatabaseView {
@@ -22,9 +22,10 @@ impl DatabaseEntity for TicketsDatabaseView {
     }
 }
 
-#[derive(FromRow)]
+#[derive(sqlx::FromRow)]
 pub struct TicketsDatabaseViewRow {
     pub id: i32,
+    pub status: TicketStatus,
     pub customer_name: String,
     pub device: String,
     pub balance: Decimal,

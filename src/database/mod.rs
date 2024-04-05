@@ -1,10 +1,11 @@
+pub mod shared_models;
 pub mod tables;
 pub mod views;
 
 use axum::extract::State;
 use itertools::Itertools;
 use sqlx::postgres::PgRow;
-use sqlx::{raw_sql, FromRow, PgPool, Postgres, QueryBuilder};
+use sqlx::{raw_sql, PgPool, Postgres, QueryBuilder};
 
 use crate::ServerState;
 use tables::customers::CustomersDatabaseTableRow;
@@ -17,7 +18,7 @@ pub struct Database {
 }
 
 pub trait DatabaseEntity: Sized {
-    type Row: for<'a> FromRow<'a, PgRow> + Send + Unpin;
+    type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin;
 
     const ENTITY_NAME: &'static str;
     const PRIMARY_COLUMN_NAME: &'static str;
