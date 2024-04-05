@@ -18,16 +18,16 @@ struct InventoryApiViewRow {
     sku: ViewCell<u32>,
     name: ViewCell<String>,
     count: ViewCell<u32>,
-    price: ViewCell<Decimal>,
     cost: ViewCell<Decimal>,
+    price: ViewCell<Decimal>,
 }
 
 struct InventoryApiViewFormatting {
     sku: ColumnFormat,
     name: ColumnFormat,
     count: ColumnFormat,
-    price: ColumnFormat,
     cost: ColumnFormat,
+    price: ColumnFormat,
 }
 
 #[derive(Serialize)]
@@ -35,8 +35,8 @@ struct InventoryApiViewMetadata {
     sku: FrontendColumnMetadata,
     name: FrontendColumnMetadata,
     count: FrontendColumnMetadata,
-    price: FrontendColumnMetadata,
     cost: FrontendColumnMetadata,
+    price: FrontendColumnMetadata,
 }
 
 impl InventoryApiViewFormatting {
@@ -45,8 +45,8 @@ impl InventoryApiViewFormatting {
             sku: ColumnFormat::Id,
             name: ColumnFormat::None,
             count: ColumnFormat::None,
-            price: ColumnFormat::Currency,
             cost: ColumnFormat::Currency,
+            price: ColumnFormat::Currency,
         }
     }
 }
@@ -107,16 +107,16 @@ impl FromDatabaseEntity for InventoryApiView {
                         sku,
                         name,
                         count,
-                        price,
                         cost,
+                        price,
                     } = row;
 
                     InventoryApiViewRow {
                         sku: ViewCell::new(sku as u32, &formatting.sku),
                         name: ViewCell::new(name, &formatting.name),
                         count: ViewCell::new(count as u32, &formatting.count),
-                        price: ViewCell::new(price, &formatting.price),
                         cost: ViewCell::new(cost, &formatting.cost),
+                        price: ViewCell::new(price, &formatting.price),
                     }
                 })
                 .collect(),

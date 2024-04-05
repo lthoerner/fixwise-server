@@ -26,6 +26,6 @@ pub struct InventoryDatabaseViewRow {
     pub sku: i32,
     pub name: String,
     pub count: i32,
-    pub price: Decimal,
     pub cost: Decimal,
+    pub price: Decimal,
 }
