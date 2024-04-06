@@ -3,6 +3,7 @@ mod database;
 
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
+use std::sync::Arc;
 use std::time::Instant;
 
 use axum::routing::get;
@@ -11,7 +12,7 @@ use http::Method;
 use rand::thread_rng;
 use rand::Rng;
 use tokio::net::TcpListener;
-// use tokio::signal;
+use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
 use api::views::customers::CustomersApiView;
@@ -28,18 +29,23 @@ struct ServerState {
 
 #[tokio::main]
 async fn main() {
-    let server_state = ServerState {
+    let server_state = Arc::new(ServerState {
         database: Database::connect_and_configure().await,
-    };
+    });
 
-    // tokio::spawn(async {
-    //     signal::ctrl_c().await.unwrap();
-    //     println!();
-    //     println!("Server shutting down...");
-    //     get_db!().close().await;
-    //     println!("Database connection closed.");
-    //     std::process::exit(0);
-    // });
+    let signal_handler_server_state = server_state.clone();
+    tokio::spawn(async move {
+        signal::ctrl_c().await.unwrap();
+        println!();
+        println!("Server shutting down...");
+        signal_handler_server_state
+            .database
+            .connection
+            .close()
+            .await;
+        println!("Database connection closed.");
+        std::process::exit(0);
+    });
 
     let bar_length = 33;
     let num_inventory_items = 12345;

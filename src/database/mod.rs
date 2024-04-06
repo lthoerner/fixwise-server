@@ -2,6 +2,8 @@ pub mod shared_models;
 pub mod tables;
 pub mod views;
 
+use std::sync::Arc;
+
 use axum::extract::State;
 use itertools::Itertools;
 use sqlx::postgres::PgRow;
@@ -26,7 +28,7 @@ pub trait DatabaseEntity: Sized {
     fn with_rows(rows: Vec<Self::Row>) -> Self;
     fn rows(self) -> Vec<Self::Row>;
 
-    async fn query_all(State(state): State<ServerState>) -> Self {
+    async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
         Self::with_rows(
             sqlx::query_as(&format!(
                 "SELECT * FROM test.{} ORDER BY {}",
