@@ -48,9 +48,9 @@ async fn main() {
     });
 
     let bar_length = 33;
-    let num_inventory_items = 12345;
-    let num_customers = 12345;
-    let num_tickets = 12345;
+    let num_inventory_items = 1234;
+    let num_customers = 1234;
+    let num_tickets = 1234;
 
     let mut dependencies = HashMap::new();
 

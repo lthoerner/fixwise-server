@@ -3,7 +3,8 @@ use rust_decimal::Decimal;
 use serde::Serialize;
 
 use super::{
-    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
+    ColumnFormat, CssColor, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType,
+    TagOption, ViewCell,
 };
 use crate::api::FromDatabaseEntity;
 use crate::database::shared_models::tickets::TicketStatus;
@@ -67,49 +68,58 @@ impl TicketsApiViewMetadata {
         Self {
             id: FrontendColumnMetadata {
                 data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "ID",
                     trimmable: false,
                 },
             },
             status: FrontendColumnMetadata {
                 data_type: FrontendDataType::Tag,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Tag {
                     name: "Status",
-                    trimmable: false,
+                    options: &[
+                        TagOption {
+                            name: "open",
+                            color: CssColor::Preset("limegreen"),
+                        },
+                        TagOption {
+                            name: "closed",
+                            color: CssColor::Preset("red"),
+                        },
+                    ],
                 },
             },
             customer_name: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Customer",
                     trimmable: true,
                 },
             },
             device: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Device",
                     trimmable: true,
                 },
             },
             balance: FrontendColumnMetadata {
                 data_type: FrontendDataType::Decimal,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Balance",
                     trimmable: false,
                 },
             },
             created_at: FrontendColumnMetadata {
                 data_type: FrontendDataType::Timestamp,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Created",
                     trimmable: false,
                 },
             },
             updated_at: FrontendColumnMetadata {
                 data_type: FrontendDataType::Timestamp,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Updated",
                     trimmable: false,
                 },

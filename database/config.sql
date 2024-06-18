@@ -1,8 +1,10 @@
 DROP SCHEMA IF EXISTS test CASCADE;
 
+DROP TYPE IF EXISTS ticket_status;
+
 CREATE SCHEMA test;
 
-CREATE TYPE test.ticket_status AS ENUM ('open', 'closed');
+CREATE TYPE ticket_status AS ENUM ('open', 'closed');
 
 CREATE TABLE test.inventory (
     sku serial PRIMARY KEY,
@@ -22,7 +24,7 @@ CREATE TABLE test.customers (
 
 CREATE TABLE test.tickets (
     id serial PRIMARY KEY,
-    status test.ticket_status NOT NULL DEFAULT 'open',
+    status ticket_status NOT NULL,
     customer_id integer references test.customers (id) NOT NULL,
     device text NOT NULL,
     diagnostic text NOT NULL,

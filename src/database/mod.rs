@@ -129,11 +129,12 @@ impl Database {
 
         for chunk in &tickets_chunks {
             let mut tickets_insert_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-                "INSERT INTO test.tickets (id, customer_id, device, diagnostic, invoice_amount, payment_amount, created_at, updated_at) ",
+                "INSERT INTO test.tickets (id, status, customer_id, device, diagnostic, invoice_amount, payment_amount, created_at, updated_at) ",
             );
 
             tickets_insert_builder.push_values(chunk, |mut b, ticket| {
                 b.push_bind(ticket.id)
+                    .push_bind(ticket.status)
                     .push_bind(ticket.customer_id)
                     .push_bind(ticket.device)
                     .push_bind(ticket.diagnostic)

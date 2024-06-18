@@ -53,6 +53,10 @@ impl Generate for TicketsDatabaseTableRow {
         // TODO: Static names here may change
         let existing_customers = dependencies.get("customers").unwrap();
 
+        let status = match thread_rng().gen_bool(0.5) {
+            true => TicketStatus::Open,
+            false => TicketStatus::Closed,
+        };
         let invoice_amount = Decimal::new(thread_rng().gen_range(10000..=99999), 2);
         let payment_amount = invoice_amount / Decimal::new(thread_rng().gen_range(1..=10), 0);
         let created_at = Self::generate_date(None);
@@ -60,7 +64,7 @@ impl Generate for TicketsDatabaseTableRow {
 
         Self {
             id: crate::generate_unique_random_i32(0, existing),
-            status: TicketStatus::Open,
+            status,
             customer_id: existing_customers[thread_rng().gen_range(0..existing_customers.len())]
                 .id(),
             device: Self::generate_device_name(),

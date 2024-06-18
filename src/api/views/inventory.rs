@@ -56,35 +56,35 @@ impl InventoryApiViewMetadata {
         Self {
             sku: FrontendColumnMetadata {
                 data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "SKU",
                     trimmable: false,
                 },
             },
             name: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Name",
                     trimmable: false,
                 },
             },
             count: FrontendColumnMetadata {
                 data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Count",
                     trimmable: false,
                 },
             },
             cost: FrontendColumnMetadata {
                 data_type: FrontendDataType::Decimal,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Cost",
                     trimmable: false,
                 },
             },
             price: FrontendColumnMetadata {
                 data_type: FrontendDataType::Decimal,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Price",
                     trimmable: false,
                 },

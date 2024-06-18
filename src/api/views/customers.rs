@@ -55,35 +55,35 @@ impl CustomersApiViewMetadata {
         Self {
             id: FrontendColumnMetadata {
                 data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "ID",
                     trimmable: false,
                 },
             },
             name: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Name",
                     trimmable: false,
                 },
             },
             email: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Email Address",
                     trimmable: true,
                 },
             },
             phone: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Phone Number",
                     trimmable: true,
                 },
             },
             address: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay {
+                display: FrontendColumnDisplay::Text {
                     name: "Mailing Address",
                     trimmable: true,
                 },

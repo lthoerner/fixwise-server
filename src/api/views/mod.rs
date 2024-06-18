@@ -10,6 +10,24 @@ use serde::Serialize;
 
 use crate::database::shared_models::tickets::TicketStatus;
 
+#[derive(Serialize)]
+struct TagOption {
+    name: &'static str,
+    color: CssColor,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum CssColor {
+    Preset(&'static str),
+    #[allow(dead_code)]
+    Rgb {
+        r: u8,
+        g: u8,
+        b: u8,
+    },
+}
+
 enum ColumnFormat {
     Id,
     Currency,
@@ -25,9 +43,16 @@ struct FrontendColumnMetadata {
 }
 
 #[derive(Serialize)]
-struct FrontendColumnDisplay {
-    name: &'static str,
-    trimmable: bool,
+#[serde(rename_all = "lowercase")]
+enum FrontendColumnDisplay {
+    Text {
+        name: &'static str,
+        trimmable: bool,
+    },
+    Tag {
+        name: &'static str,
+        options: &'static [TagOption],
+    },
 }
 
 #[derive(Serialize)]
@@ -97,11 +122,15 @@ impl ViewFormat for NaiveDateTime {
     }
 }
 
+// ? Should there be a trait or some way to write this in a less-specific way?
 impl ViewFormat for TicketStatus {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
         Some(match column_formatting {
-            ColumnFormat::Tag => self.to_string(),
-            _ => panic!("Invalid formatting specifier for TicketStatus"),
+            ColumnFormat::Tag => match self {
+                TicketStatus::Open => "Open".to_string(),
+                TicketStatus::Closed => "Closed".to_string(),
+            },
+            _ => panic!("Invalid formatting specifier for ApiTag"),
         })
     }
 }
