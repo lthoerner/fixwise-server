@@ -79,12 +79,28 @@ impl TicketsApiViewMetadata {
                     name: "Status",
                     options: &[
                         TagOption {
-                            name: "open",
+                            name: "new",
+                            color: CssColor::Preset("blue"),
+                        },
+                        TagOption {
+                            name: "waiting_for_parts",
+                            color: CssColor::Preset("red"),
+                        },
+                        TagOption {
+                            name: "waiting_for_customer",
+                            color: CssColor::Preset("yellow"),
+                        },
+                        TagOption {
+                            name: "in_repair",
+                            color: CssColor::Preset("orange"),
+                        },
+                        TagOption {
+                            name: "ready_for_pickup",
                             color: CssColor::Preset("limegreen"),
                         },
                         TagOption {
                             name: "closed",
-                            color: CssColor::Preset("red"),
+                            color: CssColor::Preset("gray"),
                         },
                     ],
                 },

@@ -4,7 +4,14 @@ DROP TYPE IF EXISTS ticket_status;
 
 CREATE SCHEMA test;
 
-CREATE TYPE ticket_status AS ENUM ('open', 'closed');
+CREATE TYPE ticket_status AS ENUM (
+    'new',
+    'waiting_for_parts',
+    'waiting_for_customer',
+    'in_repair',
+    'ready_for_pickup',
+    'closed'
+);
 
 CREATE TABLE test.inventory (
     sku serial PRIMARY KEY,

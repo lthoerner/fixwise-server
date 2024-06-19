@@ -127,7 +127,11 @@ impl ViewFormat for TicketStatus {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
         Some(match column_formatting {
             ColumnFormat::Tag => match self {
-                TicketStatus::Open => "Open".to_string(),
+                TicketStatus::New => "New".to_string(),
+                TicketStatus::WaitingForParts => "Waiting for Parts".to_string(),
+                TicketStatus::WaitingForCustomer => "Waiting for Customer".to_string(),
+                TicketStatus::InRepair => "In Repair".to_string(),
+                TicketStatus::ReadyForPickup => "Ready for Pickup".to_string(),
                 TicketStatus::Closed => "Closed".to_string(),
             },
             _ => panic!("Invalid formatting specifier for ApiTag"),

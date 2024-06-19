@@ -53,9 +53,14 @@ impl Generate for TicketsDatabaseTableRow {
         // TODO: Static names here may change
         let existing_customers = dependencies.get("customers").unwrap();
 
-        let status = match thread_rng().gen_bool(0.5) {
-            true => TicketStatus::Open,
-            false => TicketStatus::Closed,
+        let status = match thread_rng().gen_range(0..=5) {
+            0 => TicketStatus::New,
+            1 => TicketStatus::WaitingForParts,
+            2 => TicketStatus::WaitingForCustomer,
+            3 => TicketStatus::InRepair,
+            4 => TicketStatus::ReadyForPickup,
+            5 => TicketStatus::Closed,
+            _ => unreachable!(),
         };
         let invoice_amount = Decimal::new(thread_rng().gen_range(10000..=99999), 2);
         let payment_amount = invoice_amount / Decimal::new(thread_rng().gen_range(1..=10), 0);
