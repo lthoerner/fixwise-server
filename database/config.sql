@@ -1,10 +1,8 @@
-DROP SCHEMA IF EXISTS test CASCADE;
+DROP SCHEMA IF EXISTS main CASCADE;
 
-DROP TYPE IF EXISTS ticket_status;
+CREATE SCHEMA main;
 
-CREATE SCHEMA test;
-
-CREATE TYPE ticket_status AS ENUM (
+CREATE TYPE main.ticket_status AS ENUM (
     'new',
     'waiting_for_parts',
     'waiting_for_customer',
@@ -13,70 +11,97 @@ CREATE TYPE ticket_status AS ENUM (
     'closed'
 );
 
-CREATE TABLE test.inventory (
-    sku serial PRIMARY KEY,
-    name text NOT NULL,
-    count integer NOT NULL,
-    cost numeric(1000, 2) NOT NULL,
-    price numeric(1000, 2) NOT NULL
+CREATE TABLE main.vendors (
+    id serial PRIMARY KEY,
+    display_name text NOT NULL,
+    email_address text,
+    phone_number text,
+    street_address text
 );
 
-CREATE TABLE test.customers (
+CREATE TABLE main.device_manufacturers (
     id serial PRIMARY KEY,
-    name text NOT NULL,
-    email text NOT NULL,
-    phone text NOT NULL,
-    address text
+    display_name text NOT NULL
 );
 
-CREATE TABLE test.tickets (
+CREATE TABLE main.part_manufacturers (
     id serial PRIMARY KEY,
-    status ticket_status NOT NULL,
-    customer_id integer references test.customers (id) NOT NULL,
-    device text NOT NULL,
-    diagnostic text NOT NULL,
+    display_name text NOT NULL
+);
+
+CREATE TABLE main.device_categories (
+    id serial PRIMARY KEY,
+    display_name text NOT NULL
+);
+
+CREATE TABLE main.part_categories (
+    id serial PRIMARY KEY,
+    display_name text NOT NULL
+);
+
+CREATE TABLE main.device_models (
+    id serial PRIMARY KEY,
+    display_name text NOT NULL,
+    primary_model_identifiers text [] NOT NULL DEFAULT '{}',
+    secondary_model_identifiers text [] NOT NULL DEFAULT '{}',
+    manufacturer integer references main.device_manufacturers (id) NOT NULL,
+    category integer references main.device_categories (id) NOT NULL
+);
+
+CREATE TABLE main.parts (
+    id serial PRIMARY KEY,
+    display_name text NOT NULL,
+    vendor integer references main.vendors (id),
+    manufacturer integer references main.part_manufacturers (id),
+    category integer references main.part_categories (id),
+    cost numeric(1000, 2),
+    price numeric(1000, 2)
+);
+
+CREATE TABLE main.customers (
+    id serial PRIMARY KEY,
+    name text NOT NULL,
+    email_address text,
+    phone_number text,
+    street_address text
+);
+
+CREATE TABLE main.devices (
+    id serial PRIMARY KEY,
+    model integer references main.device_models (id),
+    owner integer references main.customers (id)
+);
+
+CREATE TABLE main.tickets (
+    id serial PRIMARY KEY,
+    status main.ticket_status NOT NULL,
+    customer integer references main.customers (id),
+    invoice_total numeric(1000, 2) NOT NULL,
+    payment_total numeric(1000, 2) NOT NULL,
+    description text,
     notes text [] NOT NULL DEFAULT '{}',
-    invoice_amount numeric(1000, 2) NOT NULL DEFAULT 0,
-    payment_amount numeric(1000, 2) NOT NULL DEFAULT 0,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE VIEW test.inventory_view AS
-SELECT
-    sku,
-    name,
-    count,
-    cost,
-    price
-FROM
-    test.inventory
-ORDER BY
-    sku ASC;
+CREATE TABLE main.compatible_parts (
+    device integer references main.device_models (id),
+    part integer references main.parts (id),
+    PRIMARY KEY (device, part)
+);
 
-CREATE VIEW test.customers_view AS
-SELECT
-    id,
-    name,
-    email,
-    phone,
-    address
-FROM
-    test.customers
-ORDER BY
-    id ASC;
+CREATE TABLE main.ticket_devices (
+    ticket integer references main.tickets (id),
+    device integer references main.devices (id),
+    diagnostic text,
+    labor_fee numeric(1000, 2),
+    PRIMARY KEY (ticket, device)
+);
 
-CREATE VIEW test.tickets_view AS
-SELECT
-    ticket.id,
-    ticket.status,
-    customer.name AS customer_name,
-    ticket.device,
-    ticket.invoice_amount - ticket.payment_amount AS balance,
-    ticket.created_at,
-    ticket.updated_at
-FROM
-    test.tickets ticket
-    JOIN test.customers customer ON ticket.customer_id = customer.id
-ORDER BY
-    id ASC;
+CREATE TABLE main.bundled_parts (
+    ticket integer references main.tickets (id),
+    device integer references main.devices (id),
+    part integer references main.parts (id),
+    PRIMARY KEY (ticket, device, part),
+    FOREIGN KEY (ticket, device) references main.ticket_devices (ticket, device)
+);

@@ -29,9 +29,12 @@ struct ServerState {
 
 #[tokio::main]
 async fn main() {
+    println!("Connecting to database...");
     let server_state = Arc::new(ServerState {
         database: Database::connect_and_configure().await,
     });
+
+    std::process::exit(0);
 
     let signal_handler_server_state = server_state.clone();
     tokio::spawn(async move {
