@@ -31,7 +31,7 @@ pub trait DatabaseEntity: Sized {
     async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
         Self::with_rows(
             sqlx::query_as(&format!(
-                "SELECT * FROM test.{} ORDER BY {}",
+                "SELECT * FROM main.{} ORDER BY {}",
                 Self::ENTITY_NAME,
                 Self::PRIMARY_COLUMN_NAME
             ))
@@ -91,7 +91,7 @@ impl Database {
         for chunk in &inventory_chunks {
             // TODO: Generate this query from a const list of fields or something
             let mut inventory_insert_builder: QueryBuilder<Postgres> =
-                QueryBuilder::new("INSERT INTO test.inventory (sku, name, count, cost, price) ");
+                QueryBuilder::new("INSERT INTO main.inventory (sku, name, count, cost, price) ");
 
             inventory_insert_builder.push_values(chunk, |mut b, item| {
                 b.push_bind(item.sku)
@@ -110,7 +110,7 @@ impl Database {
 
         for chunk in &customers_chunks {
             let mut customers_insert_builder: QueryBuilder<Postgres> =
-                QueryBuilder::new("INSERT INTO test.customers (id, name, email, phone, address) ");
+                QueryBuilder::new("INSERT INTO main.customers (id, name, email, phone, address) ");
 
             customers_insert_builder.push_values(chunk, |mut b, customer| {
                 b.push_bind(customer.id)
@@ -129,7 +129,7 @@ impl Database {
 
         for chunk in &tickets_chunks {
             let mut tickets_insert_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-                "INSERT INTO test.tickets (id, status, customer_id, device, diagnostic, invoice_amount, payment_amount, created_at, updated_at) ",
+                "INSERT INTO main.tickets (id, status, customer_id, device, diagnostic, invoice_amount, payment_amount, created_at, updated_at) ",
             );
 
             tickets_insert_builder.push_values(chunk, |mut b, ticket| {
