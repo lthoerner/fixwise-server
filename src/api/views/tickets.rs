@@ -80,27 +80,45 @@ impl TicketsApiViewMetadata {
                     options: &[
                         TagOption {
                             name: "new",
-                            color: CssColor::Preset("blue"),
+                            color: CssColor::Preset {
+                                name: "royalblue",
+                                opacity: 0.45,
+                            },
                         },
                         TagOption {
                             name: "waiting_for_parts",
-                            color: CssColor::Preset("red"),
+                            color: CssColor::Preset {
+                                name: "red",
+                                opacity: 0.37,
+                            },
                         },
                         TagOption {
                             name: "waiting_for_customer",
-                            color: CssColor::Preset("yellow"),
+                            color: CssColor::Preset {
+                                name: "yellow",
+                                opacity: 0.43,
+                            },
                         },
                         TagOption {
                             name: "in_repair",
-                            color: CssColor::Preset("orange"),
+                            color: CssColor::Preset {
+                                name: "orange",
+                                opacity: 0.54,
+                            },
                         },
                         TagOption {
                             name: "ready_for_pickup",
-                            color: CssColor::Preset("limegreen"),
+                            color: CssColor::Preset {
+                                name: "limegreen",
+                                opacity: 0.37,
+                            },
                         },
                         TagOption {
                             name: "closed",
-                            color: CssColor::Preset("gray"),
+                            color: CssColor::Preset {
+                                name: "gray",
+                                opacity: 0.45,
+                            },
                         },
                     ],
                 },

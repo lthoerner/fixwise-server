@@ -17,14 +17,18 @@ struct TagOption {
 }
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(untagged)]
 enum CssColor {
-    Preset(&'static str),
+    Preset {
+        name: &'static str,
+        opacity: f32,
+    },
     #[allow(dead_code)]
-    Rgb {
+    Rgba {
         r: u8,
         g: u8,
         b: u8,
+        a: f32,
     },
 }
 
