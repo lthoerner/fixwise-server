@@ -6,12 +6,12 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use itertools::Itertools;
+use rand::{thread_rng, Rng};
 use sqlx::postgres::PgRow;
 use sqlx::{raw_sql, PgPool, Postgres, QueryBuilder};
 
 use crate::ServerState;
 use tables::customers::CustomersDatabaseTableRow;
-use tables::inventory::InventoryDatabaseTableRow;
 use tables::tickets::TicketsDatabaseTableRow;
 
 #[derive(Clone)]
@@ -20,13 +20,13 @@ pub struct Database {
 }
 
 pub trait DatabaseEntity: Sized {
-    type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin;
-
+    type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone;
     const ENTITY_NAME: &'static str;
     const PRIMARY_COLUMN_NAME: &'static str;
 
     fn with_rows(rows: Vec<Self::Row>) -> Self;
     fn rows(self) -> Vec<Self::Row>;
+    fn borrow_rows(&self) -> &[Self::Row];
 
     async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
         Self::with_rows(
@@ -39,6 +39,11 @@ pub trait DatabaseEntity: Sized {
             .await
             .unwrap(),
         )
+    }
+
+    fn pick_random(&self) -> Self::Row {
+        let rows = self.borrow_rows();
+        rows[thread_rng().gen_range(0..rows.len())].clone()
     }
 }
 
