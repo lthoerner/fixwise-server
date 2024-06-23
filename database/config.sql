@@ -51,9 +51,9 @@ CREATE TABLE main.device_models (
 CREATE TABLE main.parts (
     id serial PRIMARY KEY,
     display_name text NOT NULL,
-    vendor integer references main.vendors (id),
+    vendor integer references main.vendors (id) NOT NULL,
     manufacturer integer references main.part_manufacturers (id),
-    category integer references main.part_categories (id),
+    category integer references main.part_categories (id) NOT NULL,
     cost numeric(1000, 2),
     price numeric(1000, 2)
 );
@@ -68,7 +68,7 @@ CREATE TABLE main.customers (
 
 CREATE TABLE main.devices (
     id serial PRIMARY KEY,
-    model integer references main.device_models (id),
+    model integer references main.device_models (id) NOT NULL,
     owner integer references main.customers (id)
 );
 
