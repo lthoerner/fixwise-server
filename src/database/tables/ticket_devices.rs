@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
 use rust_decimal::Decimal;
+use sqlx::query_builder::Separated;
+use sqlx::Postgres;
 
 use super::devices::DevicesDatabaseTable;
 use super::generators::*;
@@ -14,19 +16,28 @@ pub struct TicketDevicesDatabaseJunctionTable {
 
 impl DatabaseEntity for TicketDevicesDatabaseJunctionTable {
     type Row = TicketDevicesDatabaseJunctionTableRow;
-    const ENTITY_NAME: &'static str = "ticket_devices";
-    const PRIMARY_COLUMN_NAME: &'static str = "(ticket, device)";
+    const ENTITY_NAME: &str = "ticket_devices";
+    const COLUMN_NAMES: &[&str] = &["ticket", "device", "diagnostic", "labor_fee"];
+    const PRIMARY_COLUMN_NAME: &str = "(ticket, device)";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
         Self { rows }
     }
 
-    fn rows(self) -> Vec<Self::Row> {
+    fn take_rows(self) -> Vec<Self::Row> {
         self.rows
     }
 
-    fn borrow_rows(&self) -> &[Self::Row] {
+    fn rows(&self) -> &[Self::Row] {
         &self.rows
+    }
+
+    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
+        builder
+            .push_bind(row.ticket)
+            .push_bind(row.device)
+            .push_bind(row.diagnostic)
+            .push_bind(row.labor_fee);
     }
 }
 

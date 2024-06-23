@@ -1,3 +1,6 @@
+use sqlx::query_builder::Separated;
+use sqlx::Postgres;
+
 use super::IdentifiableRow;
 use crate::database::DatabaseEntity;
 
@@ -7,19 +10,35 @@ pub struct VendorsDatabaseTable {
 
 impl DatabaseEntity for VendorsDatabaseTable {
     type Row = VendorsDatabaseTableRow;
-    const ENTITY_NAME: &'static str = "vendors";
-    const PRIMARY_COLUMN_NAME: &'static str = "id";
+    const ENTITY_NAME: &str = "vendors";
+    const COLUMN_NAMES: &[&str] = &[
+        "id",
+        "display_name",
+        "email_address",
+        "phone_number",
+        "street_address",
+    ];
+    const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
         Self { rows }
     }
 
-    fn rows(self) -> Vec<Self::Row> {
+    fn take_rows(self) -> Vec<Self::Row> {
         self.rows
     }
 
-    fn borrow_rows(&self) -> &[Self::Row] {
+    fn rows(&self) -> &[Self::Row] {
         &self.rows
+    }
+
+    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
+        builder
+            .push_bind(row.id)
+            .push_bind(row.display_name)
+            .push_bind(row.email_address)
+            .push_bind(row.phone_number)
+            .push_bind(row.street_address);
     }
 }
 

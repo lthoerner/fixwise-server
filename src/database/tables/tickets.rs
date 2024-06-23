@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
+use sqlx::query_builder::Separated;
+use sqlx::Postgres;
 
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
@@ -16,19 +18,43 @@ pub struct TicketsDatabaseTable {
 
 impl DatabaseEntity for TicketsDatabaseTable {
     type Row = TicketsDatabaseTableRow;
-    const ENTITY_NAME: &'static str = "tickets";
-    const PRIMARY_COLUMN_NAME: &'static str = "id";
+    const ENTITY_NAME: &str = "tickets";
+    const COLUMN_NAMES: &[&str] = &[
+        "id",
+        "status",
+        "customer",
+        "invoice_total",
+        "payment_total",
+        "description",
+        "notes",
+        "created_at",
+        "updated_at",
+    ];
+    const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
         Self { rows }
     }
 
-    fn rows(self) -> Vec<Self::Row> {
+    fn take_rows(self) -> Vec<Self::Row> {
         self.rows
     }
 
-    fn borrow_rows(&self) -> &[Self::Row] {
+    fn rows(&self) -> &[Self::Row] {
         &self.rows
+    }
+
+    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
+        builder
+            .push_bind(row.id)
+            .push_bind(row.status)
+            .push_bind(row.customer)
+            .push_bind(row.invoice_total)
+            .push_bind(row.payment_total)
+            .push_bind(row.description)
+            .push_bind(row.notes)
+            .push_bind(row.created_at)
+            .push_bind(row.updated_at);
     }
 }
 

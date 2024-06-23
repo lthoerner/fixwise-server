@@ -1,5 +1,8 @@
 use std::collections::HashSet;
 
+use sqlx::query_builder::Separated;
+use sqlx::Postgres;
+
 use super::devices::DevicesDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
@@ -11,19 +14,24 @@ pub struct CompatiblePartsDatabaseJunctionTable {
 
 impl DatabaseEntity for CompatiblePartsDatabaseJunctionTable {
     type Row = CompatiblePartsDatabaseJunctionTableRow;
-    const ENTITY_NAME: &'static str = "compatible_parts";
-    const PRIMARY_COLUMN_NAME: &'static str = "(device, part)";
+    const ENTITY_NAME: &str = "compatible_parts";
+    const COLUMN_NAMES: &[&str] = &["device", "part"];
+    const PRIMARY_COLUMN_NAME: &str = "(device, part)";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
         Self { rows }
     }
 
-    fn rows(self) -> Vec<Self::Row> {
+    fn take_rows(self) -> Vec<Self::Row> {
         self.rows
     }
 
-    fn borrow_rows(&self) -> &[Self::Row] {
+    fn rows(&self) -> &[Self::Row] {
         &self.rows
+    }
+
+    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
+        builder.push_bind(row.device).push_bind(row.part);
     }
 }
 
