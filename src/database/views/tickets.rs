@@ -10,24 +10,28 @@ pub struct TicketsDatabaseView {
 
 impl DatabaseEntity for TicketsDatabaseView {
     type Row = TicketsDatabaseViewRow;
-    const ENTITY_NAME: &'static str = "tickets_view";
-    const PRIMARY_COLUMN_NAME: &'static str = "id";
+    const ENTITY_NAME: &str = "tickets_view";
+    const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
         Self { rows }
     }
 
-    fn rows(self) -> Vec<Self::Row> {
+    fn take_rows(self) -> Vec<Self::Row> {
         self.rows
+    }
+
+    fn rows(&self) -> &[Self::Row] {
+        &self.rows
     }
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Clone)]
 pub struct TicketsDatabaseViewRow {
     pub id: i32,
     pub status: TicketStatus,
-    pub customer_name: String,
-    pub device: String,
+    pub customer: Option<String>,
+    // pub device: String,
     pub balance: Decimal,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
