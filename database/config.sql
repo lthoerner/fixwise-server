@@ -131,8 +131,8 @@ CREATE VIEW main.device_models_view AS
 SELECT
     model.id,
     model.display_name,
-    manufacturer.display_name AS manufacturer_name,
-    category.display_name AS category_name
+    manufacturer.display_name AS manufacturer,
+    category.display_name AS category
 FROM
     main.device_models model
     JOIN main.device_manufacturers manufacturer ON model.manufacturer = manufacturer.id
@@ -143,8 +143,8 @@ ORDER BY
 CREATE VIEW main.devices_view AS
 SELECT
     device.id,
-    model.display_name,
-    customer.name
+    model.display_name AS model,
+    customer.name AS owner,
 FROM
     main.devices device
     JOIN main.device_models model ON device.model = model.id
@@ -156,9 +156,9 @@ CREATE VIEW main.parts_view AS
 SELECT
     part.id,
     part.display_name,
-    vendor.display_name AS vendor_name,
-    manufacturer.display_name AS manufacturer_name,
-    category.display_name AS category_name,
+    vendor.display_name AS vendor,
+    manufacturer.display_name AS manufacturer,
+    category.display_name AS category,
     part.cost,
     part.price
 FROM
@@ -173,7 +173,7 @@ CREATE VIEW main.tickets_view AS
 SELECT
     ticket.id,
     ticket.status,
-    customer.name,
+    customer.name AS customer,
     ticket.invoice_total - ticket.payment_total AS balance,
     ticket.created_at,
     ticket.updated_at
