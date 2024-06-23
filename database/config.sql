@@ -105,3 +105,80 @@ CREATE TABLE main.bundled_parts (
     PRIMARY KEY (ticket, device, part),
     FOREIGN KEY (ticket, device) references main.ticket_devices (ticket, device)
 );
+
+CREATE VIEW main.vendors_view AS
+SELECT
+    id,
+    display_name
+FROM
+    main.vendors
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.customers_view AS
+SELECT
+    id,
+    name,
+    email_address,
+    phone_number,
+    street_address
+FROM
+    main.customers
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.device_models_view AS
+SELECT
+    model.id,
+    model.display_name,
+    manufacturer.display_name AS manufacturer_name,
+    category.display_name AS category_name
+FROM
+    main.device_models model
+    JOIN main.device_manufacturers manufacturer ON model.manufacturer = manufacturer.id
+    JOIN main.device_categories category ON model.category = category.id
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.devices_view AS
+SELECT
+    device.id,
+    model.display_name,
+    customer.name
+FROM
+    main.devices device
+    JOIN main.device_models model ON device.model = model.id
+    JOIN main.customers customer ON device.owner = customer.id
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.parts_view AS
+SELECT
+    part.id,
+    part.display_name,
+    vendor.display_name AS vendor_name,
+    manufacturer.display_name AS manufacturer_name,
+    category.display_name AS category_name,
+    part.cost,
+    part.price
+FROM
+    main.parts part
+    JOIN main.vendors vendor ON part.vendor = vendor.id
+    JOIN main.part_manufacturers manufacturer ON part.manufacturer = manufacturer.id
+    JOIN main.part_categories category ON part.category = category.id
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.tickets_view AS
+SELECT
+    ticket.id,
+    ticket.status,
+    customer.name,
+    ticket.invoice_total - ticket.payment_total AS balance,
+    ticket.created_at,
+    ticket.updated_at
+FROM
+    main.tickets ticket
+    JOIN main.customers customer ON ticket.customer = customer.id
+ORDER BY
+    id ASC;
