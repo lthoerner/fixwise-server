@@ -6,7 +6,7 @@ use sqlx::Postgres;
 use super::devices::DevicesDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
@@ -15,7 +15,6 @@ pub struct CompatiblePartsDatabaseJunctionTable {
 impl DatabaseEntity for CompatiblePartsDatabaseJunctionTable {
     type Row = CompatiblePartsDatabaseJunctionTableRow;
     const ENTITY_NAME: &str = "compatible_parts";
-    const COLUMN_NAMES: &[&str] = &["device", "part"];
     const PRIMARY_COLUMN_NAME: &str = "(device, part)";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -29,6 +28,10 @@ impl DatabaseEntity for CompatiblePartsDatabaseJunctionTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for CompatiblePartsDatabaseJunctionTable {
+    const COLUMN_NAMES: &[&str] = &["device", "part"];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder.push_bind(row.device).push_bind(row.part);

@@ -7,7 +7,7 @@ use super::devices::DevicesDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct BundledPartsDatabaseJunctionTable {
     rows: Vec<BundledPartsDatabaseJunctionTableRow>,
@@ -16,7 +16,6 @@ pub struct BundledPartsDatabaseJunctionTable {
 impl DatabaseEntity for BundledPartsDatabaseJunctionTable {
     type Row = BundledPartsDatabaseJunctionTableRow;
     const ENTITY_NAME: &str = "bundled_parts";
-    const COLUMN_NAMES: &[&str] = &["ticket", "device", "part"];
     const PRIMARY_COLUMN_NAME: &str = "(ticket, device, part)";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -30,6 +29,10 @@ impl DatabaseEntity for BundledPartsDatabaseJunctionTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for BundledPartsDatabaseJunctionTable {
+    const COLUMN_NAMES: &[&str] = &["ticket", "device", "part"];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder

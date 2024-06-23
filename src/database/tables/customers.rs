@@ -5,7 +5,7 @@ use sqlx::Postgres;
 
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct CustomersDatabaseTable {
     rows: Vec<CustomersDatabaseTableRow>,
@@ -14,13 +14,6 @@ pub struct CustomersDatabaseTable {
 impl DatabaseEntity for CustomersDatabaseTable {
     type Row = CustomersDatabaseTableRow;
     const ENTITY_NAME: &str = "customers";
-    const COLUMN_NAMES: &[&str] = &[
-        "id",
-        "name",
-        "email_address",
-        "phone_number",
-        "street_address",
-    ];
     const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -34,6 +27,16 @@ impl DatabaseEntity for CustomersDatabaseTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for CustomersDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &[
+        "id",
+        "name",
+        "email_address",
+        "phone_number",
+        "street_address",
+    ];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder

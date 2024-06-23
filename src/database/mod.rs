@@ -37,13 +37,34 @@ pub struct Database {
 pub trait DatabaseEntity: Sized {
     type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone;
     const ENTITY_NAME: &str;
-    const COLUMN_NAMES: &[&str];
     const PRIMARY_COLUMN_NAME: &str;
-    const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::COLUMN_NAMES.len();
 
     fn with_rows(rows: Vec<Self::Row>) -> Self;
     fn take_rows(self) -> Vec<Self::Row>;
     fn rows(&self) -> &[Self::Row];
+
+    async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
+        Self::with_rows(
+            sqlx::query_as(&format!(
+                "SELECT * FROM main.{} ORDER BY {}",
+                Self::ENTITY_NAME,
+                Self::PRIMARY_COLUMN_NAME
+            ))
+            .fetch_all(&state.database.connection)
+            .await
+            .unwrap(),
+        )
+    }
+
+    fn pick_random(&self) -> Self::Row {
+        let rows = self.rows();
+        rows[thread_rng().gen_range(0..rows.len())].clone()
+    }
+}
+
+pub trait BulkInsert: DatabaseEntity {
+    const COLUMN_NAMES: &[&str];
+    const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::COLUMN_NAMES.len();
 
     fn get_querybuilder<'a>() -> QueryBuilder<'a, Postgres> {
         QueryBuilder::new(&format!(
@@ -66,24 +87,6 @@ pub trait DatabaseEntity: Sized {
             querybuilder.push_values(chunk, Self::push_bindings);
             database.execute_querybuilder(querybuilder).await;
         }
-    }
-
-    async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
-        Self::with_rows(
-            sqlx::query_as(&format!(
-                "SELECT * FROM main.{} ORDER BY {}",
-                Self::ENTITY_NAME,
-                Self::PRIMARY_COLUMN_NAME
-            ))
-            .fetch_all(&state.database.connection)
-            .await
-            .unwrap(),
-        )
-    }
-
-    fn pick_random(&self) -> Self::Row {
-        let rows = self.rows();
-        rows[thread_rng().gen_range(0..rows.len())].clone()
     }
 }
 

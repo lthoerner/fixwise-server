@@ -10,7 +10,7 @@ use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
 use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct PartsDatabaseTable {
     rows: Vec<PartsDatabaseTableRow>,
@@ -19,15 +19,6 @@ pub struct PartsDatabaseTable {
 impl DatabaseEntity for PartsDatabaseTable {
     type Row = PartsDatabaseTableRow;
     const ENTITY_NAME: &str = "parts";
-    const COLUMN_NAMES: &[&str] = &[
-        "id",
-        "display_name",
-        "vendor",
-        "manufacturer",
-        "category",
-        "cost",
-        "price",
-    ];
     const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -41,6 +32,18 @@ impl DatabaseEntity for PartsDatabaseTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for PartsDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &[
+        "id",
+        "display_name",
+        "vendor",
+        "manufacturer",
+        "category",
+        "cost",
+        "price",
+    ];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder

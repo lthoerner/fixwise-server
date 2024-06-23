@@ -2,7 +2,7 @@ use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct DeviceModelsDatabaseTable {
     rows: Vec<DeviceModelsDatabaseTableRow>,
@@ -11,14 +11,6 @@ pub struct DeviceModelsDatabaseTable {
 impl DatabaseEntity for DeviceModelsDatabaseTable {
     type Row = DeviceModelsDatabaseTableRow;
     const ENTITY_NAME: &str = "device_models";
-    const COLUMN_NAMES: &[&str] = &[
-        "id",
-        "display_name",
-        "primary_model_identifiers",
-        "secondary_model_identifiers",
-        "manufacturer",
-        "category",
-    ];
     const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -32,6 +24,17 @@ impl DatabaseEntity for DeviceModelsDatabaseTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for DeviceModelsDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &[
+        "id",
+        "display_name",
+        "primary_model_identifiers",
+        "secondary_model_identifiers",
+        "manufacturer",
+        "category",
+    ];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder

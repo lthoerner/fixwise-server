@@ -2,7 +2,7 @@ use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct PartCategoriesDatabaseTable {
     rows: Vec<PartCategoriesDatabaseTableRow>,
@@ -11,7 +11,6 @@ pub struct PartCategoriesDatabaseTable {
 impl DatabaseEntity for PartCategoriesDatabaseTable {
     type Row = PartCategoriesDatabaseTableRow;
     const ENTITY_NAME: &str = "part_categories";
-    const COLUMN_NAMES: &[&str] = &["id", "display_name"];
     const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -25,6 +24,10 @@ impl DatabaseEntity for PartCategoriesDatabaseTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for PartCategoriesDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &["id", "display_name"];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder.push_bind(row.id).push_bind(row.display_name);

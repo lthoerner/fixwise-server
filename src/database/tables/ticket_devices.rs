@@ -8,7 +8,7 @@ use super::devices::DevicesDatabaseTable;
 use super::generators::*;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
@@ -17,7 +17,6 @@ pub struct TicketDevicesDatabaseJunctionTable {
 impl DatabaseEntity for TicketDevicesDatabaseJunctionTable {
     type Row = TicketDevicesDatabaseJunctionTableRow;
     const ENTITY_NAME: &str = "ticket_devices";
-    const COLUMN_NAMES: &[&str] = &["ticket", "device", "diagnostic", "labor_fee"];
     const PRIMARY_COLUMN_NAME: &str = "(ticket, device)";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -31,6 +30,10 @@ impl DatabaseEntity for TicketDevicesDatabaseJunctionTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for TicketDevicesDatabaseJunctionTable {
+    const COLUMN_NAMES: &[&str] = &["ticket", "device", "diagnostic", "labor_fee"];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder

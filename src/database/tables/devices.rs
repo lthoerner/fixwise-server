@@ -7,7 +7,7 @@ use super::customers::CustomersDatabaseTable;
 use super::device_models::DeviceModelsDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct DevicesDatabaseTable {
     rows: Vec<DevicesDatabaseTableRow>,
@@ -16,7 +16,6 @@ pub struct DevicesDatabaseTable {
 impl DatabaseEntity for DevicesDatabaseTable {
     type Row = DevicesDatabaseTableRow;
     const ENTITY_NAME: &str = "devices";
-    const COLUMN_NAMES: &[&str] = &["id", "model", "owner"];
     const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -30,6 +29,10 @@ impl DatabaseEntity for DevicesDatabaseTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for DevicesDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &["id", "model", "owner"];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder

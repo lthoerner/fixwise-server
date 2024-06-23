@@ -10,7 +10,7 @@ use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::shared_models::tickets::TicketStatus;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
@@ -19,17 +19,6 @@ pub struct TicketsDatabaseTable {
 impl DatabaseEntity for TicketsDatabaseTable {
     type Row = TicketsDatabaseTableRow;
     const ENTITY_NAME: &str = "tickets";
-    const COLUMN_NAMES: &[&str] = &[
-        "id",
-        "status",
-        "customer",
-        "invoice_total",
-        "payment_total",
-        "description",
-        "notes",
-        "created_at",
-        "updated_at",
-    ];
     const PRIMARY_COLUMN_NAME: &str = "id";
 
     fn with_rows(rows: Vec<Self::Row>) -> Self {
@@ -43,6 +32,20 @@ impl DatabaseEntity for TicketsDatabaseTable {
     fn rows(&self) -> &[Self::Row] {
         &self.rows
     }
+}
+
+impl BulkInsert for TicketsDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &[
+        "id",
+        "status",
+        "customer",
+        "invoice_total",
+        "payment_total",
+        "description",
+        "notes",
+        "created_at",
+        "updated_at",
+    ];
 
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder
