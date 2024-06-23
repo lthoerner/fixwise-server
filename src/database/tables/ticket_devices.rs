@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use rust_decimal::Decimal;
 
 use super::devices::DevicesDatabaseTable;
+use super::generators::*;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::DatabaseEntity;
@@ -78,11 +79,8 @@ impl TicketDevicesDatabaseJunctionTableRow {
         Self {
             ticket: ticket_id,
             device: device_id,
-            diagnostic: super::generate_option(super::generate_diagnostic(), 0.6),
-            labor_fee: super::generate_option(
-                super::generate_dollar_value(Some(0.00), Some(200.00)),
-                0.7,
-            ),
+            diagnostic: generate_option(generate_diagnostic(), 0.6),
+            labor_fee: generate_option(generate_dollar_value(Some(0.00), Some(200.00)), 0.7),
         }
     }
 }

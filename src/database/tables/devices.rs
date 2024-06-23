@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use super::customers::CustomersDatabaseTable;
 use super::device_models::DeviceModelsDatabaseTable;
+use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::DatabaseEntity;
 
@@ -67,9 +68,9 @@ impl DevicesDatabaseTableRow {
         existing_customers: &CustomersDatabaseTable,
     ) -> Self {
         Self {
-            id: super::generate_unique_i32(0, existing_ids),
+            id: generate_unique_i32(0, existing_ids),
             model: existing_device_models.pick_random().id(),
-            owner: super::generate_option(existing_customers.pick_random().id(), 0.9),
+            owner: generate_option(existing_customers.pick_random().id(), 0.9),
         }
     }
 }

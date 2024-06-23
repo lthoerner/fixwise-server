@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::DatabaseEntity;
 
@@ -55,11 +56,11 @@ impl CustomersDatabaseTable {
 impl CustomersDatabaseTableRow {
     fn generate(existing_ids: &mut HashSet<i32>) -> Self {
         Self {
-            id: super::generate_unique_i32(0, existing_ids),
-            name: super::generate_name(),
-            email_address: Some(super::generate_email_address()),
-            phone_number: Some(super::generate_phone_number()),
-            street_address: Some(super::generate_address()),
+            id: generate_unique_i32(0, existing_ids),
+            name: generate_name(),
+            email_address: Some(generate_email_address()),
+            phone_number: Some(generate_phone_number()),
+            street_address: Some(generate_address()),
         }
     }
 }

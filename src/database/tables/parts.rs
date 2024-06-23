@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
+use super::generators::*;
 use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
 use super::vendors::VendorsDatabaseTable;
@@ -77,10 +78,9 @@ impl PartsDatabaseTableRow {
         existing_part_manufacturers: &PartManufacturersDatabaseTable,
         existing_part_categories: &PartCategoriesDatabaseTable,
     ) -> Self {
-        let cost =
-            super::generate_option(super::generate_dollar_value(Some(1.00), Some(500.00)), 0.8);
+        let cost = generate_option(generate_dollar_value(Some(1.00), Some(500.00)), 0.8);
         let price = match cost {
-            Some(cost) => Some(super::generate_dollar_value(
+            Some(cost) => Some(generate_dollar_value(
                 Some(cost.to_f32().unwrap()),
                 Some(1000.00),
             )),
@@ -88,14 +88,11 @@ impl PartsDatabaseTableRow {
         };
 
         Self {
-            id: super::generate_unique_i32(0, existing_ids),
+            id: generate_unique_i32(0, existing_ids),
             // TODO: Generate via vendor/manufacturer/category data along with compatibilities
             display_name: "PLACEHOLDER".to_owned(),
             vendor: existing_vendors.pick_random().id(),
-            manufacturer: super::generate_option(
-                existing_part_manufacturers.pick_random().id(),
-                0.2,
-            ),
+            manufacturer: generate_option(existing_part_manufacturers.pick_random().id(), 0.2),
             category: existing_part_categories.pick_random().id(),
             cost,
             price,

@@ -5,6 +5,7 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 use super::customers::CustomersDatabaseTable;
+use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::DatabaseEntity;
@@ -70,19 +71,18 @@ impl TicketsDatabaseTableRow {
         existing_ids: &mut HashSet<i32>,
         existing_customers: &CustomersDatabaseTable,
     ) -> Self {
-        let invoice_total = super::generate_dollar_value(Some(100.00), Some(1000.00));
-        let payment_total =
-            super::generate_dollar_value(None, Some(invoice_total.to_f32().unwrap()));
-        let created_at = super::generate_date(None);
-        let updated_at = super::generate_date(Some(created_at));
+        let invoice_total = generate_dollar_value(Some(100.00), Some(1000.00));
+        let payment_total = generate_dollar_value(None, Some(invoice_total.to_f32().unwrap()));
+        let created_at = generate_date(None);
+        let updated_at = generate_date(Some(created_at));
 
         Self {
-            id: super::generate_unique_i32(0, existing_ids),
-            status: super::generate_ticket_status(),
+            id: generate_unique_i32(0, existing_ids),
+            status: generate_ticket_status(),
             customer: existing_customers.pick_random().id(),
             invoice_total,
             payment_total,
-            description: super::generate_diagnostic(),
+            description: generate_diagnostic(),
             notes: Vec::new(),
             created_at,
             updated_at,
