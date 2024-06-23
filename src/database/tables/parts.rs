@@ -10,6 +10,7 @@ use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
 use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
+use crate::database::loading_bar::LoadingBar;
 use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct PartsDatabaseTable {
@@ -75,7 +76,7 @@ impl IdentifiableRow for PartsDatabaseTableRow {
 }
 
 impl PartsDatabaseTable {
-    fn generate(
+    pub fn generate(
         count: usize,
         existing_vendors: &VendorsDatabaseTable,
         existing_part_manufacturers: &PartManufacturersDatabaseTable,
@@ -83,7 +84,9 @@ impl PartsDatabaseTable {
     ) -> Self {
         let mut rows = Vec::new();
         let mut existing_ids = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
+            loading_bar.update();
             rows.push(PartsDatabaseTableRow::generate(
                 &mut existing_ids,
                 existing_vendors,

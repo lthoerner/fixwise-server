@@ -6,6 +6,7 @@ use sqlx::Postgres;
 use super::devices::DevicesDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
+use crate::database::loading_bar::LoadingBar;
 use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct CompatiblePartsDatabaseJunctionTable {
@@ -45,14 +46,16 @@ pub struct CompatiblePartsDatabaseJunctionTableRow {
 }
 
 impl CompatiblePartsDatabaseJunctionTable {
-    fn generate(
+    pub fn generate(
         count: usize,
         existing_devices: &DevicesDatabaseTable,
         existing_parts: &PartsDatabaseTable,
     ) -> Self {
         let mut rows = Vec::new();
         let mut existing_pairs = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
+            loading_bar.update();
             rows.push(CompatiblePartsDatabaseJunctionTableRow::generate(
                 &mut existing_pairs,
                 existing_devices,

@@ -1,3 +1,4 @@
+mod loading_bar;
 pub mod shared_models;
 pub mod tables;
 pub mod views;
@@ -27,6 +28,7 @@ use tables::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use tables::tickets::TicketsDatabaseTable;
 use tables::vendors::VendorsDatabaseTable;
 
+const TABLE_GENERATION_LOADING_BAR_LENGTH: usize = 33;
 const SQL_PARAMETER_BIND_LIMIT: usize = u16::MAX as usize;
 
 #[derive(Clone)]

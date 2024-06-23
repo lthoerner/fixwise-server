@@ -7,6 +7,7 @@ use super::customers::CustomersDatabaseTable;
 use super::device_models::DeviceModelsDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
+use crate::database::loading_bar::LoadingBar;
 use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct DevicesDatabaseTable {
@@ -56,14 +57,16 @@ impl IdentifiableRow for DevicesDatabaseTableRow {
 }
 
 impl DevicesDatabaseTable {
-    fn generate(
+    pub fn generate(
         count: usize,
         existing_device_models: &DeviceModelsDatabaseTable,
         existing_customers: &CustomersDatabaseTable,
     ) -> Self {
         let mut rows = Vec::new();
         let mut existing_ids = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
+            loading_bar.update();
             rows.push(DevicesDatabaseTableRow::generate(
                 &mut existing_ids,
                 existing_device_models,

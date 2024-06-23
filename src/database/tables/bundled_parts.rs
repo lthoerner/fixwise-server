@@ -7,6 +7,7 @@ use super::devices::DevicesDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
+use crate::database::loading_bar::LoadingBar;
 use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct BundledPartsDatabaseJunctionTable {
@@ -50,7 +51,7 @@ pub struct BundledPartsDatabaseJunctionTableRow {
 }
 
 impl BundledPartsDatabaseJunctionTable {
-    fn generate(
+    pub fn generate(
         count: usize,
         existing_tickets: &TicketsDatabaseTable,
         existing_devices: &DevicesDatabaseTable,
@@ -58,7 +59,9 @@ impl BundledPartsDatabaseJunctionTable {
     ) -> Self {
         let mut rows = Vec::new();
         let mut existing_pairs = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
+            loading_bar.update();
             rows.push(BundledPartsDatabaseJunctionTableRow::generate(
                 &mut existing_pairs,
                 existing_tickets,

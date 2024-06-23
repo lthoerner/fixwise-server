@@ -9,6 +9,7 @@ use sqlx::Postgres;
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
+use crate::database::loading_bar::LoadingBar;
 use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::{BulkInsert, DatabaseEntity};
 
@@ -81,10 +82,12 @@ impl IdentifiableRow for TicketsDatabaseTableRow {
 }
 
 impl TicketsDatabaseTable {
-    fn generate(count: usize, existing_customers: &CustomersDatabaseTable) -> Self {
+    pub fn generate(count: usize, existing_customers: &CustomersDatabaseTable) -> Self {
         let mut rows = Vec::new();
         let mut existing_ids = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
+            loading_bar.update();
             rows.push(TicketsDatabaseTableRow::generate(
                 &mut existing_ids,
                 existing_customers,
