@@ -4,6 +4,7 @@ pub mod tables;
 pub mod views;
 
 use std::sync::Arc;
+use std::time::Instant;
 use std::vec::IntoIter;
 
 use axum::extract::State;
@@ -30,6 +31,18 @@ use tables::vendors::VendorsDatabaseTable;
 
 const TABLE_GENERATION_LOADING_BAR_LENGTH: usize = 33;
 const SQL_PARAMETER_BIND_LIMIT: usize = u16::MAX as usize;
+
+const VENDORS_COUNT: usize = 123;
+const DEVICE_MANUFACTURERS_COUNT: usize = 123;
+const PART_MANUFACTURERS_COUNT: usize = 123;
+const DEVICE_MODELS_COUNT: usize = 123;
+const DEVICES_COUNT: usize = 1234;
+const PARTS_COUNT: usize = 1234;
+const CUSTOMERS_COUNT: usize = 1234;
+const TICKETS_COUNT: usize = 1234;
+const COMPATIBLE_PARTS_COUNT: usize = 1234;
+const TICKET_DEVICES_COUNT: usize = 1234;
+const BUNDLED_PARTS_COUNT: usize = 1234;
 
 #[derive(Clone)]
 pub struct Database {
@@ -117,22 +130,55 @@ impl Database {
             .unwrap();
     }
 
-    pub async fn add_items(
-        &self,
-        bundled_parts: BundledPartsDatabaseJunctionTable,
-        compatible_parts: CompatiblePartsDatabaseJunctionTable,
-        customers: CustomersDatabaseTable,
-        device_categories: DeviceCategoriesDatabaseTable,
-        device_manufacturers: DeviceManufacturersDatabaseTable,
-        device_models: DeviceModelsDatabaseTable,
-        devices: DevicesDatabaseTable,
-        part_categories: PartCategoriesDatabaseTable,
-        part_manufacturers: PartManufacturersDatabaseTable,
-        parts: PartsDatabaseTable,
-        ticket_devices: TicketDevicesDatabaseJunctionTable,
-        tickets: TicketsDatabaseTable,
-        vendors: VendorsDatabaseTable,
-    ) {
+    pub async fn add_generated_items(&self) {
+        let device_categories = DeviceCategoriesDatabaseTable::generate();
+        let part_categories = PartCategoriesDatabaseTable::generate();
+        println!("Generating {CUSTOMERS_COUNT} customers");
+        let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT);
+        println!("Generating {VENDORS_COUNT} vendors");
+        let vendors = VendorsDatabaseTable::generate(VENDORS_COUNT);
+        println!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
+        let device_manufacturers =
+            DeviceManufacturersDatabaseTable::generate(DEVICE_MANUFACTURERS_COUNT);
+        println!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
+        let part_manufacturers = PartManufacturersDatabaseTable::generate(PART_MANUFACTURERS_COUNT);
+        println!("Generating {DEVICE_MODELS_COUNT} device models");
+        let device_models = DeviceModelsDatabaseTable::generate(
+            DEVICE_MODELS_COUNT,
+            &device_manufacturers,
+            &device_categories,
+        );
+        println!("Generating {DEVICES_COUNT} devices");
+        let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, &device_models, &customers);
+        println!("Generating {PARTS_COUNT} parts");
+        let parts = PartsDatabaseTable::generate(
+            PARTS_COUNT,
+            &vendors,
+            &part_manufacturers,
+            &part_categories,
+        );
+        println!("Generating {TICKETS_COUNT} tickets");
+        let tickets = TicketsDatabaseTable::generate(TICKETS_COUNT, &customers);
+        println!("Generating {COMPATIBLE_PARTS_COUNT} compatible parts");
+        let compatible_parts = CompatiblePartsDatabaseJunctionTable::generate(
+            COMPATIBLE_PARTS_COUNT,
+            &device_models,
+            &parts,
+        );
+        println!("Generating {TICKET_DEVICES_COUNT} ticket devices");
+        let ticket_devices =
+            TicketDevicesDatabaseJunctionTable::generate(TICKET_DEVICES_COUNT, &devices, &tickets);
+        println!("Generating {BUNDLED_PARTS_COUNT} bundled parts");
+        let bundled_parts = BundledPartsDatabaseJunctionTable::generate(
+            BUNDLED_PARTS_COUNT,
+            &ticket_devices,
+            &parts,
+        );
+
+        println!("Inserting items to database...");
+
+        let start_time = Instant::now();
+
         vendors.insert_all(self).await;
         device_manufacturers.insert_all(self).await;
         part_manufacturers.insert_all(self).await;
@@ -146,6 +192,22 @@ impl Database {
         compatible_parts.insert_all(self).await;
         ticket_devices.insert_all(self).await;
         bundled_parts.insert_all(self).await;
+
+        println!(
+            "Inserted {} items in {}ms",
+            (VENDORS_COUNT
+                + DEVICE_MANUFACTURERS_COUNT
+                + PART_MANUFACTURERS_COUNT
+                + DEVICE_MODELS_COUNT
+                + DEVICES_COUNT
+                + PARTS_COUNT
+                + CUSTOMERS_COUNT
+                + TICKETS_COUNT
+                + COMPATIBLE_PARTS_COUNT
+                + TICKET_DEVICES_COUNT
+                + BUNDLED_PARTS_COUNT),
+            start_time.elapsed().as_millis()
+        );
     }
 
     async fn execute_querybuilder<'a>(&self, mut querybuilder: QueryBuilder<'a, Postgres>) {
