@@ -6,8 +6,7 @@ use sqlx::Postgres;
 use super::parts::PartsDatabaseTable;
 use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct BundledPartsDatabaseJunctionTable {
     rows: Vec<BundledPartsDatabaseJunctionTableRow>,
@@ -33,7 +32,6 @@ impl DatabaseEntity for BundledPartsDatabaseJunctionTable {
 
 impl BulkInsert for BundledPartsDatabaseJunctionTable {
     const COLUMN_NAMES: &[&str] = &["ticket", "device", "part"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder
             .push_bind(row.ticket)
@@ -49,33 +47,16 @@ pub struct BundledPartsDatabaseJunctionTableRow {
     pub part: i32,
 }
 
-impl BundledPartsDatabaseJunctionTable {
-    pub fn generate(
-        count: usize,
-        existing_ticket_devices: &TicketDevicesDatabaseJunctionTable,
-        existing_parts: &PartsDatabaseTable,
-    ) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_pairs = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(BundledPartsDatabaseJunctionTableRow::generate(
-                &mut existing_pairs,
-                existing_ticket_devices,
-                existing_parts,
-            ))
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl BundledPartsDatabaseJunctionTableRow {
+impl GenerateTableData for BundledPartsDatabaseJunctionTable {}
+impl GenerateRowData for BundledPartsDatabaseJunctionTableRow {
+    type Identifier = (i32, i32, i32);
+    type Dependencies<'a> = (
+        &'a TicketDevicesDatabaseJunctionTable,
+        &'a PartsDatabaseTable,
+    );
     fn generate(
-        existing_pairs: &mut HashSet<(i32, i32, i32)>,
-        existing_ticket_devices: &TicketDevicesDatabaseJunctionTable,
-        existing_parts: &PartsDatabaseTable,
+        existing_pairs: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         let mut ticket_id = 0;
         let mut device_id = 0;
@@ -86,9 +67,9 @@ impl BundledPartsDatabaseJunctionTableRow {
                 .get(&(ticket_id, device_id, part_id))
                 .is_some()
         {
-            let ticket_device = existing_ticket_devices.pick_random();
+            let ticket_device = dependencies.0.pick_random();
             (ticket_id, device_id) = (ticket_device.ticket, ticket_device.device);
-            part_id = existing_parts.pick_random().id();
+            part_id = dependencies.1.pick_random().id();
             first_roll = false;
         }
 

@@ -16,7 +16,7 @@ pub trait IdentifiableRow {
     fn id(&self) -> i32;
 }
 
-mod generators {
+pub mod generators {
     use std::collections::HashSet;
 
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};

@@ -9,9 +9,8 @@ use sqlx::Postgres;
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
 use crate::database::shared_models::tickets::TicketStatus;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
@@ -81,27 +80,13 @@ impl IdentifiableRow for TicketsDatabaseTableRow {
     }
 }
 
-impl TicketsDatabaseTable {
-    pub fn generate(count: usize, existing_customers: &CustomersDatabaseTable) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_ids = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(TicketsDatabaseTableRow::generate(
-                &mut existing_ids,
-                existing_customers,
-            ))
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl TicketsDatabaseTableRow {
+impl GenerateTableData for TicketsDatabaseTable {}
+impl GenerateRowData for TicketsDatabaseTableRow {
+    type Identifier = i32;
+    type Dependencies<'a> = &'a CustomersDatabaseTable;
     fn generate(
-        existing_ids: &mut HashSet<i32>,
-        existing_customers: &CustomersDatabaseTable,
+        existing_ids: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         let invoice_total = generate_dollar_value(Some(100.00), Some(1000.00));
         let payment_total = generate_dollar_value(None, Some(invoice_total.to_f32().unwrap()));
@@ -111,7 +96,7 @@ impl TicketsDatabaseTableRow {
         Self {
             id: generate_unique_i32(0, existing_ids),
             status: generate_ticket_status(),
-            customer: existing_customers.pick_random().id(),
+            customer: dependencies.pick_random().id(),
             invoice_total,
             payment_total,
             description: generate_diagnostic(),

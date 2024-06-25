@@ -7,8 +7,7 @@ use super::customers::CustomersDatabaseTable;
 use super::device_models::DeviceModelsDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct DevicesDatabaseTable {
     rows: Vec<DevicesDatabaseTableRow>,
@@ -34,7 +33,6 @@ impl DatabaseEntity for DevicesDatabaseTable {
 
 impl BulkInsert for DevicesDatabaseTable {
     const COLUMN_NAMES: &[&str] = &["id", "model", "owner"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder
             .push_bind(row.id)
@@ -56,38 +54,18 @@ impl IdentifiableRow for DevicesDatabaseTableRow {
     }
 }
 
-impl DevicesDatabaseTable {
-    pub fn generate(
-        count: usize,
-        existing_device_models: &DeviceModelsDatabaseTable,
-        existing_customers: &CustomersDatabaseTable,
-    ) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_ids = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(DevicesDatabaseTableRow::generate(
-                &mut existing_ids,
-                existing_device_models,
-                existing_customers,
-            ));
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl DevicesDatabaseTableRow {
+impl GenerateTableData for DevicesDatabaseTable {}
+impl GenerateRowData for DevicesDatabaseTableRow {
+    type Identifier = i32;
+    type Dependencies<'a> = (&'a DeviceModelsDatabaseTable, &'a CustomersDatabaseTable);
     fn generate(
-        existing_ids: &mut HashSet<i32>,
-        existing_device_models: &DeviceModelsDatabaseTable,
-        existing_customers: &CustomersDatabaseTable,
+        existing_ids: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
             id: generate_unique_i32(0, existing_ids),
-            model: existing_device_models.pick_random().id(),
-            owner: generate_option(existing_customers.pick_random().id(), 0.9),
+            model: dependencies.0.pick_random().id(),
+            owner: generate_option(dependencies.1.pick_random().id(), 0.9),
         }
     }
 }

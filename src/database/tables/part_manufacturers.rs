@@ -5,8 +5,7 @@ use sqlx::Postgres;
 
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct PartManufacturersDatabaseTable {
     rows: Vec<PartManufacturersDatabaseTableRow>,
@@ -32,7 +31,6 @@ impl DatabaseEntity for PartManufacturersDatabaseTable {
 
 impl BulkInsert for PartManufacturersDatabaseTable {
     const COLUMN_NAMES: &[&str] = &["id", "display_name"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder.push_bind(row.id).push_bind(row.display_name);
     }
@@ -50,24 +48,14 @@ impl IdentifiableRow for PartManufacturersDatabaseTableRow {
     }
 }
 
-impl PartManufacturersDatabaseTable {
-    pub fn generate(count: usize) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_ids = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(PartManufacturersDatabaseTableRow::generate(
-                &mut existing_ids,
-            ));
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl PartManufacturersDatabaseTableRow {
-    fn generate(existing_ids: &mut HashSet<i32>) -> Self {
+impl GenerateTableData for PartManufacturersDatabaseTable {}
+impl GenerateRowData for PartManufacturersDatabaseTableRow {
+    type Identifier = i32;
+    type Dependencies<'a> = ();
+    fn generate(
+        existing_ids: &mut HashSet<Self::Identifier>,
+        _dependencies: Self::Dependencies<'_>,
+    ) -> Self {
         Self {
             id: generate_unique_i32(0, existing_ids),
             display_name: generate_company_name(),

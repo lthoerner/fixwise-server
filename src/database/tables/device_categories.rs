@@ -1,11 +1,8 @@
-use std::collections::HashSet;
-
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateStaticRowData, GenerateStaticTableData};
 
 pub struct DeviceCategoriesDatabaseTable {
     rows: Vec<DeviceCategoriesDatabaseTableRow>,
@@ -31,7 +28,6 @@ impl DatabaseEntity for DeviceCategoriesDatabaseTable {
 
 impl BulkInsert for DeviceCategoriesDatabaseTable {
     const COLUMN_NAMES: &[&str] = &["id", "display_name"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder.push_bind(row.id).push_bind(row.display_name);
     }
@@ -49,28 +45,20 @@ impl IdentifiableRow for DeviceCategoriesDatabaseTableRow {
     }
 }
 
-impl DeviceCategoriesDatabaseTable {
-    pub fn generate() -> Self {
-        const DEVICE_CATEGORIES: [&str; 7] = [
-            "Phone",
-            "Tablet",
-            "Desktop",
-            "Laptop",
-            "Game Console",
-            "Camera",
-            "Drone",
-        ];
+impl GenerateStaticTableData for DeviceCategoriesDatabaseTable {
+    const ITEMS: &[&str] = &[
+        "Phone",
+        "Tablet",
+        "Desktop",
+        "Laptop",
+        "Game Console",
+        "Camera",
+        "Drone",
+    ];
+}
 
-        let mut existing_ids = HashSet::new();
-
-        let rows = DEVICE_CATEGORIES
-            .iter()
-            .map(|category| DeviceCategoriesDatabaseTableRow {
-                id: generate_unique_i32(0, &mut existing_ids),
-                display_name: (*category).to_owned(),
-            })
-            .collect();
-
-        Self::with_rows(rows)
+impl GenerateStaticRowData for DeviceCategoriesDatabaseTableRow {
+    fn new(id: i32, display_name: String) -> Self {
+        Self { id, display_name }
     }
 }

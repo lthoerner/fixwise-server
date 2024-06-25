@@ -10,8 +10,7 @@ use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
 use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct PartsDatabaseTable {
     rows: Vec<PartsDatabaseTableRow>,
@@ -75,36 +74,17 @@ impl IdentifiableRow for PartsDatabaseTableRow {
     }
 }
 
-impl PartsDatabaseTable {
-    pub fn generate(
-        count: usize,
-        existing_vendors: &VendorsDatabaseTable,
-        existing_part_manufacturers: &PartManufacturersDatabaseTable,
-        existing_part_categories: &PartCategoriesDatabaseTable,
-    ) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_ids = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(PartsDatabaseTableRow::generate(
-                &mut existing_ids,
-                existing_vendors,
-                existing_part_manufacturers,
-                existing_part_categories,
-            ));
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl PartsDatabaseTableRow {
+impl GenerateTableData for PartsDatabaseTable {}
+impl GenerateRowData for PartsDatabaseTableRow {
+    type Identifier = i32;
+    type Dependencies<'a> = (
+        &'a VendorsDatabaseTable,
+        &'a PartManufacturersDatabaseTable,
+        &'a PartCategoriesDatabaseTable,
+    );
     fn generate(
-        existing_ids: &mut HashSet<i32>,
-        existing_vendors: &VendorsDatabaseTable,
-        existing_part_manufacturers: &PartManufacturersDatabaseTable,
-        existing_part_categories: &PartCategoriesDatabaseTable,
+        existing_ids: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         let cost = generate_option(generate_dollar_value(Some(1.00), Some(500.00)), 0.8);
         let price =
@@ -114,9 +94,9 @@ impl PartsDatabaseTableRow {
             id: generate_unique_i32(0, existing_ids),
             // TODO: Generate via vendor/manufacturer/category data along with compatibilities
             display_name: "PLACEHOLDER".to_owned(),
-            vendor: existing_vendors.pick_random().id(),
-            manufacturer: generate_option(existing_part_manufacturers.pick_random().id(), 0.2),
-            category: existing_part_categories.pick_random().id(),
+            vendor: dependencies.0.pick_random().id(),
+            manufacturer: generate_option(dependencies.1.pick_random().id(), 0.2),
+            category: dependencies.2.pick_random().id(),
             cost,
             price,
         }

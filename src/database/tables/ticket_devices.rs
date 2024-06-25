@@ -8,8 +8,7 @@ use super::devices::DevicesDatabaseTable;
 use super::generators::*;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
@@ -35,7 +34,6 @@ impl DatabaseEntity for TicketDevicesDatabaseJunctionTable {
 
 impl BulkInsert for TicketDevicesDatabaseJunctionTable {
     const COLUMN_NAMES: &[&str] = &["ticket", "device", "diagnostic", "labor_fee"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder
             .push_bind(row.ticket)
@@ -54,40 +52,20 @@ pub struct TicketDevicesDatabaseJunctionTableRow {
     pub labor_fee: Option<Decimal>,
 }
 
-impl TicketDevicesDatabaseJunctionTable {
-    pub fn generate(
-        count: usize,
-        existing_devices: &DevicesDatabaseTable,
-        existing_tickets: &TicketsDatabaseTable,
-    ) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_pairs = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(TicketDevicesDatabaseJunctionTableRow::generate(
-                &mut existing_pairs,
-                existing_tickets,
-                existing_devices,
-            ))
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl TicketDevicesDatabaseJunctionTableRow {
+impl GenerateTableData for TicketDevicesDatabaseJunctionTable {}
+impl GenerateRowData for TicketDevicesDatabaseJunctionTableRow {
+    type Identifier = (i32, i32);
+    type Dependencies<'a> = (&'a TicketsDatabaseTable, &'a DevicesDatabaseTable);
     fn generate(
-        existing_pairs: &mut HashSet<(i32, i32)>,
-        existing_tickets: &TicketsDatabaseTable,
-        existing_devices: &DevicesDatabaseTable,
+        existing_pairs: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         let mut ticket_id = 0;
         let mut device_id = 0;
         let mut first_roll = true;
         while first_roll || existing_pairs.get(&(ticket_id, device_id)).is_some() {
-            ticket_id = existing_tickets.pick_random().id();
-            device_id = existing_devices.pick_random().id();
+            ticket_id = dependencies.0.pick_random().id();
+            device_id = dependencies.1.pick_random().id();
             first_roll = false;
         }
 

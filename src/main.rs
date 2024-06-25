@@ -34,8 +34,7 @@ async fn main() {
         println!("Server shutting down...");
         signal_handler_server_state
             .database
-            .connection
-            .close()
+            .close_connection()
             .await;
         println!("Database connection closed.");
         std::process::exit(0);

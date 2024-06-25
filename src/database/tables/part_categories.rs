@@ -1,11 +1,8 @@
-use std::collections::HashSet;
-
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateStaticRowData, GenerateStaticTableData};
 
 pub struct PartCategoriesDatabaseTable {
     rows: Vec<PartCategoriesDatabaseTableRow>,
@@ -31,7 +28,6 @@ impl DatabaseEntity for PartCategoriesDatabaseTable {
 
 impl BulkInsert for PartCategoriesDatabaseTable {
     const COLUMN_NAMES: &[&str] = &["id", "display_name"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder.push_bind(row.id).push_bind(row.display_name);
     }
@@ -49,28 +45,20 @@ impl IdentifiableRow for PartCategoriesDatabaseTableRow {
     }
 }
 
-impl PartCategoriesDatabaseTable {
-    pub fn generate() -> Self {
-        const PART_CATEGORIES: [&str; 7] = [
-            "Screen",
-            "Battery",
-            "Backglass",
-            "Frame",
-            "Front Camera",
-            "Rear Camera",
-            "Charge Port",
-        ];
+impl GenerateStaticTableData for PartCategoriesDatabaseTable {
+    const ITEMS: &[&str] = &[
+        "Screen",
+        "Battery",
+        "Backglass",
+        "Frame",
+        "Front Camera",
+        "Rear Camera",
+        "Charge Port",
+    ];
+}
 
-        let mut existing_ids = HashSet::new();
-
-        let rows = PART_CATEGORIES
-            .iter()
-            .map(|category| PartCategoriesDatabaseTableRow {
-                id: generate_unique_i32(0, &mut existing_ids),
-                display_name: (*category).to_owned(),
-            })
-            .collect();
-
-        Self::with_rows(rows)
+impl GenerateStaticRowData for PartCategoriesDatabaseTableRow {
+    fn new(id: i32, display_name: String) -> Self {
+        Self { id, display_name }
     }
 }

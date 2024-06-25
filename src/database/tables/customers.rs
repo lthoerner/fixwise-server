@@ -5,8 +5,7 @@ use sqlx::Postgres;
 
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct CustomersDatabaseTable {
     rows: Vec<CustomersDatabaseTableRow>,
@@ -64,22 +63,14 @@ impl IdentifiableRow for CustomersDatabaseTableRow {
     }
 }
 
-impl CustomersDatabaseTable {
-    pub fn generate(count: usize) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_ids = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(CustomersDatabaseTableRow::generate(&mut existing_ids));
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl CustomersDatabaseTableRow {
-    fn generate(existing_ids: &mut HashSet<i32>) -> Self {
+impl GenerateTableData for CustomersDatabaseTable {}
+impl GenerateRowData for CustomersDatabaseTableRow {
+    type Identifier = i32;
+    type Dependencies<'a> = ();
+    fn generate(
+        existing_ids: &mut HashSet<Self::Identifier>,
+        _dependencies: Self::Dependencies<'_>,
+    ) -> Self {
         Self {
             id: generate_unique_i32(0, existing_ids),
             name: generate_name(),

@@ -6,8 +6,7 @@ use sqlx::Postgres;
 use super::device_models::DeviceModelsDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
@@ -33,7 +32,6 @@ impl DatabaseEntity for CompatiblePartsDatabaseJunctionTable {
 
 impl BulkInsert for CompatiblePartsDatabaseJunctionTable {
     const COLUMN_NAMES: &[&str] = &["device", "part"];
-
     fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
         builder.push_bind(row.device).push_bind(row.part);
     }
@@ -45,40 +43,20 @@ pub struct CompatiblePartsDatabaseJunctionTableRow {
     pub part: i32,
 }
 
-impl CompatiblePartsDatabaseJunctionTable {
-    pub fn generate(
-        count: usize,
-        existing_device_models: &DeviceModelsDatabaseTable,
-        existing_parts: &PartsDatabaseTable,
-    ) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_pairs = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(CompatiblePartsDatabaseJunctionTableRow::generate(
-                &mut existing_pairs,
-                existing_device_models,
-                existing_parts,
-            ))
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl CompatiblePartsDatabaseJunctionTableRow {
+impl GenerateTableData for CompatiblePartsDatabaseJunctionTable {}
+impl GenerateRowData for CompatiblePartsDatabaseJunctionTableRow {
+    type Identifier = (i32, i32);
+    type Dependencies<'a> = (&'a DeviceModelsDatabaseTable, &'a PartsDatabaseTable);
     fn generate(
-        existing_pairs: &mut HashSet<(i32, i32)>,
-        existing_device_models: &DeviceModelsDatabaseTable,
-        existing_parts: &PartsDatabaseTable,
+        existing_pairs: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         let mut device_id = 0;
         let mut part_id = 0;
         let mut first_roll = true;
         while first_roll || existing_pairs.get(&(device_id, part_id)).is_some() {
-            device_id = existing_device_models.pick_random().id();
-            part_id = existing_parts.pick_random().id();
+            device_id = dependencies.0.pick_random().id();
+            part_id = dependencies.1.pick_random().id();
             first_roll = false;
         }
 

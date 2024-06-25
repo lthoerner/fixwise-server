@@ -7,8 +7,7 @@ use super::device_categories::DeviceCategoriesDatabaseTable;
 use super::device_manufacturers::DeviceManufacturersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::loading_bar::LoadingBar;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
 pub struct DeviceModelsDatabaseTable {
     rows: Vec<DeviceModelsDatabaseTableRow>,
@@ -69,33 +68,16 @@ impl IdentifiableRow for DeviceModelsDatabaseTableRow {
     }
 }
 
-impl DeviceModelsDatabaseTable {
-    pub fn generate(
-        count: usize,
-        existing_device_manufacturers: &DeviceManufacturersDatabaseTable,
-        existing_device_categories: &DeviceCategoriesDatabaseTable,
-    ) -> Self {
-        let mut rows = Vec::new();
-        let mut existing_ids = HashSet::new();
-        let mut loading_bar = LoadingBar::new(count);
-        for _ in 0..count {
-            loading_bar.update();
-            rows.push(DeviceModelsDatabaseTableRow::generate(
-                &mut existing_ids,
-                existing_device_manufacturers,
-                existing_device_categories,
-            ));
-        }
-
-        Self::with_rows(rows)
-    }
-}
-
-impl DeviceModelsDatabaseTableRow {
+impl GenerateTableData for DeviceModelsDatabaseTable {}
+impl GenerateRowData for DeviceModelsDatabaseTableRow {
+    type Identifier = i32;
+    type Dependencies<'a> = (
+        &'a DeviceManufacturersDatabaseTable,
+        &'a DeviceCategoriesDatabaseTable,
+    );
     fn generate(
-        existing_ids: &mut HashSet<i32>,
-        existing_device_manufacturers: &DeviceManufacturersDatabaseTable,
-        existing_device_categories: &DeviceCategoriesDatabaseTable,
+        existing_ids: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
             id: generate_unique_i32(0, existing_ids),
@@ -103,8 +85,8 @@ impl DeviceModelsDatabaseTableRow {
             // TODO: Add model identifiers generator
             primary_model_identifiers: Vec::new(),
             secondary_model_identifiers: Vec::new(),
-            manufacturer: existing_device_manufacturers.pick_random().id(),
-            category: existing_device_categories.pick_random().id(),
+            manufacturer: dependencies.0.pick_random().id(),
+            category: dependencies.1.pick_random().id(),
         }
     }
 }

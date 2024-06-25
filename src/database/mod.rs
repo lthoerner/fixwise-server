@@ -3,6 +3,7 @@ pub mod shared_models;
 pub mod tables;
 pub mod views;
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
 use std::vec::IntoIter;
@@ -15,6 +16,7 @@ use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::{raw_sql, PgPool, Postgres};
 
 use crate::ServerState;
+use loading_bar::LoadingBar;
 use tables::bundled_parts::BundledPartsDatabaseJunctionTable;
 use tables::compatible_parts::CompatiblePartsDatabaseJunctionTable;
 use tables::customers::CustomersDatabaseTable;
@@ -22,6 +24,7 @@ use tables::device_categories::DeviceCategoriesDatabaseTable;
 use tables::device_manufacturers::DeviceManufacturersDatabaseTable;
 use tables::device_models::DeviceModelsDatabaseTable;
 use tables::devices::DevicesDatabaseTable;
+use tables::generators::*;
 use tables::part_categories::PartCategoriesDatabaseTable;
 use tables::part_manufacturers::PartManufacturersDatabaseTable;
 use tables::parts::PartsDatabaseTable;
@@ -46,7 +49,7 @@ const BUNDLED_PARTS_COUNT: usize = 1234;
 
 #[derive(Clone)]
 pub struct Database {
-    pub connection: PgPool,
+    connection: PgPool,
 }
 
 pub trait DatabaseEntity: Sized {
@@ -77,7 +80,58 @@ pub trait DatabaseEntity: Sized {
     }
 }
 
-pub trait BulkInsert: DatabaseEntity {
+trait GenerateTableData: DatabaseEntity<Row: GenerateRowData> {
+    fn generate(
+        count: usize,
+        dependencies: <<Self as DatabaseEntity>::Row as GenerateRowData>::Dependencies<'_>,
+    ) -> Self {
+        let mut rows = Vec::new();
+        let mut existing_ids = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
+        for _ in 0..count {
+            loading_bar.update();
+            rows.push(<Self as DatabaseEntity>::Row::generate(
+                &mut existing_ids,
+                dependencies,
+            ))
+        }
+
+        Self::with_rows(rows)
+    }
+}
+
+trait GenerateRowData {
+    type Identifier: Copy;
+    type Dependencies<'a>: Copy;
+    fn generate(
+        existing_ids: &mut HashSet<Self::Identifier>,
+        dependencies: Self::Dependencies<'_>,
+    ) -> Self;
+}
+
+trait GenerateStaticTableData: DatabaseEntity<Row: GenerateStaticRowData> {
+    const ITEMS: &[&str];
+    fn generate() -> Self {
+        let mut existing_ids = HashSet::new();
+        let rows = Self::ITEMS
+            .iter()
+            .map(|item| {
+                Self::Row::new(
+                    generate_unique_i32(0, &mut existing_ids),
+                    (*item).to_owned(),
+                )
+            })
+            .collect();
+
+        Self::with_rows(rows)
+    }
+}
+
+trait GenerateStaticRowData {
+    fn new(id: i32, display_name: String) -> Self;
+}
+
+trait BulkInsert: DatabaseEntity {
     const COLUMN_NAMES: &[&str];
     const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::COLUMN_NAMES.len();
 
@@ -130,49 +184,51 @@ impl Database {
             .unwrap();
     }
 
+    pub async fn close_connection(&self) {
+        self.connection.close().await
+    }
+
     pub async fn add_generated_items(&self) {
         let device_categories = DeviceCategoriesDatabaseTable::generate();
         let part_categories = PartCategoriesDatabaseTable::generate();
         println!("Generating {CUSTOMERS_COUNT} customers");
-        let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT);
+        let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT, ());
         println!("Generating {VENDORS_COUNT} vendors");
-        let vendors = VendorsDatabaseTable::generate(VENDORS_COUNT);
+        let vendors = VendorsDatabaseTable::generate(VENDORS_COUNT, ());
         println!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
         let device_manufacturers =
-            DeviceManufacturersDatabaseTable::generate(DEVICE_MANUFACTURERS_COUNT);
+            DeviceManufacturersDatabaseTable::generate(DEVICE_MANUFACTURERS_COUNT, ());
         println!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
-        let part_manufacturers = PartManufacturersDatabaseTable::generate(PART_MANUFACTURERS_COUNT);
+        let part_manufacturers =
+            PartManufacturersDatabaseTable::generate(PART_MANUFACTURERS_COUNT, ());
         println!("Generating {DEVICE_MODELS_COUNT} device models");
         let device_models = DeviceModelsDatabaseTable::generate(
             DEVICE_MODELS_COUNT,
-            &device_manufacturers,
-            &device_categories,
+            (&device_manufacturers, &device_categories),
         );
         println!("Generating {DEVICES_COUNT} devices");
-        let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, &device_models, &customers);
+        let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, (&device_models, &customers));
         println!("Generating {PARTS_COUNT} parts");
         let parts = PartsDatabaseTable::generate(
             PARTS_COUNT,
-            &vendors,
-            &part_manufacturers,
-            &part_categories,
+            (&vendors, &part_manufacturers, &part_categories),
         );
         println!("Generating {TICKETS_COUNT} tickets");
         let tickets = TicketsDatabaseTable::generate(TICKETS_COUNT, &customers);
         println!("Generating {COMPATIBLE_PARTS_COUNT} compatible parts");
         let compatible_parts = CompatiblePartsDatabaseJunctionTable::generate(
             COMPATIBLE_PARTS_COUNT,
-            &device_models,
-            &parts,
+            (&device_models, &parts),
         );
         println!("Generating {TICKET_DEVICES_COUNT} ticket devices");
-        let ticket_devices =
-            TicketDevicesDatabaseJunctionTable::generate(TICKET_DEVICES_COUNT, &devices, &tickets);
+        let ticket_devices = TicketDevicesDatabaseJunctionTable::generate(
+            TICKET_DEVICES_COUNT,
+            (&tickets, &devices),
+        );
         println!("Generating {BUNDLED_PARTS_COUNT} bundled parts");
         let bundled_parts = BundledPartsDatabaseJunctionTable::generate(
             BUNDLED_PARTS_COUNT,
-            &ticket_devices,
-            &parts,
+            (&ticket_devices, &parts),
         );
 
         println!("Inserting items to database...");
