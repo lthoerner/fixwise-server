@@ -83,9 +83,9 @@ impl CustomersDatabaseTableRow {
         Self {
             id: generate_unique_i32(0, existing_ids),
             name: generate_name(),
-            email_address: Some(generate_email_address()),
-            phone_number: Some(generate_phone_number()),
-            street_address: Some(generate_street_address()),
+            email_address: generate_option(generate_email_address(), 0.9),
+            phone_number: generate_option(generate_phone_number(), 0.9),
+            street_address: generate_option(generate_street_address(), 0.9),
         }
     }
 }
