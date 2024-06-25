@@ -1,8 +1,10 @@
 DROP SCHEMA IF EXISTS main CASCADE;
 
+DROP TYPE IF EXISTS ticket_status;
+
 CREATE SCHEMA main;
 
-CREATE TYPE main.ticket_status AS ENUM (
+CREATE TYPE ticket_status AS ENUM (
     'new',
     'waiting_for_parts',
     'waiting_for_customer',
@@ -74,7 +76,7 @@ CREATE TABLE main.devices (
 
 CREATE TABLE main.tickets (
     id serial PRIMARY KEY,
-    status main.ticket_status NOT NULL,
+    status ticket_status NOT NULL,
     customer integer references main.customers (id),
     invoice_total numeric(1000, 2) NOT NULL,
     payment_total numeric(1000, 2) NOT NULL,
@@ -144,7 +146,7 @@ CREATE VIEW main.devices_view AS
 SELECT
     device.id,
     model.display_name AS model,
-    customer.name AS owner,
+    customer.name AS owner
 FROM
     main.devices device
     JOIN main.device_models model ON device.model = model.id
