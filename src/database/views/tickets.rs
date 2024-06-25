@@ -31,7 +31,6 @@ pub struct TicketsDatabaseViewRow {
     pub id: i32,
     pub status: TicketStatus,
     pub customer: Option<String>,
-    // pub device: String,
     pub balance: Decimal,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,

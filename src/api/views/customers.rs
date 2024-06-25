@@ -16,26 +16,26 @@ pub struct CustomersApiView {
 struct CustomersApiViewRow {
     id: ViewCell<u32>,
     name: ViewCell<String>,
-    email: ViewCell<String>,
-    phone: ViewCell<String>,
-    address: ViewCell<Option<String>>,
+    email_address: ViewCell<Option<String>>,
+    phone_number: ViewCell<Option<String>>,
+    street_address: ViewCell<Option<String>>,
 }
 
 struct CustomersApiViewFormatting {
     id: ColumnFormat,
     name: ColumnFormat,
-    email: ColumnFormat,
-    phone: ColumnFormat,
-    address: ColumnFormat,
+    email_address: ColumnFormat,
+    phone_number: ColumnFormat,
+    street_address: ColumnFormat,
 }
 
 #[derive(Serialize)]
 struct CustomersApiViewMetadata {
     id: FrontendColumnMetadata,
     name: FrontendColumnMetadata,
-    email: FrontendColumnMetadata,
-    phone: FrontendColumnMetadata,
-    address: FrontendColumnMetadata,
+    email_address: FrontendColumnMetadata,
+    phone_number: FrontendColumnMetadata,
+    street_address: FrontendColumnMetadata,
 }
 
 impl CustomersApiViewFormatting {
@@ -43,9 +43,9 @@ impl CustomersApiViewFormatting {
         Self {
             id: ColumnFormat::Id,
             name: ColumnFormat::None,
-            email: ColumnFormat::None,
-            phone: ColumnFormat::None,
-            address: ColumnFormat::None,
+            email_address: ColumnFormat::None,
+            phone_number: ColumnFormat::None,
+            street_address: ColumnFormat::None,
         }
     }
 }
@@ -67,24 +67,24 @@ impl CustomersApiViewMetadata {
                     trimmable: false,
                 },
             },
-            email: FrontendColumnMetadata {
+            email_address: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
                 display: FrontendColumnDisplay::Text {
                     name: "Email Address",
                     trimmable: true,
                 },
             },
-            phone: FrontendColumnMetadata {
+            phone_number: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
                 display: FrontendColumnDisplay::Text {
                     name: "Phone Number",
                     trimmable: true,
                 },
             },
-            address: FrontendColumnMetadata {
+            street_address: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
                 display: FrontendColumnDisplay::Text {
-                    name: "Mailing Address",
+                    name: "Street Address",
                     trimmable: true,
                 },
             },
@@ -99,23 +99,23 @@ impl FromDatabaseEntity for CustomersApiView {
         Self {
             metadata: CustomersApiViewMetadata::new(),
             rows: entity
-                .rows()
+                .take_rows()
                 .into_iter()
                 .map(|row| {
                     let CustomersDatabaseViewRow {
                         id,
                         name,
-                        email,
-                        phone,
-                        address,
+                        email_address,
+                        phone_number,
+                        street_address,
                     } = row;
 
                     CustomersApiViewRow {
                         id: ViewCell::new(id as u32, &formatting.id),
                         name: ViewCell::new(name, &formatting.name),
-                        email: ViewCell::new(email, &formatting.email),
-                        phone: ViewCell::new(phone, &formatting.phone),
-                        address: ViewCell::new(address, &formatting.address),
+                        email_address: ViewCell::new(email_address, &formatting.email_address),
+                        phone_number: ViewCell::new(phone_number, &formatting.phone_number),
+                        street_address: ViewCell::new(street_address, &formatting.street_address),
                     }
                 })
                 .collect(),

@@ -21,8 +21,7 @@ pub struct TicketsApiView {
 struct TicketsApiViewRow {
     id: ViewCell<u32>,
     status: ViewCell<TicketStatus>,
-    customer_name: ViewCell<String>,
-    device: ViewCell<String>,
+    customer: ViewCell<Option<String>>,
     balance: ViewCell<Decimal>,
     created_at: ViewCell<NaiveDateTime>,
     updated_at: ViewCell<NaiveDateTime>,
@@ -31,8 +30,7 @@ struct TicketsApiViewRow {
 struct TicketsApiViewFormatting {
     id: ColumnFormat,
     status: ColumnFormat,
-    customer_name: ColumnFormat,
-    device: ColumnFormat,
+    customer: ColumnFormat,
     balance: ColumnFormat,
     created_at: ColumnFormat,
     updated_at: ColumnFormat,
@@ -42,8 +40,7 @@ struct TicketsApiViewFormatting {
 struct TicketsApiViewMetadata {
     id: FrontendColumnMetadata,
     status: FrontendColumnMetadata,
-    customer_name: FrontendColumnMetadata,
-    device: FrontendColumnMetadata,
+    customer: FrontendColumnMetadata,
     balance: FrontendColumnMetadata,
     created_at: FrontendColumnMetadata,
     updated_at: FrontendColumnMetadata,
@@ -54,8 +51,7 @@ impl TicketsApiViewFormatting {
         Self {
             id: ColumnFormat::Id,
             status: ColumnFormat::Tag,
-            customer_name: ColumnFormat::None,
-            device: ColumnFormat::None,
+            customer: ColumnFormat::None,
             balance: ColumnFormat::Currency,
             created_at: ColumnFormat::Date,
             updated_at: ColumnFormat::Date,
@@ -123,17 +119,10 @@ impl TicketsApiViewMetadata {
                     ],
                 },
             },
-            customer_name: FrontendColumnMetadata {
+            customer: FrontendColumnMetadata {
                 data_type: FrontendDataType::String,
                 display: FrontendColumnDisplay::Text {
                     name: "Customer",
-                    trimmable: true,
-                },
-            },
-            device: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Device",
                     trimmable: true,
                 },
             },
@@ -169,14 +158,13 @@ impl FromDatabaseEntity for TicketsApiView {
         Self {
             metadata: TicketsApiViewMetadata::new(),
             rows: entity
-                .rows()
+                .take_rows()
                 .into_iter()
                 .map(|row| {
                     let TicketsDatabaseViewRow {
                         id,
                         status,
-                        customer_name,
-                        device,
+                        customer,
                         balance,
                         created_at,
                         updated_at,
@@ -185,8 +173,7 @@ impl FromDatabaseEntity for TicketsApiView {
                     TicketsApiViewRow {
                         id: ViewCell::new(id as u32, &formatting.id),
                         status: ViewCell::new(status, &formatting.status),
-                        customer_name: ViewCell::new(customer_name, &formatting.customer_name),
-                        device: ViewCell::new(device, &formatting.device),
+                        customer: ViewCell::new(customer, &formatting.customer),
                         balance: ViewCell::new(balance, &formatting.balance),
                         created_at: ViewCell::new(created_at, &formatting.created_at),
                         updated_at: ViewCell::new(updated_at, &formatting.updated_at),

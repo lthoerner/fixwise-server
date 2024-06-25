@@ -1,5 +1,4 @@
 pub mod customers;
-pub mod inventory;
 pub mod tickets;
 
 use std::fmt::Debug;
@@ -147,7 +146,7 @@ impl<T: ViewFormat> ViewFormat for Option<T> {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
         match self {
             Some(value) => value.format(column_formatting),
-            None => None,
+            None => Some("N/A".to_owned()),
         }
     }
 }
