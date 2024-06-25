@@ -21,6 +21,7 @@ mod generators {
 
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
     use fake::faker::address::en::{CityName, StateAbbr, StreetName, StreetSuffix};
+    use fake::faker::company::en::CompanyName;
     use fake::faker::internet::en::FreeEmail;
     use fake::faker::name::en::Name;
     use fake::faker::phone_number::en::PhoneNumber;
@@ -68,7 +69,7 @@ mod generators {
         PhoneNumber().fake()
     }
 
-    pub fn generate_address() -> String {
+    pub fn generate_street_address() -> String {
         format!(
             "{} {} {}, {}, {} {}",
             thread_rng().gen_range(1..=9999),
@@ -78,6 +79,10 @@ mod generators {
             StateAbbr().fake::<String>(),
             thread_rng().gen_range(10000..=99999)
         )
+    }
+
+    pub fn generate_company_name() -> String {
+        CompanyName().fake()
     }
 
     pub fn generate_date(start: Option<NaiveDateTime>) -> NaiveDateTime {
@@ -104,6 +109,7 @@ mod generators {
         )
     }
 
+    // TODO: Use company name to generate device model name
     pub fn generate_device_name() -> String {
         const PHONE_LINES: [&str; 8] = [
             "iPhone",

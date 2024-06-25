@@ -1,7 +1,11 @@
+use std::collections::HashSet;
+
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use super::generators::*;
 use super::IdentifiableRow;
+use crate::database::loading_bar::LoadingBar;
 use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct VendorsDatabaseTable {
@@ -57,5 +61,31 @@ pub struct VendorsDatabaseTableRow {
 impl IdentifiableRow for VendorsDatabaseTableRow {
     fn id(&self) -> i32 {
         self.id
+    }
+}
+
+impl VendorsDatabaseTable {
+    pub fn generate(count: usize) -> Self {
+        let mut rows = Vec::new();
+        let mut existing_ids = HashSet::new();
+        let mut loading_bar = LoadingBar::new(count);
+        for _ in 0..count {
+            loading_bar.update();
+            rows.push(VendorsDatabaseTableRow::generate(&mut existing_ids));
+        }
+
+        Self::with_rows(rows)
+    }
+}
+
+impl VendorsDatabaseTableRow {
+    fn generate(existing_ids: &mut HashSet<i32>) -> Self {
+        Self {
+            id: generate_unique_i32(0, existing_ids),
+            display_name: generate_company_name(),
+            email_address: generate_option(generate_email_address(), 0.7),
+            phone_number: generate_option(generate_phone_number(), 0.5),
+            street_address: generate_option(generate_street_address(), 0.2),
+        }
     }
 }

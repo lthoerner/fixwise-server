@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity};
 
@@ -43,5 +46,31 @@ pub struct DeviceCategoriesDatabaseTableRow {
 impl IdentifiableRow for DeviceCategoriesDatabaseTableRow {
     fn id(&self) -> i32 {
         self.id
+    }
+}
+
+impl DeviceCategoriesDatabaseTable {
+    pub fn generate() -> Self {
+        const DEVICE_CATEGORIES: [&str; 7] = [
+            "Phone",
+            "Tablet",
+            "Desktop",
+            "Laptop",
+            "Game Console",
+            "Camera",
+            "Drone",
+        ];
+
+        let mut existing_ids = HashSet::new();
+
+        let rows = DEVICE_CATEGORIES
+            .iter()
+            .map(|category| DeviceCategoriesDatabaseTableRow {
+                id: generate_unique_i32(0, &mut existing_ids),
+                display_name: (*category).to_owned(),
+            })
+            .collect();
+
+        Self::with_rows(rows)
     }
 }

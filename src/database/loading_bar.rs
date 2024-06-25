@@ -27,6 +27,7 @@ impl LoadingBar {
     pub fn update(&mut self) {
         self.percent = self.current_item as f32 * 100.0 / self.item_count as f32;
         let normalized_percent = self.percent.ceil();
+
         if normalized_percent - self.previous_print_percent
             == (100 / TABLE_GENERATION_LOADING_BAR_LENGTH) as f32
             && self.percent != 100.0
@@ -34,6 +35,10 @@ impl LoadingBar {
             self.previous_print_percent = normalized_percent;
             print!("=");
             std::io::stdout().flush().unwrap();
+        }
+
+        if self.percent == 100.0 {
+            println!();
         }
     }
 }

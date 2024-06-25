@@ -85,7 +85,7 @@ impl CustomersDatabaseTableRow {
             name: generate_name(),
             email_address: Some(generate_email_address()),
             phone_number: Some(generate_phone_number()),
-            street_address: Some(generate_address()),
+            street_address: Some(generate_street_address()),
         }
     }
 }

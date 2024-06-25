@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity};
 
@@ -43,5 +46,31 @@ pub struct PartCategoriesDatabaseTableRow {
 impl IdentifiableRow for PartCategoriesDatabaseTableRow {
     fn id(&self) -> i32 {
         self.id
+    }
+}
+
+impl PartCategoriesDatabaseTable {
+    pub fn generate() -> Self {
+        const PART_CATEGORIES: [&str; 7] = [
+            "Screen",
+            "Battery",
+            "Backglass",
+            "Frame",
+            "Front Camera",
+            "Rear Camera",
+            "Charge Port",
+        ];
+
+        let mut existing_ids = HashSet::new();
+
+        let rows = PART_CATEGORIES
+            .iter()
+            .map(|category| PartCategoriesDatabaseTableRow {
+                id: generate_unique_i32(0, &mut existing_ids),
+                display_name: (*category).to_owned(),
+            })
+            .collect();
+
+        Self::with_rows(rows)
     }
 }
