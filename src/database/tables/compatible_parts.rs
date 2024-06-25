@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use super::devices::DevicesDatabaseTable;
+use super::device_models::DeviceModelsDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::loading_bar::LoadingBar;
@@ -48,7 +48,7 @@ pub struct CompatiblePartsDatabaseJunctionTableRow {
 impl CompatiblePartsDatabaseJunctionTable {
     pub fn generate(
         count: usize,
-        existing_devices: &DevicesDatabaseTable,
+        existing_device_models: &DeviceModelsDatabaseTable,
         existing_parts: &PartsDatabaseTable,
     ) -> Self {
         let mut rows = Vec::new();
@@ -58,7 +58,7 @@ impl CompatiblePartsDatabaseJunctionTable {
             loading_bar.update();
             rows.push(CompatiblePartsDatabaseJunctionTableRow::generate(
                 &mut existing_pairs,
-                existing_devices,
+                existing_device_models,
                 existing_parts,
             ))
         }
@@ -70,14 +70,14 @@ impl CompatiblePartsDatabaseJunctionTable {
 impl CompatiblePartsDatabaseJunctionTableRow {
     fn generate(
         existing_pairs: &mut HashSet<(i32, i32)>,
-        existing_devices: &DevicesDatabaseTable,
+        existing_device_models: &DeviceModelsDatabaseTable,
         existing_parts: &PartsDatabaseTable,
     ) -> Self {
         let mut device_id = 0;
         let mut part_id = 0;
         let mut first_roll = true;
         while first_roll || existing_pairs.get(&(device_id, part_id)).is_some() {
-            device_id = existing_devices.pick_random().id();
+            device_id = existing_device_models.pick_random().id();
             part_id = existing_parts.pick_random().id();
             first_roll = false;
         }

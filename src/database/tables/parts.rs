@@ -107,13 +107,8 @@ impl PartsDatabaseTableRow {
         existing_part_categories: &PartCategoriesDatabaseTable,
     ) -> Self {
         let cost = generate_option(generate_dollar_value(Some(1.00), Some(500.00)), 0.8);
-        let price = match cost {
-            Some(cost) => Some(generate_dollar_value(
-                Some(cost.to_f32().unwrap()),
-                Some(1000.00),
-            )),
-            None => None,
-        };
+        let price =
+            cost.map(|cost| generate_dollar_value(Some(cost.to_f32().unwrap()), Some(1000.00)));
 
         Self {
             id: generate_unique_i32(0, existing_ids),

@@ -3,9 +3,8 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use super::devices::DevicesDatabaseTable;
 use super::parts::PartsDatabaseTable;
-use super::tickets::TicketsDatabaseTable;
+use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use super::IdentifiableRow;
 use crate::database::loading_bar::LoadingBar;
 use crate::database::{BulkInsert, DatabaseEntity};
@@ -53,8 +52,7 @@ pub struct BundledPartsDatabaseJunctionTableRow {
 impl BundledPartsDatabaseJunctionTable {
     pub fn generate(
         count: usize,
-        existing_tickets: &TicketsDatabaseTable,
-        existing_devices: &DevicesDatabaseTable,
+        existing_ticket_devices: &TicketDevicesDatabaseJunctionTable,
         existing_parts: &PartsDatabaseTable,
     ) -> Self {
         let mut rows = Vec::new();
@@ -64,8 +62,7 @@ impl BundledPartsDatabaseJunctionTable {
             loading_bar.update();
             rows.push(BundledPartsDatabaseJunctionTableRow::generate(
                 &mut existing_pairs,
-                existing_tickets,
-                existing_devices,
+                existing_ticket_devices,
                 existing_parts,
             ))
         }
@@ -77,8 +74,7 @@ impl BundledPartsDatabaseJunctionTable {
 impl BundledPartsDatabaseJunctionTableRow {
     fn generate(
         existing_pairs: &mut HashSet<(i32, i32, i32)>,
-        existing_tickets: &TicketsDatabaseTable,
-        existing_devices: &DevicesDatabaseTable,
+        existing_ticket_devices: &TicketDevicesDatabaseJunctionTable,
         existing_parts: &PartsDatabaseTable,
     ) -> Self {
         let mut ticket_id = 0;
@@ -90,8 +86,8 @@ impl BundledPartsDatabaseJunctionTableRow {
                 .get(&(ticket_id, device_id, part_id))
                 .is_some()
         {
-            ticket_id = existing_tickets.pick_random().id();
-            device_id = existing_devices.pick_random().id();
+            let ticket_device = existing_ticket_devices.pick_random();
+            (ticket_id, device_id) = (ticket_device.ticket, ticket_device.device);
             part_id = existing_parts.pick_random().id();
             first_roll = false;
         }

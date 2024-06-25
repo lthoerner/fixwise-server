@@ -82,8 +82,8 @@ impl DeviceModelsDatabaseTable {
             loading_bar.update();
             rows.push(DeviceModelsDatabaseTableRow::generate(
                 &mut existing_ids,
-                &existing_device_manufacturers,
-                &existing_device_categories,
+                existing_device_manufacturers,
+                existing_device_categories,
             ));
         }
 
