@@ -1,4 +1,4 @@
-mod api;
+// mod api;
 mod database;
 
 use std::sync::Arc;
@@ -11,9 +11,9 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use api::views::customers::CustomersApiView;
-use api::views::tickets::TicketsApiView;
-use api::ServeJson;
+// use api::views::customers::CustomersApiView;
+// use api::views::tickets::TicketsApiView;
+// use api::ServeJson;
 use database::tables::bundled_parts::BundledPartsDatabaseJunctionTable;
 use database::tables::compatible_parts::CompatiblePartsDatabaseJunctionTable;
 use database::tables::customers::CustomersDatabaseTable;
@@ -91,14 +91,17 @@ async fn main() {
     println!("Generating {num_tickets} tickets");
     let tickets = TicketsDatabaseTable::generate(num_tickets, &customers);
     println!("Generating {num_compatible_parts} compatible parts");
-    let compatible_parts =
-        CompatiblePartsDatabaseJunctionTable::generate(num_compatible_parts, &devices, &parts);
+    let compatible_parts = CompatiblePartsDatabaseJunctionTable::generate(
+        num_compatible_parts,
+        &device_models,
+        &parts,
+    );
     println!("Generating {num_ticket_devices} ticket devices");
     let ticket_devices =
         TicketDevicesDatabaseJunctionTable::generate(num_ticket_devices, &devices, &tickets);
     println!("Generating {num_bundled_parts} bundled parts");
     let bundled_parts =
-        BundledPartsDatabaseJunctionTable::generate(num_bundled_parts, &tickets, &devices, &parts);
+        BundledPartsDatabaseJunctionTable::generate(num_bundled_parts, &ticket_devices, &parts);
 
     let start_time = Instant::now();
     server_state
@@ -122,23 +125,33 @@ async fn main() {
 
     println!(
         "Inserted {} items in {}ms",
-        (num_customers + num_tickets),
+        (num_vendors
+            + num_device_manufacturers
+            + num_part_manufacturers
+            + num_device_models
+            + num_devices
+            + num_parts
+            + num_customers
+            + num_tickets
+            + num_compatible_parts
+            + num_ticket_devices
+            + num_bundled_parts),
         start_time.elapsed().as_millis()
     );
 
-    let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
-        .allow_origin(Any);
+    // let cors = CorsLayer::new()
+    //     .allow_methods([Method::GET, Method::POST])
+    //     .allow_origin(Any);
 
-    let routes = Router::new()
-        .route("/customers", get(CustomersApiView::serve_json))
-        .route("/tickets", get(TicketsApiView::serve_json))
-        .layer(cors)
-        .with_state(server_state);
+    // let routes = Router::new()
+    //     .route("/customers", get(CustomersApiView::serve_json))
+    //     .route("/tickets", get(TicketsApiView::serve_json))
+    //     .layer(cors)
+    //     .with_state(server_state);
 
-    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    println!("Listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, routes.into_make_service())
-        .await
-        .unwrap();
+    // let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+    // println!("Listening on {}", listener.local_addr().unwrap());
+    // axum::serve(listener, routes.into_make_service())
+    //     .await
+    //     .unwrap();
 }
