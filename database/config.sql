@@ -137,8 +137,8 @@ SELECT
     category.display_name AS category
 FROM
     main.device_models model
-    JOIN main.device_manufacturers manufacturer ON model.manufacturer = manufacturer.id
-    JOIN main.device_categories category ON model.category = category.id
+    LEFT JOIN main.device_manufacturers manufacturer ON model.manufacturer = manufacturer.id
+    LEFT JOIN main.device_categories category ON model.category = category.id
 ORDER BY
     id ASC;
 
@@ -149,8 +149,8 @@ SELECT
     customer.name AS owner
 FROM
     main.devices device
-    JOIN main.device_models model ON device.model = model.id
-    JOIN main.customers customer ON device.owner = customer.id
+    LEFT JOIN main.device_models model ON device.model = model.id
+    LEFT JOIN main.customers customer ON device.owner = customer.id
 ORDER BY
     id ASC;
 
@@ -165,9 +165,9 @@ SELECT
     part.price
 FROM
     main.parts part
-    JOIN main.vendors vendor ON part.vendor = vendor.id
-    JOIN main.part_manufacturers manufacturer ON part.manufacturer = manufacturer.id
-    JOIN main.part_categories category ON part.category = category.id
+    LEFT JOIN main.vendors vendor ON part.vendor = vendor.id
+    LEFT JOIN main.part_manufacturers manufacturer ON part.manufacturer = manufacturer.id
+    LEFT JOIN main.part_categories category ON part.category = category.id
 ORDER BY
     id ASC;
 
@@ -181,6 +181,6 @@ SELECT
     ticket.updated_at
 FROM
     main.tickets ticket
-    JOIN main.customers customer ON ticket.customer = customer.id
+    LEFT JOIN main.customers customer ON ticket.customer = customer.id
 ORDER BY
     id ASC;

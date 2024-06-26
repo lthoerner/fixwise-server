@@ -24,6 +24,6 @@ impl DatabaseEntity for VendorsDatabaseView {
 
 #[derive(sqlx::FromRow, Clone)]
 pub struct VendorsDatabaseViewRow {
-    id: i32,
-    display_name: String,
+    pub id: i32,
+    pub display_name: String,
 }

@@ -11,7 +11,11 @@ use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
 use api::views::customers::CustomersApiView;
+use api::views::device_models::DeviceModelsApiView;
+use api::views::devices::DevicesApiView;
+use api::views::parts::PartsApiView;
 use api::views::tickets::TicketsApiView;
+use api::views::vendors::VendorsApiView;
 use api::ServeJson;
 use database::Database;
 
@@ -48,7 +52,11 @@ async fn main() {
 
     let routes = Router::new()
         .route("/customers", get(CustomersApiView::serve_json))
+        .route("/device_models", get(DeviceModelsApiView::serve_json))
+        .route("/devices", get(DevicesApiView::serve_json))
+        .route("/parts", get(PartsApiView::serve_json))
         .route("/tickets", get(TicketsApiView::serve_json))
+        .route("/vendors", get(VendorsApiView::serve_json))
         .layer(cors)
         .with_state(server_state);
 

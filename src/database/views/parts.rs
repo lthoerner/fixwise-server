@@ -26,11 +26,11 @@ impl DatabaseEntity for PartsDatabaseView {
 
 #[derive(sqlx::FromRow, Clone)]
 pub struct PartsDatabaseViewRow {
-    id: i32,
-    display_name: String,
-    vendor: String,
-    manufacturer: Option<String>,
-    category: String,
-    cost: Option<Decimal>,
-    price: Option<Decimal>,
+    pub id: i32,
+    pub display_name: String,
+    pub vendor: String,
+    pub manufacturer: Option<String>,
+    pub category: String,
+    pub cost: Option<Decimal>,
+    pub price: Option<Decimal>,
 }

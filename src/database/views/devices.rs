@@ -24,7 +24,7 @@ impl DatabaseEntity for DevicesDatabaseView {
 
 #[derive(sqlx::FromRow, Clone)]
 pub struct DevicesDatabaseViewRow {
-    id: i32,
-    model: String,
-    owner: Option<String>,
+    pub id: i32,
+    pub model: String,
+    pub owner: Option<String>,
 }

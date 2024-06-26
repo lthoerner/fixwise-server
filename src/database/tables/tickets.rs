@@ -65,7 +65,7 @@ impl BulkInsert for TicketsDatabaseTable {
 pub struct TicketsDatabaseTableRow {
     pub id: i32,
     pub status: TicketStatus,
-    pub customer: i32,
+    pub customer: Option<i32>,
     pub invoice_total: Decimal,
     pub payment_total: Decimal,
     pub description: String,
@@ -96,7 +96,7 @@ impl GenerateRowData for TicketsDatabaseTableRow {
         Self {
             id: generate_unique_i32(0, existing_ids),
             status: generate_ticket_status(),
-            customer: dependencies.pick_random().id(),
+            customer: generate_option(dependencies.pick_random().id(), 0.95),
             invoice_total,
             payment_total,
             description: generate_diagnostic(),
