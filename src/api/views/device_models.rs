@@ -3,7 +3,9 @@ use serde::Serialize;
 use super::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{DatabaseEntity, FromDatabaseEntity};
+use crate::api::{
+    DatabaseEntity, FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson,
+};
 use crate::database::views::device_models::{
     DeviceModelsDatabaseView, DeviceModelsDatabaseViewRow,
 };
@@ -15,7 +17,7 @@ pub struct DeviceModelsApiView {
 }
 
 #[derive(Serialize)]
-struct DeviceModelsApiViewRow {
+pub struct DeviceModelsApiViewRow {
     id: ViewCell<u32>,
     display_name: ViewCell<String>,
     manufacturer: ViewCell<String>,
@@ -83,31 +85,40 @@ impl DeviceModelsApiViewMetadata {
     }
 }
 
+impl ServeEntityJson for DeviceModelsApiView {}
 impl FromDatabaseEntity for DeviceModelsApiView {
     type Entity = DeviceModelsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = DeviceModelsApiViewFormatting::new();
         Self {
             metadata: DeviceModelsApiViewMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(|row| {
-                    let DeviceModelsDatabaseViewRow {
-                        id,
-                        display_name,
-                        manufacturer,
-                        category,
-                    } = row;
-
-                    DeviceModelsApiViewRow {
-                        id: ViewCell::new(id as u32, &formatting.id),
-                        display_name: ViewCell::new(display_name, &formatting.display_name),
-                        manufacturer: ViewCell::new(manufacturer, &formatting.manufacturer),
-                        category: ViewCell::new(category, &formatting.category),
-                    }
-                })
+                .map(DeviceModelsApiViewRow::from_database_row)
                 .collect(),
+        }
+    }
+}
+
+impl ServeRowJson for DeviceModelsApiViewRow {}
+impl FromDatabaseRow for DeviceModelsApiViewRow {
+    type Row = DeviceModelsDatabaseViewRow;
+    type Entity = DeviceModelsDatabaseView;
+    fn from_database_row(row: Self::Row) -> Self {
+        let formatting = DeviceModelsApiViewFormatting::new();
+
+        let DeviceModelsDatabaseViewRow {
+            id,
+            display_name,
+            manufacturer,
+            category,
+        } = row;
+
+        DeviceModelsApiViewRow {
+            id: ViewCell::new(id as u32, &formatting.id),
+            display_name: ViewCell::new(display_name, &formatting.display_name),
+            manufacturer: ViewCell::new(manufacturer, &formatting.manufacturer),
+            category: ViewCell::new(category, &formatting.category),
         }
     }
 }

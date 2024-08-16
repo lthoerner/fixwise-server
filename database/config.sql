@@ -108,6 +108,12 @@ CREATE TABLE main.bundled_parts (
     FOREIGN KEY (ticket, device) references main.ticket_devices (ticket, device)
 );
 
+CREATE TABLE main.type_allocation_codes (
+    tac serial PRIMARY KEY,
+    manufacturer text NOT NULL,
+    model text NOT NULL
+);
+
 CREATE VIEW main.vendors_view AS
 SELECT
     id,

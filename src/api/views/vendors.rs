@@ -3,7 +3,9 @@ use serde::Serialize;
 use super::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{DatabaseEntity, FromDatabaseEntity};
+use crate::api::{
+    DatabaseEntity, FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson,
+};
 use crate::database::views::vendors::{VendorsDatabaseView, VendorsDatabaseViewRow};
 
 #[derive(Serialize)]
@@ -13,7 +15,7 @@ pub struct VendorsApiView {
 }
 
 #[derive(Serialize)]
-struct VendorsApiViewRow {
+pub struct VendorsApiViewRow {
     id: ViewCell<u32>,
     display_name: ViewCell<String>,
 }
@@ -59,23 +61,31 @@ impl VendorsApiViewMetadata {
     }
 }
 
+impl ServeEntityJson for VendorsApiView {}
 impl FromDatabaseEntity for VendorsApiView {
     type Entity = VendorsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = VendorsApiViewFormatting::new();
         Self {
             metadata: VendorsApiViewMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(|row| {
-                    let VendorsDatabaseViewRow { id, display_name } = row;
-                    VendorsApiViewRow {
-                        id: ViewCell::new(id as u32, &formatting.id),
-                        display_name: ViewCell::new(display_name, &formatting.display_name),
-                    }
-                })
+                .map(VendorsApiViewRow::from_database_row)
                 .collect(),
+        }
+    }
+}
+
+impl ServeRowJson for VendorsApiViewRow {}
+impl FromDatabaseRow for VendorsApiViewRow {
+    type Row = VendorsDatabaseViewRow;
+    type Entity = VendorsDatabaseView;
+    fn from_database_row(row: Self::Row) -> Self {
+        let formatting = VendorsApiViewFormatting::new();
+        let VendorsDatabaseViewRow { id, display_name } = row;
+        VendorsApiViewRow {
+            id: ViewCell::new(id as u32, &formatting.id),
+            display_name: ViewCell::new(display_name, &formatting.display_name),
         }
     }
 }

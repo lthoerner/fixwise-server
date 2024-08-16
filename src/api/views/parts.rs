@@ -4,7 +4,9 @@ use serde::Serialize;
 use super::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{DatabaseEntity, FromDatabaseEntity};
+use crate::api::{
+    DatabaseEntity, FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson,
+};
 use crate::database::views::parts::{PartsDatabaseView, PartsDatabaseViewRow};
 
 #[derive(Serialize)]
@@ -14,7 +16,7 @@ pub struct PartsApiView {
 }
 
 #[derive(Serialize)]
-struct PartsApiViewRow {
+pub struct PartsApiViewRow {
     id: ViewCell<u32>,
     display_name: ViewCell<String>,
     vendor: ViewCell<String>,
@@ -115,37 +117,46 @@ impl PartsApiViewMetadata {
     }
 }
 
+impl ServeEntityJson for PartsApiView {}
 impl FromDatabaseEntity for PartsApiView {
     type Entity = PartsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = PartsApiViewFormatting::new();
         Self {
             metadata: PartsApiViewMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(|row| {
-                    let PartsDatabaseViewRow {
-                        id,
-                        display_name,
-                        vendor,
-                        manufacturer,
-                        category,
-                        cost,
-                        price,
-                    } = row;
-
-                    PartsApiViewRow {
-                        id: ViewCell::new(id as u32, &formatting.id),
-                        display_name: ViewCell::new(display_name, &formatting.display_name),
-                        vendor: ViewCell::new(vendor, &formatting.vendor),
-                        manufacturer: ViewCell::new(manufacturer, &formatting.manufacturer),
-                        category: ViewCell::new(category, &formatting.category),
-                        cost: ViewCell::new(cost, &formatting.cost),
-                        price: ViewCell::new(price, &formatting.price),
-                    }
-                })
+                .map(PartsApiViewRow::from_database_row)
                 .collect(),
+        }
+    }
+}
+
+impl ServeRowJson for PartsApiViewRow {}
+impl FromDatabaseRow for PartsApiViewRow {
+    type Row = PartsDatabaseViewRow;
+    type Entity = PartsDatabaseView;
+    fn from_database_row(row: Self::Row) -> Self {
+        let formatting = PartsApiViewFormatting::new();
+
+        let PartsDatabaseViewRow {
+            id,
+            display_name,
+            vendor,
+            manufacturer,
+            category,
+            cost,
+            price,
+        } = row;
+
+        PartsApiViewRow {
+            id: ViewCell::new(id as u32, &formatting.id),
+            display_name: ViewCell::new(display_name, &formatting.display_name),
+            vendor: ViewCell::new(vendor, &formatting.vendor),
+            manufacturer: ViewCell::new(manufacturer, &formatting.manufacturer),
+            category: ViewCell::new(category, &formatting.category),
+            cost: ViewCell::new(cost, &formatting.cost),
+            price: ViewCell::new(price, &formatting.price),
         }
     }
 }

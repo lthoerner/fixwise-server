@@ -1,25 +1,43 @@
+pub mod utils;
 pub mod views;
 
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::Json;
 use serde::Serialize;
 
-use crate::database::DatabaseEntity;
+use crate::database::{DatabaseEntity, IdParameter};
 use crate::ServerState;
 
-pub trait ServeJson: Sized {
-    async fn serve_json(state: State<Arc<ServerState>>) -> Json<Self>;
+pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
+    async fn serve_all(state: State<Arc<ServerState>>) -> Json<Self> {
+        Json(Self::from_database_entity(
+            <Self as FromDatabaseEntity>::Entity::query_all(state).await,
+        ))
+    }
 }
 
-trait FromDatabaseEntity {
+pub trait ServeRowJson: FromDatabaseRow + Serialize + Sized {
+    async fn serve_one(
+        state: State<Arc<ServerState>>,
+        id_param: Query<IdParameter>,
+    ) -> Json<Option<Self>> {
+        Json(Some(Self::from_database_row(
+            <<Self as FromDatabaseRow>::Entity as DatabaseEntity>::query_one(state, id_param)
+                .await
+                .unwrap(),
+        )))
+    }
+}
+
+pub trait FromDatabaseEntity {
     type Entity: DatabaseEntity;
     fn from_database_entity(entity: Self::Entity) -> Self;
 }
 
-impl<T: FromDatabaseEntity + Serialize> ServeJson for T {
-    async fn serve_json(state: State<Arc<ServerState>>) -> Json<T> {
-        Json(T::from_database_entity(T::Entity::query_all(state).await))
-    }
+pub trait FromDatabaseRow {
+    type Row;
+    type Entity: DatabaseEntity<Row = Self::Row>;
+    fn from_database_row(row: Self::Row) -> Self;
 }

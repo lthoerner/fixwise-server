@@ -3,7 +3,9 @@ use serde::Serialize;
 use super::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{DatabaseEntity, FromDatabaseEntity};
+use crate::api::{
+    DatabaseEntity, FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson,
+};
 use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
 
 #[derive(Serialize)]
@@ -13,7 +15,7 @@ pub struct CustomersApiView {
 }
 
 #[derive(Serialize)]
-struct CustomersApiViewRow {
+pub struct CustomersApiViewRow {
     id: ViewCell<u32>,
     name: ViewCell<String>,
     email_address: ViewCell<Option<String>>,
@@ -92,33 +94,42 @@ impl CustomersApiViewMetadata {
     }
 }
 
+impl ServeEntityJson for CustomersApiView {}
 impl FromDatabaseEntity for CustomersApiView {
     type Entity = CustomersDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = CustomersApiViewFormatting::new();
         Self {
             metadata: CustomersApiViewMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(|row| {
-                    let CustomersDatabaseViewRow {
-                        id,
-                        name,
-                        email_address,
-                        phone_number,
-                        street_address,
-                    } = row;
-
-                    CustomersApiViewRow {
-                        id: ViewCell::new(id as u32, &formatting.id),
-                        name: ViewCell::new(name, &formatting.name),
-                        email_address: ViewCell::new(email_address, &formatting.email_address),
-                        phone_number: ViewCell::new(phone_number, &formatting.phone_number),
-                        street_address: ViewCell::new(street_address, &formatting.street_address),
-                    }
-                })
+                .map(CustomersApiViewRow::from_database_row)
                 .collect(),
+        }
+    }
+}
+
+impl ServeRowJson for CustomersApiViewRow {}
+impl FromDatabaseRow for CustomersApiViewRow {
+    type Row = CustomersDatabaseViewRow;
+    type Entity = CustomersDatabaseView;
+    fn from_database_row(row: Self::Row) -> Self {
+        let formatting = CustomersApiViewFormatting::new();
+
+        let CustomersDatabaseViewRow {
+            id,
+            name,
+            email_address,
+            phone_number,
+            street_address,
+        } = row;
+
+        CustomersApiViewRow {
+            id: ViewCell::new(id as u32, &formatting.id),
+            name: ViewCell::new(name, &formatting.name),
+            email_address: ViewCell::new(email_address, &formatting.email_address),
+            phone_number: ViewCell::new(phone_number, &formatting.phone_number),
+            street_address: ViewCell::new(street_address, &formatting.street_address),
         }
     }
 }

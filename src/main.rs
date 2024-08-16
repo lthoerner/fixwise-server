@@ -10,25 +10,30 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
+use api::utils::imei_check::ImeiInfoApiUtil;
 use api::views::customers::CustomersApiView;
 use api::views::device_models::DeviceModelsApiView;
 use api::views::devices::DevicesApiView;
 use api::views::parts::PartsApiView;
 use api::views::tickets::TicketsApiView;
 use api::views::vendors::VendorsApiView;
-use api::ServeJson;
+use api::{ServeEntityJson, ServeRowJson};
 use database::Database;
 
 #[derive(Clone)]
 struct ServerState {
     database: Database,
+    imei_info_api_key: String,
 }
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().unwrap();
+
     println!("Connecting to database...");
     let server_state = Arc::new(ServerState {
         database: Database::connect_and_configure().await,
+        imei_info_api_key: std::env::var("IMEI_INFO_API_KEY").unwrap(),
     });
 
     let signal_handler_server_state = server_state.clone();
@@ -51,12 +56,13 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/customers", get(CustomersApiView::serve_json))
-        .route("/device_models", get(DeviceModelsApiView::serve_json))
-        .route("/devices", get(DevicesApiView::serve_json))
-        .route("/parts", get(PartsApiView::serve_json))
-        .route("/tickets", get(TicketsApiView::serve_json))
-        .route("/vendors", get(VendorsApiView::serve_json))
+        .route("/customers", get(CustomersApiView::serve_all))
+        .route("/device_models", get(DeviceModelsApiView::serve_all))
+        .route("/devices", get(DevicesApiView::serve_all))
+        .route("/parts", get(PartsApiView::serve_all))
+        .route("/tickets", get(TicketsApiView::serve_all))
+        .route("/vendors", get(VendorsApiView::serve_all))
+        .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
         .layer(cors)
         .with_state(server_state);
 

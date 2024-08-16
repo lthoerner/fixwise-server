@@ -8,9 +8,10 @@ use std::sync::Arc;
 use std::time::Instant;
 use std::vec::IntoIter;
 
-use axum::extract::State;
+use axum::extract::{Query, State};
 use itertools::{IntoChunks, Itertools};
 use rand::{thread_rng, Rng};
+use serde::Deserialize;
 use sqlx::postgres::PgRow;
 use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::{raw_sql, PgPool, Postgres};
@@ -52,6 +53,7 @@ pub struct Database {
     connection: PgPool,
 }
 
+// ? Should this be accompanied by a `DatabaseRow` trait?
 pub trait DatabaseEntity: Sized {
     type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone;
     const ENTITY_NAME: &str;
@@ -60,6 +62,21 @@ pub trait DatabaseEntity: Sized {
     fn with_rows(rows: Vec<Self::Row>) -> Self;
     fn take_rows(self) -> Vec<Self::Row>;
     fn rows(&self) -> &[Self::Row];
+
+    async fn query_one(
+        State(state): State<Arc<ServerState>>,
+        id_param: Query<IdParameter>,
+    ) -> Option<Self::Row> {
+        sqlx::query_as(&format!(
+            "SELECT * FROM main.{} WHERE {} = {}",
+            Self::ENTITY_NAME,
+            Self::PRIMARY_COLUMN_NAME,
+            id_param.id,
+        ))
+        .fetch_one(&state.database.connection)
+        .await
+        .ok()
+    }
 
     async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
         Self::with_rows(
@@ -273,4 +290,9 @@ impl Database {
             .await
             .unwrap();
     }
+}
+
+#[derive(Clone, Deserialize)]
+pub struct IdParameter {
+    pub id: usize,
 }

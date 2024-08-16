@@ -10,6 +10,7 @@ pub mod part_manufacturers;
 pub mod parts;
 pub mod ticket_devices;
 pub mod tickets;
+pub mod type_allocation_codes;
 pub mod vendors;
 
 pub trait IdentifiableRow {

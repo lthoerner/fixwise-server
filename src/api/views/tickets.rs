@@ -6,7 +6,7 @@ use super::{
     ColumnFormat, CssColor, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType,
     TagOption, ViewCell,
 };
-use crate::api::FromDatabaseEntity;
+use crate::api::{FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson};
 use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
 use crate::database::DatabaseEntity;
@@ -18,7 +18,7 @@ pub struct TicketsApiView {
 }
 
 #[derive(Serialize)]
-struct TicketsApiViewRow {
+pub struct TicketsApiViewRow {
     id: ViewCell<u32>,
     status: ViewCell<TicketStatus>,
     customer: ViewCell<Option<String>>,
@@ -151,35 +151,44 @@ impl TicketsApiViewMetadata {
     }
 }
 
+impl ServeEntityJson for TicketsApiView {}
 impl FromDatabaseEntity for TicketsApiView {
     type Entity = TicketsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
-        let formatting = TicketsApiViewFormatting::new();
         Self {
             metadata: TicketsApiViewMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(|row| {
-                    let TicketsDatabaseViewRow {
-                        id,
-                        status,
-                        customer,
-                        balance,
-                        created_at,
-                        updated_at,
-                    } = row;
-
-                    TicketsApiViewRow {
-                        id: ViewCell::new(id as u32, &formatting.id),
-                        status: ViewCell::new(status, &formatting.status),
-                        customer: ViewCell::new(customer, &formatting.customer),
-                        balance: ViewCell::new(balance, &formatting.balance),
-                        created_at: ViewCell::new(created_at, &formatting.created_at),
-                        updated_at: ViewCell::new(updated_at, &formatting.updated_at),
-                    }
-                })
+                .map(TicketsApiViewRow::from_database_row)
                 .collect(),
+        }
+    }
+}
+
+impl ServeRowJson for TicketsApiViewRow {}
+impl FromDatabaseRow for TicketsApiViewRow {
+    type Row = TicketsDatabaseViewRow;
+    type Entity = TicketsDatabaseView;
+    fn from_database_row(row: Self::Row) -> Self {
+        let formatting = TicketsApiViewFormatting::new();
+
+        let TicketsDatabaseViewRow {
+            id,
+            status,
+            customer,
+            balance,
+            created_at,
+            updated_at,
+        } = row;
+
+        TicketsApiViewRow {
+            id: ViewCell::new(id as u32, &formatting.id),
+            status: ViewCell::new(status, &formatting.status),
+            customer: ViewCell::new(customer, &formatting.customer),
+            balance: ViewCell::new(balance, &formatting.balance),
+            created_at: ViewCell::new(created_at, &formatting.created_at),
+            updated_at: ViewCell::new(updated_at, &formatting.updated_at),
         }
     }
 }
