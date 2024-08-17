@@ -2,6 +2,7 @@ DROP SCHEMA IF EXISTS main CASCADE;
 
 DROP TYPE IF EXISTS ticket_status;
 
+CREATE SCHEMA IF NOT EXISTS persistent;
 CREATE SCHEMA main;
 
 CREATE TYPE ticket_status AS ENUM (
@@ -108,7 +109,7 @@ CREATE TABLE main.bundled_parts (
     FOREIGN KEY (ticket, device) references main.ticket_devices (ticket, device)
 );
 
-CREATE TABLE main.type_allocation_codes (
+CREATE TABLE IF NOT EXISTS persistent.type_allocation_codes (
     tac serial PRIMARY KEY,
     manufacturer text NOT NULL,
     model text NOT NULL

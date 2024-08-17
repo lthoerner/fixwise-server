@@ -6,10 +6,9 @@ pub mod views;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
-use std::vec::IntoIter;
 
 use axum::extract::{Query, State};
-use itertools::{IntoChunks, Itertools};
+
 use rand::{thread_rng, Rng};
 use serde::Deserialize;
 use sqlx::postgres::PgRow;
@@ -56,6 +55,7 @@ pub struct Database {
 // ? Should this be accompanied by a `DatabaseRow` trait?
 pub trait DatabaseEntity: Sized {
     type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone;
+    const SCHEMA_NAME: &str = "main";
     const ENTITY_NAME: &str;
     const PRIMARY_COLUMN_NAME: &str;
 
@@ -65,10 +65,11 @@ pub trait DatabaseEntity: Sized {
 
     async fn query_one(
         State(state): State<Arc<ServerState>>,
-        id_param: Query<IdParameter>,
+        id_param: Query<GenericIdParameter>,
     ) -> Option<Self::Row> {
         sqlx::query_as(&format!(
-            "SELECT * FROM main.{} WHERE {} = {}",
+            "SELECT * FROM {}.{} WHERE {} = {}",
+            Self::SCHEMA_NAME,
             Self::ENTITY_NAME,
             Self::PRIMARY_COLUMN_NAME,
             id_param.id,
@@ -81,7 +82,8 @@ pub trait DatabaseEntity: Sized {
     async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
         Self::with_rows(
             sqlx::query_as(&format!(
-                "SELECT * FROM main.{} ORDER BY {}",
+                "SELECT * FROM {}.{} ORDER BY {}",
+                Self::SCHEMA_NAME,
                 Self::ENTITY_NAME,
                 Self::PRIMARY_COLUMN_NAME
             ))
@@ -148,27 +150,32 @@ trait GenerateStaticRowData {
     fn new(id: i32, display_name: String) -> Self;
 }
 
-trait BulkInsert: DatabaseEntity {
+// TODO: Add standard single-insert trait
+pub trait BulkInsert: DatabaseEntity {
     const COLUMN_NAMES: &[&str];
     const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::COLUMN_NAMES.len();
 
     fn get_querybuilder<'a>() -> QueryBuilder<'a, Postgres> {
         QueryBuilder::new(&format!(
-            "INSERT INTO main.{} ({}) ",
+            "INSERT INTO {}.{} ({}) ",
+            Self::SCHEMA_NAME,
             Self::ENTITY_NAME,
             Self::COLUMN_NAMES.join(", ")
         ))
     }
 
-    fn into_chunks(self) -> IntoChunks<IntoIter<Self::Row>> {
-        let num_chunks = usize::div_ceil(self.rows().len(), Self::CHUNK_SIZE);
-        self.take_rows().into_iter().chunks(num_chunks)
+    fn into_chunks(self) -> impl Iterator<Item = Vec<Self::Row>> {
+        let mut iter = self.take_rows().into_iter();
+        // TODO: Annotate this code or something, I have very little idea what it does
+        // * This was done because `IntoChunks` was causing issues with the axum handlers
+        std::iter::from_fn(move || Some(iter.by_ref().take(Self::CHUNK_SIZE).collect()))
+            .filter(|v: &Vec<_>| v.len() > 0)
     }
 
     fn push_bindings(builder: Separated<Postgres, &str>, row: Self::Row);
 
     async fn insert_all(self, database: &Database) {
-        for chunk in &self.into_chunks() {
+        for chunk in self.into_chunks() {
             let mut querybuilder = Self::get_querybuilder();
             querybuilder.push_values(chunk, Self::push_bindings);
             database.execute_querybuilder(querybuilder).await;
@@ -283,6 +290,7 @@ impl Database {
         );
     }
 
+    // TODO: Move this logic to `BulkInsert::insert_all()`
     async fn execute_querybuilder<'a>(&self, mut querybuilder: QueryBuilder<'a, Postgres>) {
         querybuilder
             .build()
@@ -293,6 +301,6 @@ impl Database {
 }
 
 #[derive(Clone, Deserialize)]
-pub struct IdParameter {
+pub struct GenericIdParameter {
     pub id: usize,
 }

@@ -1,5 +1,8 @@
+use sqlx::query_builder::Separated;
+use sqlx::Postgres;
+
 use super::IdentifiableRow;
-use crate::database::DatabaseEntity;
+use crate::database::{BulkInsert, DatabaseEntity};
 
 pub struct TypeAllocationCodesDatabaseTable {
     rows: Vec<TypeAllocationCodesDatabaseTableRow>,
@@ -7,9 +10,11 @@ pub struct TypeAllocationCodesDatabaseTable {
 
 impl DatabaseEntity for TypeAllocationCodesDatabaseTable {
     type Row = TypeAllocationCodesDatabaseTableRow;
+    const SCHEMA_NAME: &str = "persistent";
     const ENTITY_NAME: &str = "type_allocation_codes";
     const PRIMARY_COLUMN_NAME: &str = "tac";
 
+    // TODO: Take `Into<Vec<Self::Row>>` here
     fn with_rows(rows: Vec<Self::Row>) -> Self {
         Self { rows }
     }
@@ -20,6 +25,16 @@ impl DatabaseEntity for TypeAllocationCodesDatabaseTable {
 
     fn rows(&self) -> &[Self::Row] {
         &self.rows
+    }
+}
+
+impl BulkInsert for TypeAllocationCodesDatabaseTable {
+    const COLUMN_NAMES: &[&str] = &["tac", "manufacturer", "model"];
+    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
+        builder
+            .push_bind(row.tac)
+            .push_bind(row.manufacturer)
+            .push_bind(row.model);
     }
 }
 
