@@ -38,7 +38,7 @@ impl BulkInsert for TypeAllocationCodesDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone, Debug)]
 pub struct TypeAllocationCodesDatabaseTableRow {
     pub tac: i32,
     pub manufacturer: String,

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
-use imei_info::PhoneInfo;
+use imei_info::{Imei, PhoneInfo, Tac};
 use serde::Serialize;
 
 use crate::api::{FromDatabaseRow, ServeRowJson};
@@ -22,30 +22,33 @@ impl ServeRowJson for ImeiInfoApiUtil {
         state: State<Arc<ServerState>>,
         imei_param: Query<GenericIdParameter>,
     ) -> Json<Option<Self>> {
-        if let Some(existing_row) = Self::Entity::query_one(state.clone(), imei_param.clone()).await
+        let imei = Imei::try_from(imei_param.0.id).unwrap();
+        let tac = Tac::from(imei.clone());
+        if let Some(existing_row) = Self::Entity::query_one(
+            state.clone(),
+            Query(GenericIdParameter {
+                id: tac.clone().into(),
+            }),
+        )
+        .await
         {
             Json(Some(Self::from_database_row(existing_row)))
         } else {
-            let imei_string = format!("{:08}", &imei_param.0.id);
             let PhoneInfo {
-                imei,
                 manufacturer,
                 model,
-            } = imei_info::get_imei_info(&state.imei_info_api_key, &imei_string)
+                ..
+            } = imei_info::get_imei_info(&state.imei_info_api_key, imei)
                 .await
                 .unwrap();
 
             let database_imei_info = TypeAllocationCodesDatabaseTableRow {
-                tac: imei
-                    .type_allocation_code()
-                    .iter()
-                    .enumerate()
-                    .map(|(i, d)| *d as i32 * 10 ^ i as i32)
-                    .sum(),
+                tac: tac.into(),
                 manufacturer: manufacturer.clone(),
                 model: model.clone(),
             };
 
+            // TODO: Add a single-insert trait that can make this process less fugly
             TypeAllocationCodesDatabaseTable::with_rows(Vec::from([database_imei_info]))
                 .insert_all(&state.database)
                 .await;

@@ -167,9 +167,9 @@ pub trait BulkInsert: DatabaseEntity {
     fn into_chunks(self) -> impl Iterator<Item = Vec<Self::Row>> {
         let mut iter = self.take_rows().into_iter();
         // TODO: Annotate this code or something, I have very little idea what it does
-        // * This was done because `IntoChunks` was causing issues with the axum handlers
+        // * This was done because `itertools::IntoChunks` was causing issues with the axum handlers
         std::iter::from_fn(move || Some(iter.by_ref().take(Self::CHUNK_SIZE).collect()))
-            .filter(|v: &Vec<_>| v.len() > 0)
+            .take_while(|v: &Vec<_>| v.len() > 0)
     }
 
     fn push_bindings(builder: Separated<Postgres, &str>, row: Self::Row);
