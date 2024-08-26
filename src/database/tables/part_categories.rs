@@ -1,7 +1,7 @@
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateStaticRowData, GenerateStaticTableData};
@@ -19,16 +19,10 @@ impl BulkInsert for PartCategoriesDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct PartCategoriesDatabaseTableRow {
     pub id: i32,
     pub display_name: String,
-}
-
-impl IdentifiableRow for PartCategoriesDatabaseTableRow {
-    fn id(&self) -> i32 {
-        self.id
-    }
 }
 
 impl GenerateStaticTableData for PartCategoriesDatabaseTable {

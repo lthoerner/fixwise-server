@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::device_categories::DeviceCategoriesDatabaseTable;
 use super::device_manufacturers::DeviceManufacturersDatabaseTable;
@@ -38,7 +38,7 @@ impl BulkInsert for DeviceModelsDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct DeviceModelsDatabaseTableRow {
     pub id: i32,
     pub display_name: String,
@@ -46,12 +46,6 @@ pub struct DeviceModelsDatabaseTableRow {
     pub secondary_model_identifiers: Vec<String>,
     pub manufacturer: i32,
     pub category: i32,
-}
-
-impl IdentifiableRow for DeviceModelsDatabaseTableRow {
-    fn id(&self) -> i32 {
-        self.id
-    }
 }
 
 impl GenerateTableData for DeviceModelsDatabaseTable {}

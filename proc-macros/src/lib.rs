@@ -120,3 +120,48 @@ pub fn derive_id_parameter(input: TokenStream) -> TokenStream {
         )
     }
 }
+
+#[proc_macro_derive(IdentifiableRow)]
+pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+
+    let fields = match data {
+        Data::Struct(data_struct) => match data_struct.fields {
+            Fields::Named(fields) => fields,
+            _ => {
+                synerror!(
+                    type_name,
+                    "cannot derive `IdentifiableRow` for unit or tuple structs"
+                )
+            }
+        },
+        _ => {
+            synerror!(
+                type_name,
+                "cannot derive `IdentifiableRow` for non-struct types"
+            )
+        }
+    };
+
+    let first_field = fields.named.into_iter().next();
+    if let Some(first_field) = first_field {
+        let first_field_name = first_field.ident.unwrap();
+        quote! {
+            impl IdentifiableRow for #type_name {
+                fn id(&self) -> i32 {
+                    self.#first_field_name
+                }
+            }
+        }
+        .into()
+    } else {
+        synerror!(
+            type_name,
+            "cannot derive `IdentifiableRow` for structs with no fields"
+        )
+    }
+}

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::generators::*;
 use super::IdentifiableRow;
@@ -34,19 +34,13 @@ impl BulkInsert for VendorsDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct VendorsDatabaseTableRow {
     pub id: i32,
     pub display_name: String,
     pub email_address: Option<String>,
     pub phone_number: Option<String>,
     pub street_address: Option<String>,
-}
-
-impl IdentifiableRow for VendorsDatabaseTableRow {
-    fn id(&self) -> i32 {
-        self.id
-    }
 }
 
 impl GenerateTableData for VendorsDatabaseTable {}

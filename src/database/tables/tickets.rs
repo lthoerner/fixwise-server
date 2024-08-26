@@ -6,7 +6,7 @@ use rust_decimal::Decimal;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
@@ -47,7 +47,7 @@ impl BulkInsert for TicketsDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct TicketsDatabaseTableRow {
     pub id: i32,
     pub status: TicketStatus,
@@ -58,12 +58,6 @@ pub struct TicketsDatabaseTableRow {
     pub notes: Vec<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-}
-
-impl IdentifiableRow for TicketsDatabaseTableRow {
-    fn id(&self) -> i32 {
-        self.id
-    }
 }
 
 impl GenerateTableData for TicketsDatabaseTable {}

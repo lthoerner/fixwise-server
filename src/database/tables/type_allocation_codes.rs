@@ -1,7 +1,7 @@
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity};
@@ -26,15 +26,9 @@ impl BulkInsert for TypeAllocationCodesDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone, Debug)]
+#[derive(sqlx::FromRow, Clone, Debug, IdentifiableRow)]
 pub struct TypeAllocationCodesDatabaseTableRow {
     pub tac: i32,
     pub manufacturer: String,
     pub model: String,
-}
-
-impl IdentifiableRow for TypeAllocationCodesDatabaseTableRow {
-    fn id(&self) -> i32 {
-        self.tac
-    }
 }

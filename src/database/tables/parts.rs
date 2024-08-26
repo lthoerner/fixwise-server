@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesDatabaseTable;
@@ -43,7 +43,7 @@ impl BulkInsert for PartsDatabaseTable {
     }
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct PartsDatabaseTableRow {
     pub id: i32,
     pub display_name: String,
@@ -52,12 +52,6 @@ pub struct PartsDatabaseTableRow {
     pub category: i32,
     pub cost: Option<Decimal>,
     pub price: Option<Decimal>,
-}
-
-impl IdentifiableRow for PartsDatabaseTableRow {
-    fn id(&self) -> i32 {
-        self.id
-    }
 }
 
 impl GenerateTableData for PartsDatabaseTable {}
