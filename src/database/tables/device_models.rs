@@ -3,32 +3,18 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::device_categories::DeviceCategoriesDatabaseTable;
 use super::device_manufacturers::DeviceManufacturersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "device_models", primary_column = "id")]
 pub struct DeviceModelsDatabaseTable {
     rows: Vec<DeviceModelsDatabaseTableRow>,
-}
-
-impl DatabaseEntity for DeviceModelsDatabaseTable {
-    type Row = DeviceModelsDatabaseTableRow;
-    const ENTITY_NAME: &str = "device_models";
-    const PRIMARY_COLUMN_NAME: &str = "id";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for DeviceModelsDatabaseTable {

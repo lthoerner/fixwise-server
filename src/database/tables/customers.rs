@@ -3,30 +3,16 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "customers", primary_column = "id")]
 pub struct CustomersDatabaseTable {
     rows: Vec<CustomersDatabaseTableRow>,
-}
-
-impl DatabaseEntity for CustomersDatabaseTable {
-    type Row = CustomersDatabaseTableRow;
-    const ENTITY_NAME: &str = "customers";
-    const PRIMARY_COLUMN_NAME: &str = "id";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for CustomersDatabaseTable {

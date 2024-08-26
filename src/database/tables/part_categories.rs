@@ -1,29 +1,15 @@
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateStaticRowData, GenerateStaticTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "part_categories", primary_column = "id")]
 pub struct PartCategoriesDatabaseTable {
     rows: Vec<PartCategoriesDatabaseTableRow>,
-}
-
-impl DatabaseEntity for PartCategoriesDatabaseTable {
-    type Row = PartCategoriesDatabaseTableRow;
-    const ENTITY_NAME: &str = "part_categories";
-    const PRIMARY_COLUMN_NAME: &str = "id";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for PartCategoriesDatabaseTable {

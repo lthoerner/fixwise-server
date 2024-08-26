@@ -5,6 +5,8 @@ use rust_decimal::Decimal;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::generators::*;
 use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
@@ -12,26 +14,10 @@ use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "parts", primary_column = "id")]
 pub struct PartsDatabaseTable {
     rows: Vec<PartsDatabaseTableRow>,
-}
-
-impl DatabaseEntity for PartsDatabaseTable {
-    type Row = PartsDatabaseTableRow;
-    const ENTITY_NAME: &str = "parts";
-    const PRIMARY_COLUMN_NAME: &str = "id";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for PartsDatabaseTable {

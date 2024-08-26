@@ -3,31 +3,20 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::parts::PartsDatabaseTable;
 use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(
+    entity_name = "bundled_parts",
+    primary_column = "(ticket, device, part)"
+)]
 pub struct BundledPartsDatabaseJunctionTable {
     rows: Vec<BundledPartsDatabaseJunctionTableRow>,
-}
-
-impl DatabaseEntity for BundledPartsDatabaseJunctionTable {
-    type Row = BundledPartsDatabaseJunctionTableRow;
-    const ENTITY_NAME: &str = "bundled_parts";
-    const PRIMARY_COLUMN_NAME: &str = "(ticket, device, part)";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for BundledPartsDatabaseJunctionTable {

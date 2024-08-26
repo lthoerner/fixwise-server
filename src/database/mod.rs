@@ -61,6 +61,7 @@ pub trait DatabaseEntity: Sized {
     const ENTITY_NAME: &str;
     const PRIMARY_COLUMN_NAME: &str;
 
+    // TODO: Take `Into<Vec<Self::Row>>` here
     fn with_rows(rows: Vec<Self::Row>) -> Self;
     fn take_rows(self) -> Vec<Self::Row>;
     fn rows(&self) -> &[Self::Row];

@@ -3,31 +3,17 @@ use std::collections::HashSet;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::device_models::DeviceModelsDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "compatible_parts", primary_column = "(device, part)")]
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
-}
-
-impl DatabaseEntity for CompatiblePartsDatabaseJunctionTable {
-    type Row = CompatiblePartsDatabaseJunctionTableRow;
-    const ENTITY_NAME: &str = "compatible_parts";
-    const PRIMARY_COLUMN_NAME: &str = "(device, part)";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for CompatiblePartsDatabaseJunctionTable {

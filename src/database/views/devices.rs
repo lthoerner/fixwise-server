@@ -1,25 +1,11 @@
+use proc_macros::DatabaseEntity;
+
 use crate::database::DatabaseEntity;
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "devices_view", primary_column = "id")]
 pub struct DevicesDatabaseView {
     rows: Vec<DevicesDatabaseViewRow>,
-}
-
-impl DatabaseEntity for DevicesDatabaseView {
-    type Row = DevicesDatabaseViewRow;
-    const ENTITY_NAME: &str = "devices_view";
-    const PRIMARY_COLUMN_NAME: &str = "id";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 #[derive(sqlx::FromRow, Clone)]

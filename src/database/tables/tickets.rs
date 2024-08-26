@@ -6,32 +6,18 @@ use rust_decimal::Decimal;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "tickets", primary_column = "id")]
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
-}
-
-impl DatabaseEntity for TicketsDatabaseTable {
-    type Row = TicketsDatabaseTableRow;
-    const ENTITY_NAME: &str = "tickets";
-    const PRIMARY_COLUMN_NAME: &str = "id";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for TicketsDatabaseTable {

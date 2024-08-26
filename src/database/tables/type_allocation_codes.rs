@@ -1,31 +1,19 @@
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity};
 
+#[derive(DatabaseEntity)]
+#[entity(
+    schema_name = "persistent",
+    entity_name = "type_allocation_codes",
+    primary_column = "tac"
+)]
 pub struct TypeAllocationCodesDatabaseTable {
     rows: Vec<TypeAllocationCodesDatabaseTableRow>,
-}
-
-impl DatabaseEntity for TypeAllocationCodesDatabaseTable {
-    type Row = TypeAllocationCodesDatabaseTableRow;
-    const SCHEMA_NAME: &str = "persistent";
-    const ENTITY_NAME: &str = "type_allocation_codes";
-    const PRIMARY_COLUMN_NAME: &str = "tac";
-
-    // TODO: Take `Into<Vec<Self::Row>>` here
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for TypeAllocationCodesDatabaseTable {

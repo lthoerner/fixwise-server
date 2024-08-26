@@ -4,32 +4,18 @@ use rust_decimal::Decimal;
 use sqlx::query_builder::Separated;
 use sqlx::Postgres;
 
+use proc_macros::DatabaseEntity;
+
 use super::devices::DevicesDatabaseTable;
 use super::generators::*;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
 
+#[derive(DatabaseEntity)]
+#[entity(entity_name = "ticket_devices", primary_column = "(ticket, device)")]
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
-}
-
-impl DatabaseEntity for TicketDevicesDatabaseJunctionTable {
-    type Row = TicketDevicesDatabaseJunctionTableRow;
-    const ENTITY_NAME: &str = "ticket_devices";
-    const PRIMARY_COLUMN_NAME: &str = "(ticket, device)";
-
-    fn with_rows(rows: Vec<Self::Row>) -> Self {
-        Self { rows }
-    }
-
-    fn take_rows(self) -> Vec<Self::Row> {
-        self.rows
-    }
-
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
-    }
 }
 
 impl BulkInsert for TicketDevicesDatabaseJunctionTable {
