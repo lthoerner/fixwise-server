@@ -6,8 +6,7 @@ use sqlx::Postgres;
 use proc_macros::{DatabaseEntity, IdentifiableRow};
 
 use super::generators::*;
-use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{BulkInsert, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity)]
 #[entity(entity_name = "part_manufacturers", primary_column = "id")]

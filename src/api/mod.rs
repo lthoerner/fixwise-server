@@ -5,9 +5,11 @@ use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::Json;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::database::{DatabaseEntity, IdParameter};
+use proc_macros::IdParameter;
+
+use crate::database::DatabaseEntity;
 use crate::ServerState;
 
 pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
@@ -37,4 +39,14 @@ pub trait FromDatabaseRow {
     type Row;
     type Entity: DatabaseEntity<Row = Self::Row>;
     fn from_database_row(row: Self::Row) -> Self;
+}
+
+pub trait IdParameter {
+    fn new(value: usize) -> Self;
+    fn id(&self) -> usize;
+}
+
+#[derive(Clone, Deserialize, IdParameter)]
+pub struct GenericIdParameter {
+    id: usize,
 }

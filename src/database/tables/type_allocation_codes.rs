@@ -3,8 +3,7 @@ use sqlx::Postgres;
 
 use proc_macros::{DatabaseEntity, IdentifiableRow};
 
-use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::BulkInsert;
 
 #[derive(DatabaseEntity)]
 #[entity(

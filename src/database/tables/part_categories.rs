@@ -3,8 +3,7 @@ use sqlx::Postgres;
 
 use proc_macros::{DatabaseEntity, IdentifiableRow};
 
-use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateStaticRowData, GenerateStaticTableData};
+use crate::database::{BulkInsert, GenerateStaticRowData, GenerateStaticTableData};
 
 #[derive(DatabaseEntity)]
 #[entity(entity_name = "part_categories", primary_column = "id")]

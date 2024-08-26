@@ -10,13 +10,11 @@ use std::time::Instant;
 use axum::extract::{Query, State};
 
 use rand::{thread_rng, Rng};
-use serde::Deserialize;
 use sqlx::postgres::PgRow;
 use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::{raw_sql, PgPool, Postgres};
 
-use proc_macros::IdParameter;
-
+use crate::api::IdParameter;
 use crate::ServerState;
 use loading_bar::LoadingBar;
 use tables::bundled_parts::BundledPartsDatabaseJunctionTable;
@@ -301,14 +299,4 @@ impl Database {
             .await
             .unwrap();
     }
-}
-
-pub trait IdParameter {
-    fn new(value: usize) -> Self;
-    fn id(&self) -> usize;
-}
-
-#[derive(Clone, Deserialize, IdParameter)]
-pub struct GenericIdParameter {
-    id: usize,
 }

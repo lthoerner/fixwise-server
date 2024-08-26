@@ -4,10 +4,10 @@ use super::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
 use crate::api::{
-    DatabaseEntity, FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson,
+    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
 };
 use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
-use crate::database::GenericIdParameter;
+use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
 pub struct CustomersApiView {

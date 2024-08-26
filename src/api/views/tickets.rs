@@ -6,10 +6,12 @@ use super::{
     ColumnFormat, CssColor, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType,
     TagOption, ViewCell,
 };
-use crate::api::{FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson};
+use crate::api::{
+    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
+};
 use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
-use crate::database::{DatabaseEntity, GenericIdParameter};
+use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
 pub struct TicketsApiView {

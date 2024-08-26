@@ -50,7 +50,7 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     });
 
     quote! {
-        impl DatabaseEntity for #type_name {
+        impl crate::database::DatabaseEntity for #type_name {
             type Row = #row_type_name;
             #optional_schema_definition
             const ENTITY_NAME: &str = #entity_name;
@@ -102,7 +102,7 @@ pub fn derive_id_parameter(input: TokenStream) -> TokenStream {
     if let Some(first_field) = first_field {
         let first_field_name = first_field.ident.unwrap();
         quote! {
-            impl IdParameter for #type_name {
+            impl crate::api::IdParameter for #type_name {
                 fn new(#first_field_name: usize) -> Self {
                     Self { #first_field_name }
                 }
@@ -151,7 +151,7 @@ pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
     if let Some(first_field) = first_field {
         let first_field_name = first_field.ident.unwrap();
         quote! {
-            impl IdentifiableRow for #type_name {
+            impl crate::database::tables::IdentifiableRow for #type_name {
                 fn id(&self) -> i32 {
                     self.#first_field_name
                 }

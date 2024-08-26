@@ -4,13 +4,11 @@ use axum::extract::{Json, Query, State};
 use imei_info::{Imei, PhoneInfo, Tac};
 use serde::{Deserialize, Serialize};
 
-use proc_macros::IdParameter;
-
-use crate::api::{FromDatabaseRow, ServeRowJson};
+use crate::api::{FromDatabaseRow, IdParameter, ServeRowJson};
 use crate::database::tables::type_allocation_codes::{
     TypeAllocationCodesDatabaseTable, TypeAllocationCodesDatabaseTableRow,
 };
-use crate::database::{BulkInsert, DatabaseEntity, IdParameter};
+use crate::database::{BulkInsert, DatabaseEntity};
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]

@@ -4,7 +4,6 @@ use rust_decimal::Decimal;
 use proc_macros::DatabaseEntity;
 
 use crate::database::shared_models::tickets::TicketStatus;
-use crate::database::DatabaseEntity;
 
 #[derive(DatabaseEntity)]
 #[entity(entity_name = "tickets_view", primary_column = "id")]
