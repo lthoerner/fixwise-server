@@ -9,6 +9,7 @@ use crate::api::{
 use crate::database::views::device_models::{
     DeviceModelsDatabaseView, DeviceModelsDatabaseViewRow,
 };
+use crate::database::GenericIdParameter;
 
 #[derive(Serialize)]
 pub struct DeviceModelsApiView {
@@ -100,7 +101,7 @@ impl FromDatabaseEntity for DeviceModelsApiView {
     }
 }
 
-impl ServeRowJson for DeviceModelsApiViewRow {}
+impl ServeRowJson<GenericIdParameter> for DeviceModelsApiViewRow {}
 impl FromDatabaseRow for DeviceModelsApiViewRow {
     type Row = DeviceModelsDatabaseViewRow;
     type Entity = DeviceModelsDatabaseView;

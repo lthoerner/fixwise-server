@@ -15,6 +15,8 @@ use sqlx::postgres::PgRow;
 use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::{raw_sql, PgPool, Postgres};
 
+use proc_macros::IdParameter;
+
 use crate::ServerState;
 use loading_bar::LoadingBar;
 use tables::bundled_parts::BundledPartsDatabaseJunctionTable;
@@ -65,14 +67,14 @@ pub trait DatabaseEntity: Sized {
 
     async fn query_one(
         State(state): State<Arc<ServerState>>,
-        id_param: Query<GenericIdParameter>,
+        id_param: Query<impl IdParameter>,
     ) -> Option<Self::Row> {
         sqlx::query_as(&format!(
             "SELECT * FROM {}.{} WHERE {} = {}",
             Self::SCHEMA_NAME,
             Self::ENTITY_NAME,
             Self::PRIMARY_COLUMN_NAME,
-            id_param.id,
+            id_param.id(),
         ))
         .fetch_one(&state.database.connection)
         .await
@@ -300,7 +302,12 @@ impl Database {
     }
 }
 
-#[derive(Clone, Deserialize)]
+pub trait IdParameter {
+    fn new(value: usize) -> Self;
+    fn id(&self) -> usize;
+}
+
+#[derive(Clone, Deserialize, IdParameter)]
 pub struct GenericIdParameter {
-    pub id: usize,
+    id: usize,
 }

@@ -2,14 +2,21 @@ use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
 use imei_info::{Imei, PhoneInfo, Tac};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+use proc_macros::IdParameter;
 
 use crate::api::{FromDatabaseRow, ServeRowJson};
 use crate::database::tables::type_allocation_codes::{
     TypeAllocationCodesDatabaseTable, TypeAllocationCodesDatabaseTableRow,
 };
-use crate::database::{BulkInsert, DatabaseEntity, GenericIdParameter};
+use crate::database::{BulkInsert, DatabaseEntity, IdParameter};
 use crate::ServerState;
+
+#[derive(Clone, Deserialize, IdParameter)]
+pub struct ImeiParameter {
+    imei: usize,
+}
 
 #[derive(Serialize)]
 pub struct ImeiInfoApiUtil {
@@ -17,20 +24,16 @@ pub struct ImeiInfoApiUtil {
     model: String,
 }
 
-impl ServeRowJson for ImeiInfoApiUtil {
+impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
     async fn serve_one(
         state: State<Arc<ServerState>>,
-        imei_param: Query<GenericIdParameter>,
+        imei_param: Query<ImeiParameter>,
     ) -> Json<Option<Self>> {
-        let imei = Imei::try_from(imei_param.0.id).unwrap();
+        let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
-        if let Some(existing_row) = Self::Entity::query_one(
-            state.clone(),
-            Query(GenericIdParameter {
-                id: tac.clone().into(),
-            }),
-        )
-        .await
+        if let Some(existing_row) =
+            Self::Entity::query_one(state.clone(), Query(ImeiParameter::new(tac.clone().into())))
+                .await
         {
             Json(Some(Self::from_database_row(existing_row)))
         } else {

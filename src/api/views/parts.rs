@@ -8,6 +8,7 @@ use crate::api::{
     DatabaseEntity, FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson,
 };
 use crate::database::views::parts::{PartsDatabaseView, PartsDatabaseViewRow};
+use crate::database::GenericIdParameter;
 
 #[derive(Serialize)]
 pub struct PartsApiView {
@@ -132,7 +133,7 @@ impl FromDatabaseEntity for PartsApiView {
     }
 }
 
-impl ServeRowJson for PartsApiViewRow {}
+impl ServeRowJson<GenericIdParameter> for PartsApiViewRow {}
 impl FromDatabaseRow for PartsApiViewRow {
     type Row = PartsDatabaseViewRow;
     type Entity = PartsDatabaseView;

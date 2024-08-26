@@ -7,7 +7,7 @@ use axum::extract::{Query, State};
 use axum::Json;
 use serde::Serialize;
 
-use crate::database::{DatabaseEntity, GenericIdParameter};
+use crate::database::{DatabaseEntity, IdParameter};
 use crate::ServerState;
 
 pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
@@ -18,11 +18,8 @@ pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
     }
 }
 
-pub trait ServeRowJson: FromDatabaseRow + Serialize + Sized {
-    async fn serve_one(
-        state: State<Arc<ServerState>>,
-        id_param: Query<GenericIdParameter>,
-    ) -> Json<Option<Self>> {
+pub trait ServeRowJson<I: IdParameter>: FromDatabaseRow + Serialize + Sized {
+    async fn serve_one(state: State<Arc<ServerState>>, id_param: Query<I>) -> Json<Option<Self>> {
         Json(Some(Self::from_database_row(
             <<Self as FromDatabaseRow>::Entity as DatabaseEntity>::query_one(state, id_param)
                 .await

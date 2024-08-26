@@ -9,7 +9,7 @@ use super::{
 use crate::api::{FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson};
 use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
-use crate::database::DatabaseEntity;
+use crate::database::{DatabaseEntity, GenericIdParameter};
 
 #[derive(Serialize)]
 pub struct TicketsApiView {
@@ -166,7 +166,7 @@ impl FromDatabaseEntity for TicketsApiView {
     }
 }
 
-impl ServeRowJson for TicketsApiViewRow {}
+impl ServeRowJson<GenericIdParameter> for TicketsApiViewRow {}
 impl FromDatabaseRow for TicketsApiViewRow {
     type Row = TicketsDatabaseViewRow;
     type Entity = TicketsDatabaseView;
