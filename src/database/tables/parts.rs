@@ -2,26 +2,21 @@ use std::collections::HashSet;
 
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
 
-use proc_macros::{DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
 use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "parts", primary_column = "id")]
-pub struct PartsDatabaseTable {
-    rows: Vec<PartsDatabaseTableRow>,
-}
-
-impl BulkInsert for PartsDatabaseTable {
-    const COLUMN_NAMES: &[&str] = &[
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "parts",
+    primary_column = "id",
+    columns = [
         "id",
         "display_name",
         "vendor",
@@ -29,18 +24,10 @@ impl BulkInsert for PartsDatabaseTable {
         "category",
         "cost",
         "price",
-    ];
-
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder
-            .push_bind(row.id)
-            .push_bind(row.display_name)
-            .push_bind(row.vendor)
-            .push_bind(row.manufacturer)
-            .push_bind(row.category)
-            .push_bind(row.cost)
-            .push_bind(row.price);
-    }
+    ]
+)]
+pub struct PartsDatabaseTable {
+    rows: Vec<PartsDatabaseTableRow>,
 }
 
 #[derive(sqlx::FromRow, Clone, IdentifiableRow)]

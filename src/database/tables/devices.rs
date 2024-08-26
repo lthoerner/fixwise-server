@@ -1,30 +1,21 @@
 use std::collections::HashSet;
 
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
-
-use proc_macros::{DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
 
 use super::customers::CustomersDatabaseTable;
 use super::device_models::DeviceModelsDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "devices", primary_column = "id")]
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "devices",
+    primary_column = "id",
+    columns = ["id", "model", "owner"]
+)]
 pub struct DevicesDatabaseTable {
     rows: Vec<DevicesDatabaseTableRow>,
-}
-
-impl BulkInsert for DevicesDatabaseTable {
-    const COLUMN_NAMES: &[&str] = &["id", "model", "owner"];
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder
-            .push_bind(row.id)
-            .push_bind(row.model)
-            .push_bind(row.owner);
-    }
 }
 
 #[derive(sqlx::FromRow, Clone, IdentifiableRow)]

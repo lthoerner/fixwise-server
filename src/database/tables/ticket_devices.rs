@@ -1,32 +1,23 @@
 use std::collections::HashSet;
 
 use rust_decimal::Decimal;
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::{BulkInsert, DatabaseEntity};
 
 use super::devices::DevicesDatabaseTable;
 use super::generators::*;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "ticket_devices", primary_column = "(ticket, device)")]
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "ticket_devices",
+    primary_column = "(ticket, device)",
+    columns = ["ticket", "device", "diagnostic", "labor_fee"]
+)]
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
-}
-
-impl BulkInsert for TicketDevicesDatabaseJunctionTable {
-    const COLUMN_NAMES: &[&str] = &["ticket", "device", "diagnostic", "labor_fee"];
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder
-            .push_bind(row.ticket)
-            .push_bind(row.device)
-            .push_bind(row.diagnostic)
-            .push_bind(row.labor_fee);
-    }
 }
 
 #[derive(sqlx::FromRow, Clone)]

@@ -1,41 +1,28 @@
 use std::collections::HashSet;
 
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
-
-use proc_macros::{DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
 
 use super::device_categories::DeviceCategoriesDatabaseTable;
 use super::device_manufacturers::DeviceManufacturersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "device_models", primary_column = "id")]
-pub struct DeviceModelsDatabaseTable {
-    rows: Vec<DeviceModelsDatabaseTableRow>,
-}
-
-impl BulkInsert for DeviceModelsDatabaseTable {
-    const COLUMN_NAMES: &[&str] = &[
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "device_models",
+    primary_column = "id",
+    columns = [
         "id",
         "display_name",
         "primary_model_identifiers",
         "secondary_model_identifiers",
         "manufacturer",
         "category",
-    ];
-
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder
-            .push_bind(row.id)
-            .push_bind(row.display_name)
-            .push_bind(row.primary_model_identifiers)
-            .push_bind(row.secondary_model_identifiers)
-            .push_bind(row.manufacturer)
-            .push_bind(row.category);
-    }
+    ]
+)]
+pub struct DeviceModelsDatabaseTable {
+    rows: Vec<DeviceModelsDatabaseTableRow>,
 }
 
 #[derive(sqlx::FromRow, Clone, IdentifiableRow)]

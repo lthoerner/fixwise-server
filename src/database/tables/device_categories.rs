@@ -1,21 +1,15 @@
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
 
-use proc_macros::{DatabaseEntity, IdentifiableRow};
+use crate::database::{GenerateStaticRowData, GenerateStaticTableData};
 
-use crate::database::{BulkInsert, GenerateStaticRowData, GenerateStaticTableData};
-
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "device_categories", primary_column = "id")]
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "device_categories",
+    primary_column = "id",
+    columns = ["id", "display_name"]
+)]
 pub struct DeviceCategoriesDatabaseTable {
     rows: Vec<DeviceCategoriesDatabaseTableRow>,
-}
-
-impl BulkInsert for DeviceCategoriesDatabaseTable {
-    const COLUMN_NAMES: &[&str] = &["id", "display_name"];
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder.push_bind(row.id).push_bind(row.display_name);
-    }
 }
 
 #[derive(sqlx::FromRow, Clone, IdentifiableRow)]

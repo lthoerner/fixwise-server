@@ -1,26 +1,20 @@
 use std::collections::HashSet;
 
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
-
-use proc_macros::DatabaseEntity;
+use proc_macros::{BulkInsert, DatabaseEntity};
 
 use super::device_models::DeviceModelsDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "compatible_parts", primary_column = "(device, part)")]
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "compatible_parts",
+    primary_column = "(device, part)",
+    columns = ["device", "part"]
+)]
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
-}
-
-impl BulkInsert for CompatiblePartsDatabaseJunctionTable {
-    const COLUMN_NAMES: &[&str] = &["device", "part"];
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder.push_bind(row.device).push_bind(row.part);
-    }
 }
 
 #[derive(sqlx::FromRow, Clone)]

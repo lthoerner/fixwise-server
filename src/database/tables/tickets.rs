@@ -3,25 +3,20 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::query_builder::Separated;
-use sqlx::Postgres;
 
-use proc_macros::{DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
 
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::shared_models::tickets::TicketStatus;
-use crate::database::{BulkInsert, DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
-#[derive(DatabaseEntity)]
-#[entity(entity_name = "tickets", primary_column = "id")]
-pub struct TicketsDatabaseTable {
-    rows: Vec<TicketsDatabaseTableRow>,
-}
-
-impl BulkInsert for TicketsDatabaseTable {
-    const COLUMN_NAMES: &[&str] = &[
+#[derive(DatabaseEntity, BulkInsert)]
+#[entity(
+    entity_name = "tickets",
+    primary_column = "id",
+    columns = [
         "id",
         "status",
         "customer",
@@ -31,20 +26,10 @@ impl BulkInsert for TicketsDatabaseTable {
         "notes",
         "created_at",
         "updated_at",
-    ];
-
-    fn push_bindings(mut builder: Separated<Postgres, &str>, row: Self::Row) {
-        builder
-            .push_bind(row.id)
-            .push_bind(row.status)
-            .push_bind(row.customer)
-            .push_bind(row.invoice_total)
-            .push_bind(row.payment_total)
-            .push_bind(row.description)
-            .push_bind(row.notes)
-            .push_bind(row.created_at)
-            .push_bind(row.updated_at);
-    }
+    ]
+)]
+pub struct TicketsDatabaseTable {
+    rows: Vec<TicketsDatabaseTableRow>,
 }
 
 #[derive(sqlx::FromRow, Clone, IdentifiableRow)]
