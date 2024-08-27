@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 
 use super::customers::CustomersDatabaseTable;
 use super::device_models::DeviceModelsDatabaseTable;
@@ -9,16 +9,12 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "devices",
-    primary_column = "id",
-    columns = ["id", "model", "owner"]
-)]
+#[entity(entity_name = "devices", primary_column = "id")]
 pub struct DevicesDatabaseTable {
     rows: Vec<DevicesDatabaseTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct DevicesDatabaseTableRow {
     pub id: i32,
     pub model: i32,

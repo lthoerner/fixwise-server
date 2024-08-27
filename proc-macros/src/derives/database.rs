@@ -10,7 +10,6 @@ use crate::synerror;
 struct DatabaseEntityAttributes {
     schema_name: Option<String>,
     entity_name: String,
-    columns: Option<Vec<String>>,
     primary_column: String,
 }
 
@@ -29,7 +28,6 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
         schema_name,
         entity_name,
         primary_column,
-        ..
     }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
@@ -63,47 +61,76 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
                 &self.rows
             }
         }
+
+        impl crate::database::DatabaseRow for #row_type_name {
+            type Entity = #type_name;
+        }
     }
     .into()
 }
 
-pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
-    let mut input: DeriveInput = parse_macro_input!(input);
-    let type_name = input.ident.clone();
-    let Data::Struct(_) = input.data else {
-        synerror!(type_name, "cannot derive `BulkInsert` for non-struct types")
+pub fn derive_single_insert(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+
+    let fields = match data {
+        Data::Struct(data_struct) => match data_struct.fields {
+            Fields::Named(fields) => fields,
+            _ => {
+                synerror!(
+                    type_name,
+                    "cannot derive `SingleInsert` for unit or tuple structs"
+                )
+            }
+        },
+        _ => {
+            synerror!(
+                type_name,
+                "cannot derive `SingleInsert` for non-struct types"
+            )
+        }
     };
 
-    let Ok(DatabaseEntityAttributes { columns, .. }) = deluxe::extract_attributes(&mut input)
-    else {
-        synerror!(
-            type_name,
-            "cannot derive `BulkInsert` without `#[entity(...)]` attribute"
-        )
-    };
-    let Some(column_names) = columns else {
-        synerror!(
-            type_name,
-            "cannot derive `BulkInsert` without `columns` member of `#[entity(...)]` attribute"
-        )
-    };
-
+    let mut column_names = Vec::new();
     let mut column_idents = Vec::new();
-    for column_name in &column_names {
-        let column_name = Ident::new(column_name, type_name.span());
+    for field in fields.named.into_iter() {
+        let column_name = field.ident.unwrap();
         column_idents.push(quote!(row.#column_name));
+        column_names.push(column_name.to_string());
     }
 
     quote! {
-        impl crate::database::BulkInsert for #type_name {
+        impl crate::database::SingleInsert for #type_name {
             const COLUMN_NAMES: &[&str] = &[#(#column_names),*];
 
-            fn push_bindings(mut builder: crate::database::Separated<crate::database::Postgres, &str>, row: Self::Row) {
+            fn push_column_bindings(
+                mut builder: crate::database::Separated<crate::database::Postgres, &str>,
+                row: Self,
+            ) {
                 #(
                     builder.push_bind(#column_idents);
                 )*
             }
         }
+    }
+    .into()
+}
+
+pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+    let Data::Struct(_) = data else {
+        synerror!(type_name, "cannot derive `BulkInsert` for non-struct types")
+    };
+
+    quote! {
+        impl crate::database::BulkInsert for #type_name {}
     }
     .into()
 }

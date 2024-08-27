@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity};
+use proc_macros::{BulkInsert, DatabaseEntity, SingleInsert};
 
 use super::parts::PartsDatabaseTable;
 use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
@@ -10,14 +10,13 @@ use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 #[derive(DatabaseEntity, BulkInsert)]
 #[entity(
     entity_name = "bundled_parts",
-    primary_column = "(ticket, device, part)",
-    columns = ["ticket", "device", "part"]
+    primary_column = "(ticket, device, part)"
 )]
 pub struct BundledPartsDatabaseJunctionTable {
     rows: Vec<BundledPartsDatabaseJunctionTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, Clone)]
 pub struct BundledPartsDatabaseJunctionTableRow {
     pub ticket: i32,
     pub device: i32,

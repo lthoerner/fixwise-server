@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
@@ -13,26 +13,12 @@ use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "tickets",
-    primary_column = "id",
-    columns = [
-        "id",
-        "status",
-        "customer",
-        "invoice_total",
-        "payment_total",
-        "description",
-        "notes",
-        "created_at",
-        "updated_at",
-    ]
-)]
+#[entity(entity_name = "tickets", primary_column = "id")]
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct TicketsDatabaseTableRow {
     pub id: i32,
     pub status: TicketStatus,

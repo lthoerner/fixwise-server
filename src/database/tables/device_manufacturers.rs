@@ -1,21 +1,17 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
 use crate::database::{GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "device_manufacturers",
-    primary_column = "id",
-    columns = ["id", "display_name"]
-)]
+#[entity(entity_name = "device_manufacturers", primary_column = "id")]
 pub struct DeviceManufacturersDatabaseTable {
     rows: Vec<DeviceManufacturersDatabaseTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct DeviceManufacturersDatabaseTableRow {
     pub id: i32,
     pub display_name: String,

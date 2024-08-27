@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity};
+use proc_macros::{BulkInsert, DatabaseEntity, SingleInsert};
 
 use super::device_models::DeviceModelsDatabaseTable;
 use super::parts::PartsDatabaseTable;
@@ -8,16 +8,12 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "compatible_parts",
-    primary_column = "(device, part)",
-    columns = ["device", "part"]
-)]
+#[entity(entity_name = "compatible_parts", primary_column = "(device, part)")]
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, Clone)]
 pub struct CompatiblePartsDatabaseJunctionTableRow {
     pub device: i32,
     pub part: i32,

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow};
+use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesDatabaseTable;
@@ -13,24 +13,12 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "parts",
-    primary_column = "id",
-    columns = [
-        "id",
-        "display_name",
-        "vendor",
-        "manufacturer",
-        "category",
-        "cost",
-        "price",
-    ]
-)]
+#[entity(entity_name = "parts", primary_column = "id")]
 pub struct PartsDatabaseTable {
     rows: Vec<PartsDatabaseTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct PartsDatabaseTableRow {
     pub id: i32,
     pub display_name: String,

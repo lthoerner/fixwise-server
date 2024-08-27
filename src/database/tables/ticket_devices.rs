@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity};
+use proc_macros::{BulkInsert, DatabaseEntity, SingleInsert};
 
 use super::devices::DevicesDatabaseTable;
 use super::generators::*;
@@ -11,16 +11,12 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "ticket_devices",
-    primary_column = "(ticket, device)",
-    columns = ["ticket", "device", "diagnostic", "labor_fee"]
-)]
+#[entity(entity_name = "ticket_devices", primary_column = "(ticket, device)")]
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, Clone)]
 pub struct TicketDevicesDatabaseJunctionTableRow {
     pub ticket: i32,
     pub device: i32,

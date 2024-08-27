@@ -52,9 +52,8 @@ pub struct Database {
     connection: PgPool,
 }
 
-// ? Should this be accompanied by a `DatabaseRow` trait?
 pub trait DatabaseEntity: Sized {
-    type Row: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone;
+    type Row: DatabaseRow<Entity = Self>;
     const SCHEMA_NAME: &str = "main";
     const ENTITY_NAME: &str;
     const PRIMARY_COLUMN_NAME: &str;
@@ -97,6 +96,21 @@ pub trait DatabaseEntity: Sized {
     fn pick_random(&self) -> Self::Row {
         let rows = self.rows();
         rows[thread_rng().gen_range(0..rows.len())].clone()
+    }
+}
+
+pub trait DatabaseRow: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
+    type Entity: DatabaseEntity<Row = Self>;
+
+    async fn query_one(
+        state: State<Arc<ServerState>>,
+        id_param: Query<impl IdParameter>,
+    ) -> Option<Self> {
+        Self::Entity::query_one(state, id_param).await
+    }
+
+    async fn query_all(state: State<Arc<ServerState>>) -> Self::Entity {
+        Self::Entity::query_all(state).await
     }
 }
 
@@ -151,19 +165,29 @@ trait GenerateStaticRowData {
     fn new(id: i32, display_name: String) -> Self;
 }
 
-// TODO: Add standard single-insert trait
-pub trait BulkInsert: DatabaseEntity {
+pub trait SingleInsert: DatabaseRow {
     const COLUMN_NAMES: &[&str];
-    const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::COLUMN_NAMES.len();
 
     fn get_querybuilder<'a>() -> QueryBuilder<'a, Postgres> {
         QueryBuilder::new(&format!(
             "INSERT INTO {}.{} ({}) ",
-            Self::SCHEMA_NAME,
-            Self::ENTITY_NAME,
+            Self::Entity::SCHEMA_NAME,
+            Self::Entity::ENTITY_NAME,
             Self::COLUMN_NAMES.join(", ")
         ))
     }
+
+    fn push_column_bindings(builder: Separated<Postgres, &str>, row: Self);
+
+    async fn insert_one(self, database: &Database) {
+        let mut query_builder = Self::get_querybuilder();
+        query_builder.push_values(std::iter::once(self), Self::push_column_bindings);
+        database.execute_query_builder(query_builder).await;
+    }
+}
+
+pub trait BulkInsert: DatabaseEntity<Row: SingleInsert> {
+    const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::Row::COLUMN_NAMES.len();
 
     fn into_chunks(self) -> impl Iterator<Item = Vec<Self::Row>> {
         let mut iter = self.take_rows().into_iter();
@@ -173,13 +197,11 @@ pub trait BulkInsert: DatabaseEntity {
             .take_while(|v: &Vec<_>| v.len() > 0)
     }
 
-    fn push_bindings(builder: Separated<Postgres, &str>, row: Self::Row);
-
     async fn insert_all(self, database: &Database) {
         for chunk in self.into_chunks() {
-            let mut querybuilder = Self::get_querybuilder();
-            querybuilder.push_values(chunk, Self::push_bindings);
-            database.execute_querybuilder(querybuilder).await;
+            let mut query_builder = Self::Row::get_querybuilder();
+            query_builder.push_values(chunk, Self::Row::push_column_bindings);
+            database.execute_query_builder(query_builder).await;
         }
     }
 }
@@ -291,9 +313,8 @@ impl Database {
         );
     }
 
-    // TODO: Move this logic to `BulkInsert::insert_all()`
-    async fn execute_querybuilder<'a>(&self, mut querybuilder: QueryBuilder<'a, Postgres>) {
-        querybuilder
+    async fn execute_query_builder<'a>(&self, mut query_builder: QueryBuilder<'a, Postgres>) {
+        query_builder
             .build()
             .execute(&self.connection)
             .await

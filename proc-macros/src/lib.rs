@@ -22,7 +22,12 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     derives::database::derive_database_entity(input)
 }
 
-#[proc_macro_derive(BulkInsert, attributes(entity))]
+#[proc_macro_derive(SingleInsert)]
+pub fn derive_single_insert(input: TokenStream) -> TokenStream {
+    derives::database::derive_single_insert(input)
+}
+
+#[proc_macro_derive(BulkInsert)]
 pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
     derives::database::derive_bulk_insert(input)
 }
