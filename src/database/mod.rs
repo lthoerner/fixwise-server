@@ -102,14 +102,14 @@ pub trait DatabaseEntity: Sized {
 pub trait DatabaseRow: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     type Entity: DatabaseEntity<Row = Self>;
 
-    async fn query_one(
+    async fn _query_one(
         state: State<Arc<ServerState>>,
         id_param: Query<impl IdParameter>,
     ) -> Option<Self> {
         Self::Entity::query_one(state, id_param).await
     }
 
-    async fn query_all(state: State<Arc<ServerState>>) -> Self::Entity {
+    async fn _query_all(state: State<Arc<ServerState>>) -> Self::Entity {
         Self::Entity::query_all(state).await
     }
 }
@@ -179,7 +179,7 @@ pub trait SingleInsert: DatabaseRow {
 
     fn push_column_bindings(builder: Separated<Postgres, &str>, row: Self);
 
-    async fn insert_one(self, database: &Database) {
+    async fn insert(self, database: &Database) {
         let mut query_builder = Self::get_querybuilder();
         query_builder.push_values(std::iter::once(self), Self::push_column_bindings);
         database.execute_query_builder(query_builder).await;

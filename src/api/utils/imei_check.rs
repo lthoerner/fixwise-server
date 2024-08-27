@@ -8,7 +8,7 @@ use crate::api::{FromDatabaseRow, IdParameter, ServeRowJson};
 use crate::database::tables::type_allocation_codes::{
     TypeAllocationCodesDatabaseTable, TypeAllocationCodesDatabaseTableRow,
 };
-use crate::database::{BulkInsert, DatabaseEntity};
+use crate::database::{DatabaseEntity, SingleInsert};
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]
@@ -49,10 +49,7 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
                 model: model.clone(),
             };
 
-            // TODO: Add a single-insert trait that can make this process less fugly
-            TypeAllocationCodesDatabaseTable::with_rows(Vec::from([database_imei_info]))
-                .insert_all(&state.database)
-                .await;
+            database_imei_info.insert(&state.database).await;
 
             let frontend_imei_info = ImeiInfoApiUtil {
                 manufacturer,
