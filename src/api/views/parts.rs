@@ -136,7 +136,6 @@ impl FromDatabaseEntity for PartsApiView {
 impl ServeRowJson<GenericIdParameter> for PartsApiViewRow {}
 impl FromDatabaseRow for PartsApiViewRow {
     type Row = PartsDatabaseViewRow;
-    type Entity = PartsDatabaseView;
     fn from_database_row(row: Self::Row) -> Self {
         let formatting = PartsApiViewFormatting::new();
 

@@ -171,7 +171,6 @@ impl FromDatabaseEntity for TicketsApiView {
 impl ServeRowJson<GenericIdParameter> for TicketsApiViewRow {}
 impl FromDatabaseRow for TicketsApiViewRow {
     type Row = TicketsDatabaseViewRow;
-    type Entity = TicketsDatabaseView;
     fn from_database_row(row: Self::Row) -> Self {
         let formatting = TicketsApiViewFormatting::new();
 

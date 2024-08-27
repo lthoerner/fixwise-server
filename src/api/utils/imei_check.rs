@@ -5,10 +5,8 @@ use imei_info::{Imei, PhoneInfo, Tac};
 use serde::{Deserialize, Serialize};
 
 use crate::api::{FromDatabaseRow, IdParameter, ServeRowJson};
-use crate::database::tables::type_allocation_codes::{
-    TypeAllocationCodesDatabaseTable, TypeAllocationCodesDatabaseTableRow,
-};
-use crate::database::{DatabaseEntity, SingleInsert};
+use crate::database::tables::type_allocation_codes::TypeAllocationCodesDatabaseTableRow;
+use crate::database::{DatabaseRow, SingleInsert};
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]
@@ -30,8 +28,7 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
         if let Some(existing_row) =
-            Self::Entity::query_one(state.clone(), Query(ImeiParameter::new(tac.clone().into())))
-                .await
+            Self::Row::query_one(state.clone(), Query(ImeiParameter::new(tac.clone().into()))).await
         {
             Json(Some(Self::from_database_row(existing_row)))
         } else {
@@ -63,7 +60,6 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
 
 impl FromDatabaseRow for ImeiInfoApiUtil {
     type Row = TypeAllocationCodesDatabaseTableRow;
-    type Entity = TypeAllocationCodesDatabaseTable;
     fn from_database_row(row: Self::Row) -> Self {
         ImeiInfoApiUtil {
             manufacturer: row.manufacturer,

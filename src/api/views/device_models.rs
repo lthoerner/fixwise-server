@@ -104,7 +104,6 @@ impl FromDatabaseEntity for DeviceModelsApiView {
 impl ServeRowJson<GenericIdParameter> for DeviceModelsApiViewRow {}
 impl FromDatabaseRow for DeviceModelsApiViewRow {
     type Row = DeviceModelsDatabaseViewRow;
-    type Entity = DeviceModelsDatabaseView;
     fn from_database_row(row: Self::Row) -> Self {
         let formatting = DeviceModelsApiViewFormatting::new();
 

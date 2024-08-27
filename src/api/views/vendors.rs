@@ -80,7 +80,6 @@ impl FromDatabaseEntity for VendorsApiView {
 impl ServeRowJson<GenericIdParameter> for VendorsApiViewRow {}
 impl FromDatabaseRow for VendorsApiViewRow {
     type Row = VendorsDatabaseViewRow;
-    type Entity = VendorsDatabaseView;
     fn from_database_row(row: Self::Row) -> Self {
         let formatting = VendorsApiViewFormatting::new();
         let VendorsDatabaseViewRow { id, display_name } = row;

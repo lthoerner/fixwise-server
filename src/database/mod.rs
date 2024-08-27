@@ -102,7 +102,7 @@ pub trait DatabaseEntity: Sized {
 pub trait DatabaseRow: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     type Entity: DatabaseEntity<Row = Self>;
 
-    async fn _query_one(
+    async fn query_one(
         state: State<Arc<ServerState>>,
         id_param: Query<impl IdParameter>,
     ) -> Option<Self> {

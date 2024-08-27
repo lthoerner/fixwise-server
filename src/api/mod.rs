@@ -9,13 +9,13 @@ use serde::{Deserialize, Serialize};
 
 use proc_macros::IdParameter;
 
-use crate::database::DatabaseEntity;
+use crate::database::{DatabaseEntity, DatabaseRow};
 use crate::ServerState;
 
 pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
     async fn serve_all(state: State<Arc<ServerState>>) -> Json<Self> {
         Json(Self::from_database_entity(
-            <Self as FromDatabaseEntity>::Entity::query_all(state).await,
+            Self::Entity::query_all(state).await,
         ))
     }
 }
@@ -23,9 +23,7 @@ pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
 pub trait ServeRowJson<I: IdParameter>: FromDatabaseRow + Serialize + Sized {
     async fn serve_one(state: State<Arc<ServerState>>, id_param: Query<I>) -> Json<Option<Self>> {
         Json(Some(Self::from_database_row(
-            <<Self as FromDatabaseRow>::Entity as DatabaseEntity>::query_one(state, id_param)
-                .await
-                .unwrap(),
+            Self::Row::query_one(state, id_param).await.unwrap(),
         )))
     }
 }
@@ -36,8 +34,7 @@ pub trait FromDatabaseEntity {
 }
 
 pub trait FromDatabaseRow {
-    type Row;
-    type Entity: DatabaseEntity<Row = Self::Row>;
+    type Row: DatabaseRow;
     fn from_database_row(row: Self::Row) -> Self;
 }
 
