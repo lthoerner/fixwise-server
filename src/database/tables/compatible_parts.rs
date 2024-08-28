@@ -8,7 +8,7 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(entity_name = "compatible_parts", primary_column = "(device, part)")]
+#[entity(entity_name = "compatible_parts", primary_key = "(device, part)")]
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
 }

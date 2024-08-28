@@ -10,7 +10,7 @@ use crate::synerror;
 struct DatabaseEntityAttributes {
     schema_name: Option<String>,
     entity_name: String,
-    primary_column: String,
+    primary_key: String,
 }
 
 pub fn derive_database_entity(input: TokenStream) -> TokenStream {
@@ -27,7 +27,7 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     let Ok(DatabaseEntityAttributes {
         schema_name,
         entity_name,
-        primary_column,
+        primary_key,
     }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
@@ -47,7 +47,7 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
             type Row = #row_type_name;
             #optional_schema_definition
             const ENTITY_NAME: &str = #entity_name;
-            const PRIMARY_COLUMN_NAME: &str = #primary_column;
+            const PRIMARY_KEY: &str = #primary_key;
 
             fn with_rows(rows: Vec<Self::Row>) -> Self {
                 Self { rows }

@@ -4,7 +4,7 @@ use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 #[entity(
     schema_name = "persistent",
     entity_name = "type_allocation_codes",
-    primary_column = "tac"
+    primary_key = "tac"
 )]
 pub struct TypeAllocationCodesDatabaseTable {
     rows: Vec<TypeAllocationCodesDatabaseTableRow>,

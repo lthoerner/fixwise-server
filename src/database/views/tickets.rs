@@ -6,7 +6,7 @@ use proc_macros::DatabaseEntity;
 use crate::database::shared_models::tickets::TicketStatus;
 
 #[derive(DatabaseEntity)]
-#[entity(entity_name = "tickets_view", primary_column = "id")]
+#[entity(entity_name = "tickets_view", primary_key = "id")]
 pub struct TicketsDatabaseView {
     rows: Vec<TicketsDatabaseViewRow>,
 }

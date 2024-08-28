@@ -13,7 +13,7 @@ use crate::database::shared_models::tickets::TicketStatus;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(entity_name = "tickets", primary_column = "id")]
+#[entity(entity_name = "tickets", primary_key = "id")]
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
 }

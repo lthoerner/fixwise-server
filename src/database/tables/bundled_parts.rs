@@ -8,10 +8,7 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
 
 #[derive(DatabaseEntity, BulkInsert)]
-#[entity(
-    entity_name = "bundled_parts",
-    primary_column = "(ticket, device, part)"
-)]
+#[entity(entity_name = "bundled_parts", primary_key = "(ticket, device, part)")]
 pub struct BundledPartsDatabaseJunctionTable {
     rows: Vec<BundledPartsDatabaseJunctionTableRow>,
 }

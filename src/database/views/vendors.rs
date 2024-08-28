@@ -1,7 +1,7 @@
 use proc_macros::DatabaseEntity;
 
 #[derive(DatabaseEntity)]
-#[entity(entity_name = "vendors_view", primary_column = "id")]
+#[entity(entity_name = "vendors_view", primary_key = "id")]
 pub struct VendorsDatabaseView {
     rows: Vec<VendorsDatabaseViewRow>,
 }
