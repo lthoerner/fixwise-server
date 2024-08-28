@@ -27,7 +27,10 @@ impl GenerateStaticTableData for DeviceCategoriesDatabaseTable {
 }
 
 impl GenerateStaticRowData for DeviceCategoriesDatabaseTableRow {
-    fn new(id: i32, display_name: String) -> Self {
-        Self { id, display_name }
+    fn new(id: i32, display_name: impl Into<String>) -> Self {
+        Self {
+            id,
+            display_name: display_name.into(),
+        }
     }
 }
