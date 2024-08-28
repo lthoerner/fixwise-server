@@ -275,7 +275,7 @@ pub trait SingleInsert: DatabaseRow {
     ///
     /// This was going to be a member of [`DatabaseEntity`] but was placed here because it is needed
     /// for [`SingleInsert::get_query_builder`] to generate the SQL for inserting rows to the
-    /// database, as well as determining the batch size for bulk insertion.
+    /// database, as well as determining the [`BulkInsert::CHUNK_SIZE`].
     const COLUMN_NAMES: &[&str];
 
     /// Get the [`QueryBuilder`] necessary to insert one or more rows of data into the database.
