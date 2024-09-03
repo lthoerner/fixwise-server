@@ -85,7 +85,7 @@ pub trait DatabaseEntity: Sized {
     /// This is used directly in the SQL for querying the entity, so it should be in the format
     /// expected by SQL. For most entities, this will be a standalone column name, but for junction
     /// tables, it will be multiple column names written as a parenthesized, comma-separated list,
-    /// such as `"(column_a, column_b, column_c)"`
+    /// such as `"(column_a, column_b, column_c)"`.
     const PRIMARY_KEY: &str;
 
     /// Create the entity from a collection of rows.
