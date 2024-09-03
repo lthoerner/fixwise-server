@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
-use crate::database::{GenerateRowData, GenerateTableData};
+use crate::database::GenerateRowData;
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
 #[entity(entity_name = "customers", primary_key = "id")]
 pub struct CustomersDatabaseTable {
     rows: Vec<CustomersDatabaseTableRow>,
@@ -20,7 +20,6 @@ pub struct CustomersDatabaseTableRow {
     pub street_address: Option<String>,
 }
 
-impl GenerateTableData for CustomersDatabaseTable {}
 impl GenerateRowData for CustomersDatabaseTableRow {
     type Identifier = i32;
     type Dependencies<'a> = ();

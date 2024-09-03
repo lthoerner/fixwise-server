@@ -2,15 +2,15 @@ use std::collections::HashSet;
 
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, SingleInsert};
+use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, SingleInsert};
 
 use super::devices::DevicesDatabaseTable;
 use super::generators::*;
 use super::tickets::TicketsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
 #[entity(entity_name = "ticket_devices", primary_key = "(ticket, device)")]
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
@@ -25,7 +25,6 @@ pub struct TicketDevicesDatabaseJunctionTableRow {
     pub labor_fee: Option<Decimal>,
 }
 
-impl GenerateTableData for TicketDevicesDatabaseJunctionTable {}
 impl GenerateRowData for TicketDevicesDatabaseJunctionTableRow {
     type Identifier = (i32, i32);
     type Dependencies<'a> = (&'a TicketsDatabaseTable, &'a DevicesDatabaseTable);

@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, SingleInsert};
+use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, SingleInsert};
 
 use super::device_models::DeviceModelsDatabaseTable;
 use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
 #[entity(entity_name = "compatible_parts", primary_key = "(device, part)")]
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
@@ -19,7 +19,6 @@ pub struct CompatiblePartsDatabaseJunctionTableRow {
     pub part: i32,
 }
 
-impl GenerateTableData for CompatiblePartsDatabaseJunctionTable {}
 impl GenerateRowData for CompatiblePartsDatabaseJunctionTableRow {
     type Identifier = (i32, i32);
     type Dependencies<'a> = (&'a DeviceModelsDatabaseTable, &'a PartsDatabaseTable);

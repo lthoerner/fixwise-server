@@ -69,6 +69,25 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     .into()
 }
 
+pub fn derive_generate_table_data(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+    let Data::Struct(_) = data else {
+        synerror!(
+            type_name,
+            "cannot derive `GenerateTableData` for non-struct types"
+        )
+    };
+
+    quote! {
+        impl crate::database::GenerateTableData for #type_name {}
+    }
+    .into()
+}
+
 pub fn derive_single_insert(input: TokenStream) -> TokenStream {
     let DeriveInput {
         ident: type_name,

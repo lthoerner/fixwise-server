@@ -3,16 +3,16 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesDatabaseTable;
 use super::part_manufacturers::PartManufacturersDatabaseTable;
 use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
 #[entity(entity_name = "parts", primary_key = "id")]
 pub struct PartsDatabaseTable {
     rows: Vec<PartsDatabaseTableRow>,
@@ -29,7 +29,6 @@ pub struct PartsDatabaseTableRow {
     pub price: Option<Decimal>,
 }
 
-impl GenerateTableData for PartsDatabaseTable {}
 impl GenerateRowData for PartsDatabaseTableRow {
     type Identifier = i32;
     type Dependencies<'a> = (

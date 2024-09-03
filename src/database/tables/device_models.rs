@@ -1,14 +1,14 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::device_categories::DeviceCategoriesDatabaseTable;
 use super::device_manufacturers::DeviceManufacturersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
 #[entity(entity_name = "device_models", primary_key = "id")]
 pub struct DeviceModelsDatabaseTable {
     rows: Vec<DeviceModelsDatabaseTableRow>,
@@ -24,7 +24,6 @@ pub struct DeviceModelsDatabaseTableRow {
     pub category: i32,
 }
 
-impl GenerateTableData for DeviceModelsDatabaseTable {}
 impl GenerateRowData for DeviceModelsDatabaseTableRow {
     type Identifier = i32;
     type Dependencies<'a> = (

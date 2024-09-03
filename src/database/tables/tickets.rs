@@ -4,15 +4,15 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::shared_models::tickets::TicketStatus;
-use crate::database::{DatabaseEntity, GenerateRowData, GenerateTableData};
+use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
 #[entity(entity_name = "tickets", primary_key = "id")]
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
@@ -31,7 +31,6 @@ pub struct TicketsDatabaseTableRow {
     pub updated_at: NaiveDateTime,
 }
 
-impl GenerateTableData for TicketsDatabaseTable {}
 impl GenerateRowData for TicketsDatabaseTableRow {
     type Identifier = i32;
     type Dependencies<'a> = &'a CustomersDatabaseTable;
