@@ -109,7 +109,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
     };
 
     let fields: BTreeMap<(String, Ident), bool> = {
-        // Maybe parse don't validate
+        // TODO: Maybe parse don't validate
         let Fields::Named(_) = &data_struct.fields else {
             synerror!(
                 type_name,
@@ -137,8 +137,8 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
             true => {
                 quote! {
                     match row.#column_ident {
-                        crate::database::Defaultable::Value(column_value) => { builder.push_bind(column_value); },
-                        crate::database::Defaultable::Default => { builder.push("DEFAULT"); },
+                        Some(column_value) => { builder.push_bind(column_value); },
+                        None => { builder.push("DEFAULT"); },
                     }
                 }
             }
