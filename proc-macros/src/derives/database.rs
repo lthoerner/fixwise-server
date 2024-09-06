@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use deluxe::ExtractAttributes;
 use proc_macro::{self, TokenStream};
 use quote::quote;
@@ -12,6 +14,10 @@ struct DatabaseEntityAttributes {
     entity_name: String,
     primary_key: String,
 }
+
+#[derive(Debug, ExtractAttributes)]
+#[deluxe(attributes(defaultable))]
+struct DefaultableRowAttribute;
 
 pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
@@ -95,30 +101,52 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
         ..
     } = parse_macro_input!(input);
 
-    let fields = match data {
-        Data::Struct(data_struct) => match data_struct.fields {
-            Fields::Named(fields) => fields,
-            _ => {
-                synerror!(
-                    type_name,
-                    "cannot derive `SingleInsert` for unit or tuple structs"
-                )
-            }
-        },
-        _ => {
+    let Data::Struct(data_struct) = data else {
+        synerror!(
+            type_name,
+            "cannot derive `SingleInsert` for non-struct types"
+        )
+    };
+
+    let fields: BTreeMap<(String, Ident), bool> = {
+        // Maybe parse don't validate
+        let Fields::Named(_) = &data_struct.fields else {
             synerror!(
                 type_name,
-                "cannot derive `SingleInsert` for non-struct types"
+                "cannot derive `SingleInsert` for unit or tuple structs"
             )
+        };
+
+        let mut defaultable_fields: BTreeMap<(String, Ident), bool> = BTreeMap::new();
+        for mut field in data_struct.fields.into_iter() {
+            let field_ident = field.ident.clone().unwrap();
+            let field_name = field_ident.clone().to_string();
+            let defaultable_attribute: Option<DefaultableRowAttribute> =
+                deluxe::extract_attributes(&mut field).ok();
+            dbg!(&defaultable_attribute);
+            defaultable_fields.insert((field_name, field_ident), defaultable_attribute.is_some());
         }
+
+        defaultable_fields
     };
 
     let mut column_names = Vec::new();
-    let mut column_idents = Vec::new();
-    for field in fields.named.into_iter() {
-        let column_name = field.ident.unwrap();
-        column_idents.push(quote!(row.#column_name));
-        column_names.push(column_name.to_string());
+    let mut binding_statements = Vec::new();
+    for ((column_name, column_ident), defaultable) in fields {
+        let binding_or_default = match defaultable {
+            true => {
+                quote! {
+                    match row.#column_ident {
+                        crate::database::Defaultable::Value(column_value) => { builder.push_bind(column_value); },
+                        crate::database::Defaultable::Default => { builder.push("DEFAULT"); },
+                    }
+                }
+            }
+            false => quote!(builder.push_bind(row.#column_ident);),
+        };
+
+        column_names.push(column_name);
+        binding_statements.push(binding_or_default);
     }
 
     quote! {
@@ -130,7 +158,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
                 row: Self,
             ) {
                 #(
-                    builder.push_bind(#column_idents);
+                    #binding_statements
                 )*
             }
         }

@@ -27,7 +27,7 @@ pub fn derive_generate_table_data(input: TokenStream) -> TokenStream {
     derives::database::derive_generate_table_data(input)
 }
 
-#[proc_macro_derive(SingleInsert)]
+#[proc_macro_derive(SingleInsert, attributes(defaultable))]
 pub fn derive_single_insert(input: TokenStream) -> TokenStream {
     derives::database::derive_single_insert(input)
 }

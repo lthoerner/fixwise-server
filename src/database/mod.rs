@@ -10,9 +10,11 @@ use std::time::Instant;
 use axum::extract::{Query, State};
 
 use rand::{thread_rng, Rng};
+use sqlx::database::HasValueRef;
+use sqlx::error::BoxDynError as SqlxError;
 use sqlx::postgres::PgRow;
 use sqlx::query_builder::{QueryBuilder, Separated};
-use sqlx::{raw_sql, PgPool, Postgres};
+use sqlx::{raw_sql, Database as SqlxDatabase, Decode, PgPool, Postgres, Type as SqlxType};
 
 use crate::api::IdParameter;
 use crate::ServerState;
@@ -50,6 +52,31 @@ const BUNDLED_PARTS_COUNT: usize = 1234;
 #[derive(Clone)]
 pub struct Database {
     connection: PgPool,
+}
+
+#[derive(Clone)]
+pub enum Defaultable<T: SqlxType<Postgres>> {
+    Value(T),
+    #[allow(dead_code)]
+    Default,
+}
+
+impl<T> SqlxType<Postgres> for Defaultable<T>
+where
+    T: SqlxType<Postgres>,
+{
+    fn type_info() -> <Postgres as SqlxDatabase>::TypeInfo {
+        T::type_info()
+    }
+}
+
+impl<'a, T> Decode<'a, Postgres> for Defaultable<T>
+where
+    T: SqlxType<Postgres> + Decode<'a, Postgres>,
+{
+    fn decode(value: <Postgres as HasValueRef<'a>>::ValueRef) -> Result<Self, SqlxError> {
+        Ok(Self::Value(T::decode(value)?))
+    }
 }
 
 /// A trait that allows table and view types to interoperate with and be queried from the database.
