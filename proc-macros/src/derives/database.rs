@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use deluxe::ExtractAttributes;
 use proc_macro::{self, TokenStream};
 use quote::quote;
@@ -108,7 +106,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
         )
     };
 
-    let fields: BTreeMap<(String, Ident), bool> = {
+    let fields: Vec<(String, Ident, bool)> = {
         // TODO: Maybe parse don't validate
         let Fields::Named(_) = &data_struct.fields else {
             synerror!(
@@ -117,14 +115,14 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
             )
         };
 
-        let mut defaultable_fields: BTreeMap<(String, Ident), bool> = BTreeMap::new();
+        let mut defaultable_fields: Vec<(String, Ident, bool)> = Vec::new();
         for mut field in data_struct.fields.into_iter() {
             let field_ident = field.ident.clone().unwrap();
             let field_name = field_ident.clone().to_string();
             let defaultable_attribute: Option<DefaultableRowAttribute> =
                 deluxe::extract_attributes(&mut field).ok();
             dbg!(&defaultable_attribute);
-            defaultable_fields.insert((field_name, field_ident), defaultable_attribute.is_some());
+            defaultable_fields.push((field_name, field_ident, defaultable_attribute.is_some()));
         }
 
         defaultable_fields
@@ -132,7 +130,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
 
     let mut column_names = Vec::new();
     let mut binding_statements = Vec::new();
-    for ((column_name, column_ident), defaultable) in fields {
+    for (column_name, column_ident, defaultable) in fields {
         let binding_or_default = match defaultable {
             true => {
                 quote! {
