@@ -121,7 +121,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
             let field_name = field_ident.clone().to_string();
             let defaultable_attribute: Option<DefaultableRowAttribute> =
                 deluxe::extract_attributes(&mut field).ok();
-            dbg!(&defaultable_attribute);
+
             defaultable_fields.push((field_name, field_ident, defaultable_attribute.is_some()));
         }
 
