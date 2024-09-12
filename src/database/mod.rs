@@ -341,7 +341,7 @@ pub trait BulkInsert: DatabaseEntity<Row: SingleInsert> {
         // TODO: Annotate this code or something, I have very little idea what it does
         // * This was done because `itertools::IntoChunks` was causing issues with the axum handlers
         std::iter::from_fn(move || Some(iter.by_ref().take(Self::CHUNK_SIZE).collect()))
-            .take_while(|v: &Vec<_>| v.len() > 0)
+            .take_while(|v: &Vec<_>| !v.is_empty())
     }
 
     /// Insert the entire table into the database in a series of batches (or "chunks").
