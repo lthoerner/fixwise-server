@@ -189,7 +189,7 @@ trait GenerateTableData: DatabaseEntity<Row: GenerateRowData> {
         let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
             loading_bar.update();
-            rows.push(Self::Row::generate(&mut existing_ids, dependencies))
+            rows.push(Self::Row::generate(&rows, &mut existing_ids, dependencies))
         }
 
         Self::with_rows(rows)
@@ -199,7 +199,7 @@ trait GenerateTableData: DatabaseEntity<Row: GenerateRowData> {
 /// A trait that allows a database row to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-trait GenerateRowData {
+trait GenerateRowData: Sized {
     /// The primary identifier type for this row.
     ///
     /// Usually this will be an [`i32`] (signed integers are used for database compatibility, even
@@ -221,6 +221,7 @@ trait GenerateRowData {
     /// implementation must return a row with a unique ID. Any foreign key column must only use IDs
     /// found within its respective dependency table.
     fn generate(
+        existing_rows: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self;

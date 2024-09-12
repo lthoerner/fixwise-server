@@ -9,7 +9,7 @@ use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::shared_models::tickets::TicketStatus;
+use crate::database::shared_models::TicketStatus;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
 #[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
@@ -21,20 +21,27 @@ pub struct TicketsDatabaseTable {
 #[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
 pub struct TicketsDatabaseTableRow {
     pub id: i32,
-    pub status: TicketStatus,
+    #[defaultable]
+    pub status: Option<TicketStatus>,
     pub customer: Option<i32>,
-    pub invoice_total: Decimal,
-    pub payment_total: Decimal,
+    #[defaultable]
+    pub invoice_total: Option<Decimal>,
+    #[defaultable]
+    pub payment_total: Option<Decimal>,
     pub description: String,
-    pub notes: Vec<String>,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    #[defaultable]
+    pub notes: Option<Vec<String>>,
+    #[defaultable]
+    pub created_at: Option<NaiveDateTime>,
+    #[defaultable]
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 impl GenerateRowData for TicketsDatabaseTableRow {
     type Identifier = i32;
     type Dependencies<'a> = &'a CustomersDatabaseTable;
     fn generate(
+        _existing_rows: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
@@ -45,14 +52,14 @@ impl GenerateRowData for TicketsDatabaseTableRow {
 
         Self {
             id: generate_unique_i32(0, existing_ids),
-            status: generate_ticket_status(),
+            status: Some(generate_ticket_status()),
             customer: generate_option(dependencies.pick_random().id(), 0.95),
-            invoice_total,
-            payment_total,
+            invoice_total: Some(invoice_total),
+            payment_total: Some(payment_total),
             description: generate_diagnostic(),
-            notes: Vec::new(),
-            created_at,
-            updated_at,
+            notes: None,
+            created_at: Some(created_at),
+            updated_at: Some(updated_at),
         }
     }
 }

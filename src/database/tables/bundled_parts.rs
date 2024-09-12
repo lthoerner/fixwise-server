@@ -27,6 +27,7 @@ impl GenerateRowData for BundledPartsDatabaseJunctionTableRow {
         &'a PartsDatabaseTable,
     );
     fn generate(
+        _existing_rows: &[Self],
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

@@ -31,6 +31,7 @@ impl GenerateRowData for DeviceModelsDatabaseTableRow {
         &'a DeviceCategoriesDatabaseTable,
     );
     fn generate(
+        _existing_rows: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

@@ -29,6 +29,7 @@ impl GenerateRowData for TicketDevicesDatabaseJunctionTableRow {
     type Identifier = (i32, i32);
     type Dependencies<'a> = (&'a TicketsDatabaseTable, &'a DevicesDatabaseTable);
     fn generate(
+        _existing_rows: &[Self],
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

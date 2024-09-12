@@ -25,6 +25,7 @@ impl GenerateRowData for DevicesDatabaseTableRow {
     type Identifier = i32;
     type Dependencies<'a> = (&'a DeviceModelsDatabaseTable, &'a CustomersDatabaseTable);
     fn generate(
+        _existing_rows: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

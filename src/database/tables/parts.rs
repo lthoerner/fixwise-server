@@ -37,6 +37,7 @@ impl GenerateRowData for PartsDatabaseTableRow {
         &'a PartCategoriesDatabaseTable,
     );
     fn generate(
+        _existing_rows: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
