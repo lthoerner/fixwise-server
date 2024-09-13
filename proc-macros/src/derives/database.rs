@@ -118,7 +118,12 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
         let mut defaultable_fields: Vec<(String, Ident, bool)> = Vec::new();
         for mut field in data_struct.fields.into_iter() {
             let field_ident = field.ident.clone().unwrap();
-            let field_name = field_ident.clone().to_string();
+            // TODO: Use the #[slqx(rename = "<name>")] attribute
+            let field_name = field_ident
+                .clone()
+                .to_string()
+                .trim_start_matches("r#")
+                .to_owned();
             let defaultable_attribute: Option<DefaultableRowAttribute> =
                 deluxe::extract_attributes(&mut field).ok();
 
