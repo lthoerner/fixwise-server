@@ -25,9 +25,18 @@ use tables::device_manufacturers::DeviceManufacturersDatabaseTable;
 use tables::device_models::DeviceModelsDatabaseTable;
 use tables::devices::DevicesDatabaseTable;
 use tables::generators::*;
+use tables::invoice_items::InvoiceItemsDatabaseTable;
+use tables::invoice_payments::InvoicePaymentsDatabaseTable;
+use tables::invoices::InvoicesDatabaseTable;
+use tables::items::ItemsDatabaseTable;
 use tables::part_categories::PartCategoriesDatabaseTable;
 use tables::part_manufacturers::PartManufacturersDatabaseTable;
 use tables::parts::PartsDatabaseTable;
+use tables::product_prices::ProductPricesDatabaseTable;
+use tables::products::ProductsDatabaseTable;
+use tables::service_prices::ServicePricesDatabaseTable;
+use tables::service_types::ServiceTypesDatabaseTable;
+use tables::services::ServicesDatabaseTable;
 use tables::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use tables::tickets::TicketsDatabaseTable;
 use tables::vendors::VendorsDatabaseTable;
@@ -39,9 +48,16 @@ const VENDORS_COUNT: usize = 123;
 const DEVICE_MANUFACTURERS_COUNT: usize = 123;
 const PART_MANUFACTURERS_COUNT: usize = 123;
 const DEVICE_MODELS_COUNT: usize = 123;
-const DEVICES_COUNT: usize = 1234;
 const PARTS_COUNT: usize = 1234;
+const PRODUCTS_COUNT: usize = 1234;
+const PRODUCT_PRICES_COUNT: usize = 1234;
+const SERVICES_COUNT: usize = 1234;
+const SERVICE_PRICES_COUNT: usize = 1234;
 const CUSTOMERS_COUNT: usize = 1234;
+const DEVICES_COUNT: usize = 1234;
+const INVOICES_COUNT: usize = 1234;
+const INVOICE_ITEMS_COUNT: usize = 1234;
+const INVOICE_PAYMENTS_COUNT: usize = 123;
 const TICKETS_COUNT: usize = 1234;
 const COMPATIBLE_PARTS_COUNT: usize = 1234;
 const TICKET_DEVICES_COUNT: usize = 1234;
@@ -99,25 +115,41 @@ pub trait DatabaseEntity: Sized {
     /// Query (select) a single row from the database using an identifying key.
     ///
     /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
-    // TODO: Check how this interacts with junction tables
-    async fn query_one(
-        State(state): State<Arc<ServerState>>,
-        id_param: Query<impl IdParameter>,
-    ) -> Option<Self::Row> {
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseEntity::query_one_handler()`].
+    async fn query_one(database: &Database, id: impl IdParameter) -> Option<Self::Row> {
         sqlx::query_as(&format!(
             "SELECT * FROM {}.{} WHERE {} = {}",
             Self::SCHEMA_NAME,
             Self::ENTITY_NAME,
             Self::PRIMARY_KEY,
-            id_param.id(),
+            id.id(),
         ))
-        .fetch_one(&state.database.connection)
+        .fetch_one(&database.connection)
         .await
         .ok()
     }
 
+    /// Query (select) a single row from the database using an identifying key.
+    ///
+    /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseEntity::query_one()`].
+    // TODO: Check how this interacts with junction tables
+    async fn query_one_handler(
+        State(state): State<Arc<ServerState>>,
+        Query(id_param): Query<impl IdParameter>,
+    ) -> Option<Self::Row> {
+        Self::query_one(&state.database, id_param).await
+    }
+
     /// Query (select) all rows for this entity from the database.
-    async fn query_all(State(state): State<Arc<ServerState>>) -> Self {
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseEntity::query_all_handler()`].
+    async fn query_all(database: &Database) -> Self {
         Self::with_rows(
             sqlx::query_as(&format!(
                 "SELECT * FROM {}.{} ORDER BY {}",
@@ -125,10 +157,18 @@ pub trait DatabaseEntity: Sized {
                 Self::ENTITY_NAME,
                 Self::PRIMARY_KEY
             ))
-            .fetch_all(&state.database.connection)
+            .fetch_all(&database.connection)
             .await
             .unwrap(),
         )
+    }
+
+    /// Query (select) all rows for this entity from the database.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseEntity::query_all()`].
+    async fn query_all_handler(State(state): State<Arc<ServerState>>) -> Self {
+        Self::query_all(&state.database).await
     }
 
     /// Pick a random row from the entity.
@@ -155,19 +195,46 @@ pub trait DatabaseRow: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// "upcasting" and "downcasting," mostly for auto-implementations in other traits.
     type Entity: DatabaseEntity<Row = Self>;
 
+    #[allow(dead_code)]
     /// Query (select) a single row from the database using an identifying key.
     ///
     /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
-    async fn query_one(
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseRow::query_one_handler()`].
+    async fn query_one(database: &Database, id_param: impl IdParameter) -> Option<Self> {
+        Self::Entity::query_one(database, id_param).await
+    }
+
+    /// Query (select) a single row from the database using an identifying key.
+    ///
+    /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseRow::query_one()`].
+    async fn query_one_handler(
         state: State<Arc<ServerState>>,
         id_param: Query<impl IdParameter>,
     ) -> Option<Self> {
-        Self::Entity::query_one(state, id_param).await
+        Self::Entity::query_one_handler(state, id_param).await
     }
 
+    #[allow(dead_code)]
     /// Query (select) all rows for this entity from the database.
-    async fn _query_all(state: State<Arc<ServerState>>) -> Self::Entity {
-        Self::Entity::query_all(state).await
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseRow::query_all_handler()`].
+    async fn query_all(database: &Database) -> Self::Entity {
+        Self::Entity::query_all(database).await
+    }
+
+    #[allow(dead_code)]
+    /// Query (select) all rows for this entity from the database.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseRow::query_all()`].
+    async fn query_all_handler(state: State<Arc<ServerState>>) -> Self::Entity {
+        Self::Entity::query_all_handler(state).await
     }
 }
 
@@ -388,75 +455,135 @@ impl Database {
     }
 
     pub async fn add_generated_items(&self) {
+        let start_time = Instant::now();
+
         let device_categories = DeviceCategoriesDatabaseTable::generate();
+        device_categories.clone().insert_all(self).await;
         let part_categories = PartCategoriesDatabaseTable::generate();
-        println!("Generating {CUSTOMERS_COUNT} customers");
-        let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT, ());
+        part_categories.clone().insert_all(self).await;
+        let service_types = ServiceTypesDatabaseTable::generate();
+        service_types.clone().insert_all(self).await;
+
         println!("Generating {VENDORS_COUNT} vendors");
         let vendors = VendorsDatabaseTable::generate(VENDORS_COUNT, ());
+        vendors.clone().insert_all(self).await;
+
         println!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
         let device_manufacturers =
             DeviceManufacturersDatabaseTable::generate(DEVICE_MANUFACTURERS_COUNT, ());
+        device_manufacturers.clone().insert_all(self).await;
+
         println!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
         let part_manufacturers =
             PartManufacturersDatabaseTable::generate(PART_MANUFACTURERS_COUNT, ());
+        part_manufacturers.clone().insert_all(self).await;
+
         println!("Generating {DEVICE_MODELS_COUNT} device models");
         let device_models = DeviceModelsDatabaseTable::generate(
             DEVICE_MODELS_COUNT,
             (&device_manufacturers, &device_categories),
         );
-        println!("Generating {DEVICES_COUNT} devices");
-        let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, (&device_models, &customers));
+        device_models.clone().insert_all(self).await;
+
         println!("Generating {PARTS_COUNT} parts");
         let parts = PartsDatabaseTable::generate(
             PARTS_COUNT,
             (&vendors, &part_manufacturers, &part_categories),
         );
+        parts.clone().insert_all(self).await;
+
+        println!("Generating {PRODUCTS_COUNT} products");
+        let products = ProductsDatabaseTable::generate(PRODUCTS_COUNT, ());
+        products.clone().insert_all(self).await;
+
+        println!("Generating {PRODUCT_PRICES_COUNT} product_prices");
+        let product_prices = ProductPricesDatabaseTable::generate(PRODUCT_PRICES_COUNT, &products);
+        product_prices.clone().insert_all(self).await;
+
+        println!("Generating {SERVICES_COUNT} services");
+        let services =
+            ServicesDatabaseTable::generate(SERVICES_COUNT, (&service_types, &device_models));
+        services.clone().insert_all(self).await;
+
+        println!("Generating {SERVICE_PRICES_COUNT} service_prices");
+        let service_prices = ServicePricesDatabaseTable::generate(SERVICE_PRICES_COUNT, &services);
+        service_prices.clone().insert_all(self).await;
+
+        println!("Generating {CUSTOMERS_COUNT} customers");
+        let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT, ());
+        customers.clone().insert_all(self).await;
+
+        println!("Generating {DEVICES_COUNT} devices");
+        let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, (&device_models, &customers));
+        devices.clone().insert_all(self).await;
+
+        // * Items must be fetched from the database as they are generated by triggers when
+        // * inserting products and services and not separately generated.
+        let items = ItemsDatabaseTable::query_all(self).await;
+
+        println!("Generating {INVOICES_COUNT} invoices");
+        let invoices = InvoicesDatabaseTable::generate(INVOICES_COUNT, ());
+        invoices.clone().insert_all(self).await;
+
+        println!("Generating {INVOICE_ITEMS_COUNT} invoice items");
+        let invoice_items =
+            InvoiceItemsDatabaseTable::generate(INVOICE_ITEMS_COUNT, (&invoices, &items));
+        invoice_items.clone().insert_all(self).await;
+
+        println!("Generating {INVOICE_PAYMENTS_COUNT} invoice payments");
+        let invoice_payments = InvoicePaymentsDatabaseTable::generate(
+            INVOICE_PAYMENTS_COUNT,
+            (
+                &invoices,
+                &invoice_items,
+                &items,
+                &product_prices,
+                &service_prices,
+            ),
+        );
+        invoice_payments.insert_all(self).await;
+
         println!("Generating {TICKETS_COUNT} tickets");
-        let tickets = TicketsDatabaseTable::generate(TICKETS_COUNT, &customers);
+        let tickets = TicketsDatabaseTable::generate(TICKETS_COUNT, (&customers, &invoices));
+        tickets.clone().insert_all(self).await;
+
         println!("Generating {COMPATIBLE_PARTS_COUNT} compatible parts");
         let compatible_parts = CompatiblePartsDatabaseJunctionTable::generate(
             COMPATIBLE_PARTS_COUNT,
             (&device_models, &parts),
         );
+        compatible_parts.insert_all(self).await;
+
         println!("Generating {TICKET_DEVICES_COUNT} ticket devices");
         let ticket_devices = TicketDevicesDatabaseJunctionTable::generate(
             TICKET_DEVICES_COUNT,
-            (&tickets, &devices),
+            (&tickets, &devices, &services),
         );
+        ticket_devices.clone().insert_all(self).await;
+
         println!("Generating {BUNDLED_PARTS_COUNT} bundled parts");
         let bundled_parts = BundledPartsDatabaseJunctionTable::generate(
             BUNDLED_PARTS_COUNT,
             (&ticket_devices, &parts),
         );
-
-        println!("Inserting items to database...");
-
-        let start_time = Instant::now();
-
-        vendors.insert_all(self).await;
-        device_manufacturers.insert_all(self).await;
-        part_manufacturers.insert_all(self).await;
-        device_categories.insert_all(self).await;
-        part_categories.insert_all(self).await;
-        device_models.insert_all(self).await;
-        parts.insert_all(self).await;
-        customers.insert_all(self).await;
-        devices.insert_all(self).await;
-        tickets.insert_all(self).await;
-        compatible_parts.insert_all(self).await;
-        ticket_devices.insert_all(self).await;
         bundled_parts.insert_all(self).await;
 
         println!(
-            "Inserted {} items in {}ms",
+            "Generated and inserted {} items in {}ms",
             (VENDORS_COUNT
                 + DEVICE_MANUFACTURERS_COUNT
                 + PART_MANUFACTURERS_COUNT
                 + DEVICE_MODELS_COUNT
-                + DEVICES_COUNT
                 + PARTS_COUNT
+                + PRODUCTS_COUNT
+                + PRODUCT_PRICES_COUNT
+                + SERVICES_COUNT
+                + SERVICE_PRICES_COUNT
                 + CUSTOMERS_COUNT
+                + DEVICES_COUNT
+                + INVOICES_COUNT
+                + INVOICE_ITEMS_COUNT
+                + INVOICE_PAYMENTS_COUNT
                 + TICKETS_COUNT
                 + COMPATIBLE_PARTS_COUNT
                 + TICKET_DEVICES_COUNT

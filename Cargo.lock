@@ -443,8 +443,7 @@ dependencies = [
 [[package]]
 name = "deluxe"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ed332aaf752b459088acf3dd4eca323e3ef4b83c70a84ca48fb0ec5305f1488"
+source = "git+https://code.lthoerner.com/deluxe#b6d59a9aac0fa972b587befb766c9b8e577c8f7a"
 dependencies = [
  "deluxe-core",
  "deluxe-macros",
@@ -456,8 +455,7 @@ dependencies = [
 [[package]]
 name = "deluxe-core"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eddada51c8576df9d6a8450c351ff63042b092c9458b8ac7d20f89cbd0ffd313"
+source = "git+https://code.lthoerner.com/deluxe#b6d59a9aac0fa972b587befb766c9b8e577c8f7a"
 dependencies = [
  "arrayvec",
  "proc-macro2",
@@ -469,8 +467,7 @@ dependencies = [
 [[package]]
 name = "deluxe-macros"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f87546d9c837f0b7557e47b8bd6eae52c3c223141b76aa233c345c9ab41d9117"
+source = "git+https://code.lthoerner.com/deluxe#b6d59a9aac0fa972b587befb766c9b8e577c8f7a"
 dependencies = [
  "deluxe-core",
  "heck",

@@ -27,8 +27,11 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
     ) -> Json<Option<Self>> {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
-        if let Some(existing_row) =
-            Self::Row::query_one(state.clone(), Query(ImeiParameter::new(tac.clone().into()))).await
+        if let Some(existing_row) = Self::Row::query_one_handler(
+            state.clone(),
+            Query(ImeiParameter::new(tac.clone().into())),
+        )
+        .await
         {
             Json(Some(Self::from_database_row(existing_row)))
         } else {

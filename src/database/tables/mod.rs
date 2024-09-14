@@ -5,9 +5,18 @@ pub mod device_categories;
 pub mod device_manufacturers;
 pub mod device_models;
 pub mod devices;
+pub mod invoice_items;
+pub mod invoice_payments;
+pub mod invoices;
+pub mod items;
 pub mod part_categories;
 pub mod part_manufacturers;
 pub mod parts;
+pub mod product_prices;
+pub mod products;
+pub mod service_prices;
+pub mod service_types;
+pub mod services;
 pub mod ticket_devices;
 pub mod tickets;
 pub mod type_allocation_codes;
@@ -30,7 +39,7 @@ pub mod generators {
     use rand::{thread_rng, Rng};
     use rust_decimal::Decimal;
 
-    use crate::database::shared_models::tickets::TicketStatus;
+    use crate::database::shared_models::{PaymentType, TicketStatus};
 
     pub fn generate_option<T>(maybe_value: T, some_chance: f64) -> Option<T> {
         match thread_rng().gen_bool(some_chance) {
@@ -155,6 +164,14 @@ pub mod generators {
             3 => TicketStatus::InRepair,
             4 => TicketStatus::ReadyForPickup,
             5 => TicketStatus::Closed,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn generate_payment_type() -> PaymentType {
+        match thread_rng().gen_range(0..=1) {
+            0 => PaymentType::Card,
+            1 => PaymentType::Cash,
             _ => unreachable!(),
         }
     }

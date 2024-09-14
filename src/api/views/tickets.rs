@@ -9,7 +9,7 @@ use super::{
 use crate::api::{
     FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
 };
-use crate::database::shared_models::tickets::TicketStatus;
+use crate::database::shared_models::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 

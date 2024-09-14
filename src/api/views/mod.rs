@@ -11,7 +11,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use crate::database::shared_models::tickets::TicketStatus;
+use crate::database::shared_models::TicketStatus;
 
 #[derive(Serialize)]
 struct TagOption {

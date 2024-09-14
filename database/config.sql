@@ -1,8 +1,11 @@
 DROP SCHEMA IF EXISTS main CASCADE;
 
 DROP TYPE IF EXISTS ticket_status;
+DROP TYPE IF EXISTS payment_type;
+DROP TYPE IF EXISTS item_type;
 
 CREATE SCHEMA IF NOT EXISTS persistent;
+
 CREATE SCHEMA main;
 
 CREATE TYPE ticket_status AS ENUM (
@@ -13,6 +16,10 @@ CREATE TYPE ticket_status AS ENUM (
     'ready_for_pickup',
     'closed'
 );
+
+CREATE TYPE payment_type AS ENUM ('card', 'cash');
+
+CREATE TYPE item_type AS ENUM ('product', 'service');
 
 CREATE TABLE main.vendors (
     id serial PRIMARY KEY,
@@ -57,8 +64,49 @@ CREATE TABLE main.parts (
     vendor integer references main.vendors (id) NOT NULL,
     manufacturer integer references main.part_manufacturers (id),
     category integer references main.part_categories (id) NOT NULL,
-    cost numeric(1000, 2),
-    price numeric(1000, 2)
+    cost numeric(1000, 2) NOT NULL DEFAULT 0,
+    price numeric(1000, 2) NOT NULL DEFAULT 0
+);
+
+-- This table is a stub to be expanded upon later
+CREATE TABLE main.products (
+    sku serial PRIMARY KEY,
+    display_name text NOT NULL
+);
+
+CREATE TABLE main.product_prices (
+    id serial PRIMARY KEY,
+    product integer references main.products (sku) NOT NULL,
+    cost numeric(1000, 2) NOT NULL DEFAULT 0,
+    price numeric(1000, 2) NOT NULL DEFAULT 0,
+    time_set timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE main.service_types (
+    id serial PRIMARY KEY,
+    display_name text NOT NULL
+);
+
+CREATE TABLE main.services (
+    id serial PRIMARY KEY,
+    -- "Other" device and type must be actual static records
+    type integer references main.service_types (id) NOT NULL,
+    device integer references main.device_models (id) NOT NULL
+);
+
+CREATE TABLE main.service_prices (
+    id serial PRIMARY KEY,
+    service integer references main.services (id) NOT NULL,
+    base_fee numeric(1000, 2) NOT NULL DEFAULT 0,
+    labor_fee numeric(1000, 2) NOT NULL DEFAULT 0,
+    time_set timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE main.items (
+    id serial PRIMARY KEY,
+    product_or_service integer NOT NULL,
+    type item_type NOT NULL,
+    UNIQUE (product_or_service, type)
 );
 
 CREATE TABLE main.customers (
@@ -75,12 +123,31 @@ CREATE TABLE main.devices (
     owner integer references main.customers (id)
 );
 
+CREATE TABLE main.invoices (
+    id serial PRIMARY KEY,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE main.invoice_items (
+    invoice integer references main.invoices (id) NOT NULL,
+    item integer references main.items (id) NOT NULL,
+    PRIMARY KEY (invoice, item)
+);
+
+CREATE TABLE main.invoice_payments (
+    id serial PRIMARY KEY,
+    invoice integer references main.invoices (id) NOT NULL,
+    amount numeric(1000, 2) NOT NULL,
+    type payment_type NOT NULL,
+    timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE main.tickets (
     id serial PRIMARY KEY,
-    status ticket_status NOT NULL,
+    status ticket_status NOT NULL DEFAULT 'new',
     customer integer references main.customers (id),
-    invoice_total numeric(1000, 2) NOT NULL,
-    payment_total numeric(1000, 2) NOT NULL,
+    invoice integer references main.invoices (id),
     description text,
     notes text [] NOT NULL DEFAULT '{}',
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,8 +163,8 @@ CREATE TABLE main.compatible_parts (
 CREATE TABLE main.ticket_devices (
     ticket integer references main.tickets (id),
     device integer references main.devices (id),
+    service integer references main.services (id),
     diagnostic text,
-    labor_fee numeric(1000, 2),
     PRIMARY KEY (ticket, device)
 );
 
@@ -114,6 +181,123 @@ CREATE TABLE IF NOT EXISTS persistent.type_allocation_codes (
     manufacturer text NOT NULL,
     model text NOT NULL
 );
+
+CREATE FUNCTION main.get_product_price_at_time(product_id integer, point_in_time timestamp)
+RETURNS numeric AS $$
+BEGIN
+    RETURN (
+        SELECT
+            price
+        FROM
+            main.product_prices
+        WHERE
+            product = product_id
+            AND time_set <= point_in_time
+        ORDER BY
+            time_set DESC
+        LIMIT
+            1
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION main.get_service_price_at_time(service_id integer, point_in_time timestamp)
+RETURNS numeric AS $$
+BEGIN
+    RETURN (
+        SELECT
+            base_fee + labor_fee
+        FROM
+            main.service_prices
+        WHERE
+            service = service_id
+            AND time_set <= point_in_time
+        ORDER BY
+            time_set DESC
+        LIMIT
+            1
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION main.get_item_price_at_time(item_id integer, point_in_time timestamp)
+RETURNS numeric AS $$
+DECLARE
+    item_type item_type;
+    product_or_service_id integer;
+    price numeric;
+BEGIN
+    SELECT
+        type,
+        product_or_service INTO item_type,
+        product_or_service_id
+    FROM
+        main.items
+    WHERE
+        id = item_id;
+
+    IF item_type = 'product' THEN
+        price := main.get_product_price_at_time(product_or_service_id, point_in_time);
+    ELSIF item_type = 'service' THEN
+        price := main.get_service_price_at_time(product_or_service_id, point_in_time);
+    END IF;
+
+    RETURN price;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION main.get_invoice_total(invoice_id integer)
+RETURNS numeric AS $$
+DECLARE
+    creation_date timestamp;
+BEGIN
+    SELECT
+        created_at INTO creation_date
+    FROM
+        main.invoices
+    WHERE
+        id = invoice_id;
+
+    RETURN (
+        SELECT
+            SUM(
+                main.get_item_price_at_time(item_id, creation_date)
+            )
+        FROM
+            (
+                SELECT
+                    item AS item_id
+                FROM
+                    main.invoice_items
+                WHERE
+                    invoice = invoice_id
+            )
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION main.get_payment_total(invoice_id integer)
+RETURNS numeric AS $$
+BEGIN
+    RETURN (
+        SELECT
+            SUM(amount)
+        FROM
+            main.invoice_payments
+        WHERE
+            invoice = invoice_id
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION main.get_invoice_balance(invoice_id integer)
+RETURNS numeric AS $$
+BEGIN
+    RETURN (
+        main.get_invoice_total(invoice_id) - main.get_payment_total(invoice_id)
+    );
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE VIEW main.vendors_view AS
 SELECT
@@ -183,7 +367,7 @@ SELECT
     ticket.id,
     ticket.status,
     customer.name AS customer,
-    ticket.invoice_total - ticket.payment_total AS balance,
+    main.get_invoice_balance(ticket.invoice) AS balance,
     ticket.created_at,
     ticket.updated_at
 FROM
@@ -191,3 +375,37 @@ FROM
     LEFT JOIN main.customers customer ON ticket.customer = customer.id
 ORDER BY
     id ASC;
+
+CREATE FUNCTION main.insert_product_as_item()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO
+        main.items (product_or_service, type)
+    VALUES
+        (NEW.sku, 'product');
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION main.insert_service_as_item()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO
+        main.items (product_or_service, type)
+    VALUES
+        (NEW.id, 'service');
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER product_item_collector
+AFTER
+INSERT
+    ON main.products FOR EACH ROW EXECUTE FUNCTION main.insert_product_as_item();
+
+CREATE TRIGGER service_item_collector
+AFTER
+INSERT
+    ON main.services FOR EACH ROW EXECUTE FUNCTION main.insert_service_as_item();

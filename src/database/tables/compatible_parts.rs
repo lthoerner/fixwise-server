@@ -27,20 +27,17 @@ impl GenerateRowData for CompatiblePartsDatabaseJunctionTableRow {
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
-        let mut device_id = 0;
-        let mut part_id = 0;
+        let mut device = 0;
+        let mut part = 0;
         let mut first_roll = true;
-        while first_roll || existing_pairs.get(&(device_id, part_id)).is_some() {
-            device_id = dependencies.0.pick_random().id();
-            part_id = dependencies.1.pick_random().id();
+        while first_roll || existing_pairs.get(&(device, part)).is_some() {
+            device = dependencies.0.pick_random().id();
+            part = dependencies.1.pick_random().id();
             first_roll = false;
         }
 
-        existing_pairs.insert((device_id, part_id));
+        existing_pairs.insert((device, part));
 
-        Self {
-            device: device_id,
-            part: part_id,
-        }
+        Self { device, part }
     }
 }

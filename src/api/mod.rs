@@ -23,7 +23,7 @@ pub trait ServeEntityJson: FromDatabaseEntity + Serialize + Sized {
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
     async fn serve_all(state: State<Arc<ServerState>>) -> Json<Self> {
         Json(Self::from_database_entity(
-            Self::Entity::query_all(state).await,
+            Self::Entity::query_all_handler(state).await,
         ))
     }
 }
@@ -46,7 +46,7 @@ pub trait ServeRowJson<I: IdParameter>: FromDatabaseRow + Serialize + Sized {
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
     async fn serve_one(state: State<Arc<ServerState>>, id_param: Query<I>) -> Json<Option<Self>> {
         Json(Some(Self::from_database_row(
-            Self::Row::query_one(state, id_param).await.unwrap(),
+            Self::Row::query_one_handler(state, id_param).await.unwrap(),
         )))
     }
 }
