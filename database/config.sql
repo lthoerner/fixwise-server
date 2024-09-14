@@ -242,7 +242,7 @@ BEGIN
         price := main.get_service_price_at_time(product_or_service_id, point_in_time);
     END IF;
 
-    RETURN price;
+    RETURN COALESCE(price, '0');
 END;
 $$ LANGUAGE plpgsql;
 
@@ -260,9 +260,7 @@ BEGIN
 
     RETURN (
         SELECT
-            SUM(
-                main.get_item_price_at_time(item_id, creation_date)
-            )
+            COALESCE(SUM(main.get_item_price_at_time(item_id, creation_date)), '0')
         FROM
             (
                 SELECT
@@ -281,7 +279,7 @@ RETURNS numeric AS $$
 BEGIN
     RETURN (
         SELECT
-            SUM(amount)
+            COALESCE(SUM(amount), '0')
         FROM
             main.invoice_payments
         WHERE
