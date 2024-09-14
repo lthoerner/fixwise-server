@@ -8,13 +8,13 @@ use super::generators::*;
 use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "device_models", primary_key = "id")]
 pub struct DeviceModelsDatabaseTable {
     rows: Vec<DeviceModelsDatabaseTableRow>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
 pub struct DeviceModelsDatabaseTableRow {
     pub id: i32,
     pub display_name: String,

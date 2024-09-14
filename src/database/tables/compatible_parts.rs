@@ -7,7 +7,7 @@ use super::parts::PartsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "compatible_parts", primary_key = "(device, part)")]
 pub struct CompatiblePartsDatabaseJunctionTable {
     rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,

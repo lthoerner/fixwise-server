@@ -7,7 +7,7 @@ use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "bundled_parts", primary_key = "(ticket, device, part)")]
 pub struct BundledPartsDatabaseJunctionTable {
     rows: Vec<BundledPartsDatabaseJunctionTableRow>,

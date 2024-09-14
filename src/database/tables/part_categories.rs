@@ -2,13 +2,13 @@ use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 
 use crate::database::{GenerateStaticRowData, GenerateStaticTableData};
 
-#[derive(DatabaseEntity, BulkInsert)]
+#[derive(DatabaseEntity, BulkInsert, Clone)]
 #[entity(entity_name = "part_categories", primary_key = "id")]
 pub struct PartCategoriesDatabaseTable {
     rows: Vec<PartCategoriesDatabaseTableRow>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
 pub struct PartCategoriesDatabaseTableRow {
     pub id: i32,
     pub display_name: String,

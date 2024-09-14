@@ -5,7 +5,7 @@ use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow
 use super::generators::*;
 use crate::database::GenerateRowData;
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "customers", primary_key = "id")]
 pub struct CustomersDatabaseTable {
     rows: Vec<CustomersDatabaseTableRow>,

@@ -5,13 +5,13 @@ use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow
 use super::generators::*;
 use crate::database::GenerateRowData;
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "device_manufacturers", primary_key = "id")]
 pub struct DeviceManufacturersDatabaseTable {
     rows: Vec<DeviceManufacturersDatabaseTableRow>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
 pub struct DeviceManufacturersDatabaseTableRow {
     pub id: i32,
     pub display_name: String,

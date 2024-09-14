@@ -12,13 +12,13 @@ use super::IdentifiableRow;
 use crate::database::shared_models::TicketStatus;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "tickets", primary_key = "id")]
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
 pub struct TicketsDatabaseTableRow {
     pub id: i32,
     #[defaultable]

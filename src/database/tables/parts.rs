@@ -12,13 +12,13 @@ use super::vendors::VendorsDatabaseTable;
 use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData)]
+#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
 #[entity(entity_name = "parts", primary_key = "id")]
 pub struct PartsDatabaseTable {
     rows: Vec<PartsDatabaseTableRow>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
 pub struct PartsDatabaseTableRow {
     pub id: i32,
     pub display_name: String,
