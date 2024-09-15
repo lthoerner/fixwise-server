@@ -68,11 +68,13 @@ CREATE TABLE main.parts (
     price numeric(1000, 2) NOT NULL DEFAULT 0
 );
 
+
 -- This table is a stub to be expanded upon later
 CREATE TABLE main.products (
     sku serial PRIMARY KEY,
     display_name text NOT NULL
 );
+
 
 CREATE TABLE main.product_prices (
     id serial PRIMARY KEY,
@@ -82,10 +84,12 @@ CREATE TABLE main.product_prices (
     time_set timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE main.service_types (
     id serial PRIMARY KEY,
     display_name text NOT NULL
 );
+
 
 CREATE TABLE main.services (
     id serial PRIMARY KEY,
@@ -94,6 +98,7 @@ CREATE TABLE main.services (
     device integer references main.device_models (id) NOT NULL
 );
 
+
 CREATE TABLE main.service_prices (
     id serial PRIMARY KEY,
     service integer references main.services (id) NOT NULL,
@@ -101,6 +106,7 @@ CREATE TABLE main.service_prices (
     labor_fee numeric(1000, 2) NOT NULL DEFAULT 0,
     time_set timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE main.items (
     id serial PRIMARY KEY,
@@ -123,17 +129,20 @@ CREATE TABLE main.devices (
     owner integer references main.customers (id)
 );
 
+
 CREATE TABLE main.invoices (
     id serial PRIMARY KEY,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE main.invoice_items (
     invoice integer references main.invoices (id) NOT NULL,
     item integer references main.items (id) NOT NULL,
     PRIMARY KEY (invoice, item)
 );
+
 
 CREATE TABLE main.invoice_payments (
     id serial PRIMARY KEY,
@@ -183,13 +192,14 @@ CREATE TABLE IF NOT EXISTS persistent.type_allocation_codes (
 );
 
 CREATE FUNCTION main.get_product_price_at_time(product_id integer, point_in_time timestamp)
-RETURNS numeric AS $$
+RETURNS TABLE (cost numeric, price numeric) AS $$
 BEGIN
-    RETURN (
+    RETURN QUERY (
         SELECT
-            price
+            product_price.cost,
+            product_price.price
         FROM
-            main.product_prices
+            main.product_prices product_price
         WHERE
             product = product_id
             AND time_set <= point_in_time
@@ -202,13 +212,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE FUNCTION main.get_service_price_at_time(service_id integer, point_in_time timestamp)
-RETURNS numeric AS $$
+RETURNS TABLE (base_fee numeric, labor_fee numeric) AS $$
 BEGIN
-    RETURN (
+    RETURN QUERY (
         SELECT
-            base_fee + labor_fee
+            service_price.base_fee,
+            service_price.labor_fee
         FROM
-            main.service_prices
+            main.service_prices service_price
         WHERE
             service = service_id
             AND time_set <= point_in_time
@@ -226,6 +237,10 @@ DECLARE
     item_type item_type;
     product_or_service_id integer;
     price numeric;
+    product_cost numeric;
+    product_price numeric;
+    service_base_fee numeric;
+    service_labor_fee numeric;
 BEGIN
     SELECT
         type,
@@ -237,9 +252,13 @@ BEGIN
         id = item_id;
 
     IF item_type = 'product' THEN
-        price := main.get_product_price_at_time(product_or_service_id, point_in_time);
+        SELECT product_price.cost, product_price.price INTO product_cost, product_price
+        FROM main.get_product_price_at_time(product_or_service_id, point_in_time) product_price;
+        price := product_price;
     ELSIF item_type = 'service' THEN
-        price := main.get_service_price_at_time(product_or_service_id, point_in_time);
+        SELECT service_price.base_fee, service_price.labor_fee INTO service_base_fee, service_labor_fee
+        FROM main.get_service_price_at_time(product_or_service_id, point_in_time) service_price;
+        price := service_base_fee + service_labor_fee;
     END IF;
 
     RETURN COALESCE(price, '0');
@@ -326,8 +345,10 @@ SELECT
     category.display_name AS category
 FROM
     main.device_models model
-    LEFT JOIN main.device_manufacturers manufacturer ON model.manufacturer = manufacturer.id
-    LEFT JOIN main.device_categories category ON model.category = category.id
+    LEFT JOIN main.device_manufacturers manufacturer
+        ON model.manufacturer = manufacturer.id
+    LEFT JOIN main.device_categories category
+        ON model.category = category.id
 ORDER BY
     id ASC;
 
@@ -338,8 +359,10 @@ SELECT
     customer.name AS owner
 FROM
     main.devices device
-    LEFT JOIN main.device_models model ON device.model = model.id
-    LEFT JOIN main.customers customer ON device.owner = customer.id
+    LEFT JOIN main.device_models model
+        ON device.model = model.id
+    LEFT JOIN main.customers customer
+        ON device.owner = customer.id
 ORDER BY
     id ASC;
 
@@ -354,9 +377,98 @@ SELECT
     part.price
 FROM
     main.parts part
-    LEFT JOIN main.vendors vendor ON part.vendor = vendor.id
-    LEFT JOIN main.part_manufacturers manufacturer ON part.manufacturer = manufacturer.id
-    LEFT JOIN main.part_categories category ON part.category = category.id
+    LEFT JOIN main.vendors vendor
+        ON part.vendor = vendor.id
+    LEFT JOIN main.part_manufacturers manufacturer
+        ON part.manufacturer = manufacturer.id
+    LEFT JOIN main.part_categories category
+        ON part.category = category.id
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.products_view AS
+SELECT
+    product.sku,
+    product.display_name,
+    product_price.cost,
+    product_price.price
+FROM
+    main.products product
+    LEFT JOIN LATERAL main.get_product_price_at_time(product.sku, CURRENT_TIMESTAMP::timestamp) product_price
+        ON true
+ORDER BY
+    sku ASC;
+
+CREATE VIEW main.services_view AS
+SELECT
+    service.id,
+    service_type.display_name as type_name,
+    device_model.display_name as device_name,
+    service_price.base_fee,
+    service_price.labor_fee
+FROM
+    main.services service
+    LEFT JOIN main.service_types service_type
+        ON service.type = service_type.id
+    LEFT JOIN main.device_models device_model
+        ON service.device = device_model.id
+    LEFT JOIN LATERAL main.get_service_price_at_time(service.id, CURRENT_TIMESTAMP::timestamp) service_price
+        ON true
+ORDER BY
+    id ASC;
+
+CREATE VIEW main.items_view AS
+SELECT
+    item.id AS item_id,
+    item.type AS item_type,
+    product.sku AS product_sku,
+    product.display_name AS product_name,
+    product.cost AS product_cost,
+    product.price AS product_price,
+    NULL AS service_id,
+    NULL AS service_type_name,
+    NULL AS service_device_name,
+    NULL AS service_base_fee,
+    NULL AS service_labor_fee
+FROM
+    main.items item
+    LEFT JOIN main.products_view product
+        ON item.product_or_service = product.sku AND item.type = 'product'
+
+UNION ALL
+
+SELECT
+    item.id AS item_id,
+    item.type AS item_type,
+    NULL AS product_sku,
+    NULL AS product_name,
+    NULL AS product_cost,
+    NULL AS product_price,
+    service.id AS service_id,
+    service.type_name AS service_type_name,
+    service.device_name AS service_device_name,
+    service.base_fee AS service_base_fee,
+    service.labor_fee AS service_labor_fee
+FROM
+    main.items item
+    LEFT JOIN main.services_view service
+        ON item.product_or_service = service.id AND item.type = 'service'
+ORDER BY
+    item_id ASC;
+
+CREATE VIEW main.invoices_view AS
+SELECT
+    invoice.id,
+    invoice.created_at,
+    invoice.updated_at,
+    invoice_total,
+    payment_total
+FROM
+    main.invoices invoice
+    LEFT JOIN LATERAL main.get_invoice_total(invoice.id) invoice_total
+        ON true
+    LEFT JOIN LATERAL main.get_payment_total(invoice.id) payment_total
+        ON true
 ORDER BY
     id ASC;
 
@@ -370,7 +482,8 @@ SELECT
     ticket.updated_at
 FROM
     main.tickets ticket
-    LEFT JOIN main.customers customer ON ticket.customer = customer.id
+    LEFT JOIN main.customers customer
+        ON ticket.customer = customer.id
 ORDER BY
     id ASC;
 
