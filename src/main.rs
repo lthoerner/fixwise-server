@@ -11,12 +11,13 @@ use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
 use api::utils::imei_check::ImeiInfoApiUtil;
-use api::views::customers::CustomersApiView;
-use api::views::device_models::DeviceModelsApiView;
-use api::views::devices::DevicesApiView;
-use api::views::parts::PartsApiView;
-use api::views::tickets::TicketsApiView;
-use api::views::vendors::VendorsApiView;
+use api::views::formatted::customers::CustomersApiView;
+use api::views::formatted::device_models::DeviceModelsApiView;
+use api::views::formatted::devices::DevicesApiView;
+use api::views::formatted::parts::PartsApiView;
+use api::views::formatted::tickets::TicketsApiView;
+use api::views::formatted::vendors::VendorsApiView;
+use api::views::raw::invoices::InvoicesApiView;
 use api::{ServeEntityJson, ServeRowJson};
 use database::Database;
 
@@ -63,6 +64,7 @@ async fn main() {
         .route("/tickets", get(TicketsApiView::serve_all))
         .route("/vendors", get(VendorsApiView::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
+        .route("/raw/invoices", get(InvoicesApiView::serve_all))
         .layer(cors)
         .with_state(server_state);
 

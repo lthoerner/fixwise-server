@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::{
+use crate::api::views::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
 use crate::api::{

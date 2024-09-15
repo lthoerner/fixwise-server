@@ -1,9 +1,5 @@
-pub mod customers;
-pub mod device_models;
-pub mod devices;
-pub mod parts;
-pub mod tickets;
-pub mod vendors;
+pub mod formatted;
+pub mod raw;
 
 use std::fmt::Debug;
 
