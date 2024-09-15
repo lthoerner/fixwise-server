@@ -9,12 +9,12 @@ use crate::database::views::invoices::{InvoicesDatabaseView, InvoicesDatabaseVie
 use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
-pub struct InvoicesApiView {
-    rows: Vec<InvoicesApiViewRow>,
+pub struct InvoicesApiEndpoint {
+    rows: Vec<InvoicesApiEndpointRow>,
 }
 
 #[derive(Serialize)]
-pub struct InvoicesApiViewRow {
+pub struct InvoicesApiEndpointRow {
     pub id: i32,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
@@ -22,25 +22,25 @@ pub struct InvoicesApiViewRow {
     pub payment_total: Decimal,
 }
 
-impl ServeEntityJson for InvoicesApiView {}
-impl FromDatabaseEntity for InvoicesApiView {
+impl ServeEntityJson for InvoicesApiEndpoint {}
+impl FromDatabaseEntity for InvoicesApiEndpoint {
     type Entity = InvoicesDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
         Self {
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(InvoicesApiViewRow::from_database_row)
+                .map(InvoicesApiEndpointRow::from_database_row)
                 .collect(),
         }
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for InvoicesApiViewRow {}
-impl FromDatabaseRow for InvoicesApiViewRow {
+impl ServeRowJson<GenericIdParameter> for InvoicesApiEndpointRow {}
+impl FromDatabaseRow for InvoicesApiEndpointRow {
     type Row = InvoicesDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {
-        InvoicesApiViewRow {
+        InvoicesApiEndpointRow {
             id: row.id,
             created_at: row.created_at,
             updated_at: row.updated_at,

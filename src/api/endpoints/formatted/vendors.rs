@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::api::views::{
+use crate::api::endpoints::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
 use crate::api::{
@@ -10,29 +10,29 @@ use crate::database::views::vendors::{VendorsDatabaseView, VendorsDatabaseViewRo
 use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
-pub struct VendorsApiView {
-    metadata: VendorsApiViewMetadata,
-    rows: Vec<VendorsApiViewRow>,
+pub struct VendorsApiEndpoint {
+    metadata: EndpointMetadata,
+    rows: Vec<VendorsApiEndpointRow>,
 }
 
 #[derive(Serialize)]
-pub struct VendorsApiViewRow {
+pub struct VendorsApiEndpointRow {
     id: ViewCell<u32>,
     display_name: ViewCell<String>,
 }
 
-struct VendorsApiViewFormatting {
+struct EndpointFormatting {
     id: ColumnFormat,
     display_name: ColumnFormat,
 }
 
 #[derive(Serialize)]
-struct VendorsApiViewMetadata {
+struct EndpointMetadata {
     id: FrontendColumnMetadata,
     display_name: FrontendColumnMetadata,
 }
 
-impl VendorsApiViewFormatting {
+impl EndpointFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -41,7 +41,7 @@ impl VendorsApiViewFormatting {
     }
 }
 
-impl VendorsApiViewMetadata {
+impl EndpointMetadata {
     const fn new() -> Self {
         Self {
             id: FrontendColumnMetadata {
@@ -62,28 +62,28 @@ impl VendorsApiViewMetadata {
     }
 }
 
-impl ServeEntityJson for VendorsApiView {}
-impl FromDatabaseEntity for VendorsApiView {
+impl ServeEntityJson for VendorsApiEndpoint {}
+impl FromDatabaseEntity for VendorsApiEndpoint {
     type Entity = VendorsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
         Self {
-            metadata: VendorsApiViewMetadata::new(),
+            metadata: EndpointMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(VendorsApiViewRow::from_database_row)
+                .map(VendorsApiEndpointRow::from_database_row)
                 .collect(),
         }
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for VendorsApiViewRow {}
-impl FromDatabaseRow for VendorsApiViewRow {
+impl ServeRowJson<GenericIdParameter> for VendorsApiEndpointRow {}
+impl FromDatabaseRow for VendorsApiEndpointRow {
     type Row = VendorsDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {
-        let formatting = VendorsApiViewFormatting::new();
+        let formatting = EndpointFormatting::new();
         let VendorsDatabaseViewRow { id, display_name } = row;
-        VendorsApiViewRow {
+        VendorsApiEndpointRow {
             id: ViewCell::new(id as u32, &formatting.id),
             display_name: ViewCell::new(display_name, &formatting.display_name),
         }

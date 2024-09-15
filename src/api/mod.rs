@@ -1,6 +1,4 @@
-// ? Do these need to be separate?
-pub mod utils;
-pub mod views;
+pub mod endpoints;
 
 use std::sync::Arc;
 

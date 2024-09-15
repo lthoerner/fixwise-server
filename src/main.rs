@@ -10,14 +10,14 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use api::utils::imei_check::ImeiInfoApiUtil;
-use api::views::formatted::customers::CustomersApiView;
-use api::views::formatted::device_models::DeviceModelsApiView;
-use api::views::formatted::devices::DevicesApiView;
-use api::views::formatted::parts::PartsApiView;
-use api::views::formatted::tickets::TicketsApiView;
-use api::views::formatted::vendors::VendorsApiView;
-use api::views::raw::invoices::InvoicesApiView;
+use api::endpoints::formatted::customers::CustomersApiEndpoint;
+use api::endpoints::formatted::device_models::DeviceModelsApiEndpoint;
+use api::endpoints::formatted::devices::DevicesApiEndpoint;
+use api::endpoints::formatted::parts::PartsApiEndpoint;
+use api::endpoints::formatted::tickets::TicketsApiEndpoint;
+use api::endpoints::formatted::vendors::VendorsApiEndpoint;
+use api::endpoints::raw::invoices::InvoicesApiEndpoint;
+use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
 use api::{ServeEntityJson, ServeRowJson};
 use database::Database;
 
@@ -57,14 +57,14 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/customers", get(CustomersApiView::serve_all))
-        .route("/device_models", get(DeviceModelsApiView::serve_all))
-        .route("/devices", get(DevicesApiView::serve_all))
-        .route("/parts", get(PartsApiView::serve_all))
-        .route("/tickets", get(TicketsApiView::serve_all))
-        .route("/vendors", get(VendorsApiView::serve_all))
+        .route("/customers", get(CustomersApiEndpoint::serve_all))
+        .route("/device_models", get(DeviceModelsApiEndpoint::serve_all))
+        .route("/devices", get(DevicesApiEndpoint::serve_all))
+        .route("/parts", get(PartsApiEndpoint::serve_all))
+        .route("/tickets", get(TicketsApiEndpoint::serve_all))
+        .route("/vendors", get(VendorsApiEndpoint::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
-        .route("/raw/invoices", get(InvoicesApiView::serve_all))
+        .route("/raw/invoices", get(InvoicesApiEndpoint::serve_all))
         .layer(cors)
         .with_state(server_state);
 

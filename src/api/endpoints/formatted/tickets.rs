@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use crate::api::views::{
+use crate::api::endpoints::{
     ColumnFormat, CssColor, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType,
     TagOption, ViewCell,
 };
@@ -14,13 +14,13 @@ use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRo
 use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
-pub struct TicketsApiView {
-    metadata: TicketsApiViewMetadata,
-    rows: Vec<TicketsApiViewRow>,
+pub struct TicketsApiEndpoint {
+    metadata: EndpointMetadata,
+    rows: Vec<TicketsApiEndpointRow>,
 }
 
 #[derive(Serialize)]
-pub struct TicketsApiViewRow {
+pub struct TicketsApiEndpointRow {
     id: ViewCell<u32>,
     status: ViewCell<TicketStatus>,
     customer: ViewCell<Option<String>>,
@@ -29,7 +29,7 @@ pub struct TicketsApiViewRow {
     updated_at: ViewCell<NaiveDateTime>,
 }
 
-struct TicketsApiViewFormatting {
+struct EndpointFormatting {
     id: ColumnFormat,
     status: ColumnFormat,
     customer: ColumnFormat,
@@ -39,7 +39,7 @@ struct TicketsApiViewFormatting {
 }
 
 #[derive(Serialize)]
-struct TicketsApiViewMetadata {
+struct EndpointMetadata {
     id: FrontendColumnMetadata,
     status: FrontendColumnMetadata,
     customer: FrontendColumnMetadata,
@@ -48,7 +48,7 @@ struct TicketsApiViewMetadata {
     updated_at: FrontendColumnMetadata,
 }
 
-impl TicketsApiViewFormatting {
+impl EndpointFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -61,7 +61,7 @@ impl TicketsApiViewFormatting {
     }
 }
 
-impl TicketsApiViewMetadata {
+impl EndpointMetadata {
     const fn new() -> Self {
         Self {
             id: FrontendColumnMetadata {
@@ -153,26 +153,26 @@ impl TicketsApiViewMetadata {
     }
 }
 
-impl ServeEntityJson for TicketsApiView {}
-impl FromDatabaseEntity for TicketsApiView {
+impl ServeEntityJson for TicketsApiEndpoint {}
+impl FromDatabaseEntity for TicketsApiEndpoint {
     type Entity = TicketsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
         Self {
-            metadata: TicketsApiViewMetadata::new(),
+            metadata: EndpointMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(TicketsApiViewRow::from_database_row)
+                .map(TicketsApiEndpointRow::from_database_row)
                 .collect(),
         }
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for TicketsApiViewRow {}
-impl FromDatabaseRow for TicketsApiViewRow {
+impl ServeRowJson<GenericIdParameter> for TicketsApiEndpointRow {}
+impl FromDatabaseRow for TicketsApiEndpointRow {
     type Row = TicketsDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {
-        let formatting = TicketsApiViewFormatting::new();
+        let formatting = EndpointFormatting::new();
 
         let TicketsDatabaseViewRow {
             id,
@@ -183,7 +183,7 @@ impl FromDatabaseRow for TicketsApiViewRow {
             updated_at,
         } = row;
 
-        TicketsApiViewRow {
+        TicketsApiEndpointRow {
             id: ViewCell::new(id as u32, &formatting.id),
             status: ViewCell::new(status, &formatting.status),
             customer: ViewCell::new(customer, &formatting.customer),

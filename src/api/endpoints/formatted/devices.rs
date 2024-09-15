@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::api::views::{
+use crate::api::endpoints::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
 use crate::api::{
@@ -10,32 +10,32 @@ use crate::database::views::devices::{DevicesDatabaseView, DevicesDatabaseViewRo
 use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
-pub struct DevicesApiView {
-    metadata: DevicesApiViewMetadata,
-    rows: Vec<DevicesApiViewRow>,
+pub struct DevicesApiEndpoint {
+    metadata: EndpointMetadata,
+    rows: Vec<DevicesApiEndpointRow>,
 }
 
 #[derive(Serialize)]
-pub struct DevicesApiViewRow {
+pub struct DevicesApiEndpointRow {
     id: ViewCell<u32>,
     model: ViewCell<String>,
     owner: ViewCell<Option<String>>,
 }
 
-struct DevicesApiViewFormatting {
+struct EndpointFormatting {
     id: ColumnFormat,
     model: ColumnFormat,
     owner: ColumnFormat,
 }
 
 #[derive(Serialize)]
-struct DevicesApiViewMetadata {
+struct EndpointMetadata {
     id: FrontendColumnMetadata,
     model: FrontendColumnMetadata,
     owner: FrontendColumnMetadata,
 }
 
-impl DevicesApiViewFormatting {
+impl EndpointFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -45,7 +45,7 @@ impl DevicesApiViewFormatting {
     }
 }
 
-impl DevicesApiViewMetadata {
+impl EndpointMetadata {
     const fn new() -> Self {
         Self {
             id: FrontendColumnMetadata {
@@ -73,28 +73,28 @@ impl DevicesApiViewMetadata {
     }
 }
 
-impl ServeEntityJson for DevicesApiView {}
-impl FromDatabaseEntity for DevicesApiView {
+impl ServeEntityJson for DevicesApiEndpoint {}
+impl FromDatabaseEntity for DevicesApiEndpoint {
     type Entity = DevicesDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
         Self {
-            metadata: DevicesApiViewMetadata::new(),
+            metadata: EndpointMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(DevicesApiViewRow::from_database_row)
+                .map(DevicesApiEndpointRow::from_database_row)
                 .collect(),
         }
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for DevicesApiViewRow {}
-impl FromDatabaseRow for DevicesApiViewRow {
+impl ServeRowJson<GenericIdParameter> for DevicesApiEndpointRow {}
+impl FromDatabaseRow for DevicesApiEndpointRow {
     type Row = DevicesDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {
-        let formatting = DevicesApiViewFormatting::new();
+        let formatting = EndpointFormatting::new();
         let DevicesDatabaseViewRow { id, model, owner } = row;
-        DevicesApiViewRow {
+        DevicesApiEndpointRow {
             id: ViewCell::new(id as u32, &formatting.id),
             model: ViewCell::new(model, &formatting.model),
             owner: ViewCell::new(owner, &formatting.owner),

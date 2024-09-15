@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::api::views::{
+use crate::api::endpoints::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
 use crate::api::{
@@ -10,13 +10,13 @@ use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabase
 use crate::database::DatabaseEntity;
 
 #[derive(Serialize)]
-pub struct CustomersApiView {
-    metadata: CustomersApiViewMetadata,
-    rows: Vec<CustomersApiViewRow>,
+pub struct CustomersApiEndpoint {
+    metadata: EndpointMetadata,
+    rows: Vec<CustomersApiEndpointRow>,
 }
 
 #[derive(Serialize)]
-pub struct CustomersApiViewRow {
+pub struct CustomersApiEndpointRow {
     id: ViewCell<u32>,
     name: ViewCell<String>,
     email_address: ViewCell<Option<String>>,
@@ -24,7 +24,7 @@ pub struct CustomersApiViewRow {
     street_address: ViewCell<Option<String>>,
 }
 
-struct CustomersApiViewFormatting {
+struct EndpointFormatting {
     id: ColumnFormat,
     name: ColumnFormat,
     email_address: ColumnFormat,
@@ -33,7 +33,7 @@ struct CustomersApiViewFormatting {
 }
 
 #[derive(Serialize)]
-struct CustomersApiViewMetadata {
+struct EndpointMetadata {
     id: FrontendColumnMetadata,
     name: FrontendColumnMetadata,
     email_address: FrontendColumnMetadata,
@@ -41,7 +41,7 @@ struct CustomersApiViewMetadata {
     street_address: FrontendColumnMetadata,
 }
 
-impl CustomersApiViewFormatting {
+impl EndpointFormatting {
     const fn new() -> Self {
         Self {
             id: ColumnFormat::Id,
@@ -53,7 +53,7 @@ impl CustomersApiViewFormatting {
     }
 }
 
-impl CustomersApiViewMetadata {
+impl EndpointMetadata {
     const fn new() -> Self {
         Self {
             id: FrontendColumnMetadata {
@@ -95,26 +95,26 @@ impl CustomersApiViewMetadata {
     }
 }
 
-impl ServeEntityJson for CustomersApiView {}
-impl FromDatabaseEntity for CustomersApiView {
+impl ServeEntityJson for CustomersApiEndpoint {}
+impl FromDatabaseEntity for CustomersApiEndpoint {
     type Entity = CustomersDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
         Self {
-            metadata: CustomersApiViewMetadata::new(),
+            metadata: EndpointMetadata::new(),
             rows: entity
                 .take_rows()
                 .into_iter()
-                .map(CustomersApiViewRow::from_database_row)
+                .map(CustomersApiEndpointRow::from_database_row)
                 .collect(),
         }
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for CustomersApiViewRow {}
-impl FromDatabaseRow for CustomersApiViewRow {
+impl ServeRowJson<GenericIdParameter> for CustomersApiEndpointRow {}
+impl FromDatabaseRow for CustomersApiEndpointRow {
     type Row = CustomersDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {
-        let formatting = CustomersApiViewFormatting::new();
+        let formatting = EndpointFormatting::new();
 
         let CustomersDatabaseViewRow {
             id,
@@ -124,7 +124,7 @@ impl FromDatabaseRow for CustomersApiViewRow {
             street_address,
         } = row;
 
-        CustomersApiViewRow {
+        CustomersApiEndpointRow {
             id: ViewCell::new(id as u32, &formatting.id),
             name: ViewCell::new(name, &formatting.name),
             email_address: ViewCell::new(email_address, &formatting.email_address),
