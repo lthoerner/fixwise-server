@@ -426,7 +426,7 @@ pub trait BulkInsert: DatabaseEntity<Row: SingleInsert> {
 }
 
 impl Database {
-    const CONFIG_SCRIPT: &str = include_str!("../../database/config.sql");
+    const CONFIG_SCRIPT: &str = include_str!("../../database/config.pgsql");
 
     pub async fn connect_and_configure() -> Self {
         let database = Self::connect().await;
