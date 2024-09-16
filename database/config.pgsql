@@ -68,13 +68,11 @@ CREATE TABLE main.parts (
     price numeric(1000, 2) NOT NULL DEFAULT 0
 );
 
-
 -- This table is a stub to be expanded upon later
 CREATE TABLE main.products (
     sku serial PRIMARY KEY,
     display_name text NOT NULL
 );
-
 
 CREATE TABLE main.product_prices (
     id serial PRIMARY KEY,
@@ -84,12 +82,10 @@ CREATE TABLE main.product_prices (
     time_set timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE main.service_types (
     id serial PRIMARY KEY,
     display_name text NOT NULL
 );
-
 
 CREATE TABLE main.services (
     id serial PRIMARY KEY,
@@ -98,7 +94,6 @@ CREATE TABLE main.services (
     device integer references main.device_models (id) NOT NULL
 );
 
-
 CREATE TABLE main.service_prices (
     id serial PRIMARY KEY,
     service integer references main.services (id) NOT NULL,
@@ -106,7 +101,6 @@ CREATE TABLE main.service_prices (
     labor_fee numeric(1000, 2) NOT NULL DEFAULT 0,
     time_set timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 
 CREATE TABLE main.items (
     id serial PRIMARY KEY,
@@ -129,20 +123,17 @@ CREATE TABLE main.devices (
     owner integer references main.customers (id)
 );
 
-
 CREATE TABLE main.invoices (
     id serial PRIMARY KEY,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE main.invoice_items (
     invoice integer references main.invoices (id) NOT NULL,
     item integer references main.items (id) NOT NULL,
     PRIMARY KEY (invoice, item)
 );
-
 
 CREATE TABLE main.invoice_payments (
     id serial PRIMARY KEY,
@@ -442,7 +433,7 @@ SELECT
     NULL AS service_labor_fee
 FROM
     main.items item
-    LEFT JOIN main.products_view product
+    INNER JOIN main.products_view product
         ON item.product_or_service = product.sku AND item.type = 'product'
 
 UNION ALL
@@ -461,7 +452,7 @@ SELECT
     service.labor_fee AS service_labor_fee
 FROM
     main.items item
-    LEFT JOIN main.services_view service
+    INNER JOIN main.services_view service
         ON item.product_or_service = service.id AND item.type = 'service'
 ORDER BY
     item_id ASC;
