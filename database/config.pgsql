@@ -196,17 +196,22 @@ RETURNS TABLE (cost numeric, price numeric) AS $$
 BEGIN
     RETURN QUERY (
         SELECT
-            product_price.cost,
-            product_price.price
+            COALESCE(product_price.cost, 0),
+            COALESCE(product_price.price, 0)
         FROM
-            main.product_prices product_price
-        WHERE
-            product = product_id
-            AND time_set <= point_in_time
-        ORDER BY
-            time_set DESC
-        LIMIT
-            1
+            (SELECT
+                product_price.cost,
+                product_price.price
+             FROM
+                main.product_prices product_price
+             WHERE
+                product_price.product = product_id
+                AND product_price.time_set <= point_in_time
+             ORDER BY
+                time_set DESC
+             LIMIT 1) product_price
+        RIGHT JOIN
+            (SELECT 1) dummy ON true
     );
 END;
 $$ LANGUAGE plpgsql;
@@ -216,17 +221,22 @@ RETURNS TABLE (base_fee numeric, labor_fee numeric) AS $$
 BEGIN
     RETURN QUERY (
         SELECT
-            service_price.base_fee,
-            service_price.labor_fee
+            COALESCE(service_price.base_fee, 0),
+            COALESCE(service_price.labor_fee, 0)
         FROM
-            main.service_prices service_price
-        WHERE
-            service = service_id
-            AND time_set <= point_in_time
-        ORDER BY
-            time_set DESC
-        LIMIT
-            1
+            (SELECT
+                service_price.base_fee,
+                service_price.labor_fee
+            FROM
+                main.service_prices service_price
+            WHERE
+                service = service_id
+                AND time_set <= point_in_time
+            ORDER BY
+                time_set DESC
+            LIMIT 1) service_price
+        RIGHT JOIN
+            (SELECT 1) dummy ON true
     );
 END;
 $$ LANGUAGE plpgsql;
@@ -390,8 +400,8 @@ CREATE VIEW main.products_view AS
 SELECT
     product.sku,
     product.display_name,
-    product_price.cost,
-    product_price.price
+    product_price.cost AS cost,
+    product_price.price AS price
 FROM
     main.products product
     LEFT JOIN LATERAL main.get_product_price_at_time(product.sku, CURRENT_TIMESTAMP::timestamp) product_price
@@ -404,8 +414,8 @@ SELECT
     service.id,
     service_type.display_name as type_name,
     device_model.display_name as device_name,
-    service_price.base_fee,
-    service_price.labor_fee
+    service_price.base_fee AS base_fee,
+    service_price.labor_fee AS labor_fee
 FROM
     main.services service
     LEFT JOIN main.service_types service_type

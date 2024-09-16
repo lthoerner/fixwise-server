@@ -17,6 +17,9 @@ use api::endpoints::formatted::parts::PartsApiEndpoint;
 use api::endpoints::formatted::tickets::TicketsApiEndpoint;
 use api::endpoints::formatted::vendors::VendorsApiEndpoint;
 use api::endpoints::raw::invoices::InvoicesApiEndpoint;
+use api::endpoints::raw::items::ItemsApiEndpoint;
+use api::endpoints::raw::products::ProductsApiEndpoint;
+use api::endpoints::raw::services::ServicesApiEndpoint;
 use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
 use api::{ServeEntityJson, ServeRowJson};
 use database::Database;
@@ -64,6 +67,9 @@ async fn main() {
         .route("/tickets", get(TicketsApiEndpoint::serve_all))
         .route("/vendors", get(VendorsApiEndpoint::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
+        .route("/raw/products", get(ProductsApiEndpoint::serve_all))
+        .route("/raw/services", get(ServicesApiEndpoint::serve_all))
+        .route("/raw/items", get(ItemsApiEndpoint::serve_all))
         .route("/raw/invoices", get(InvoicesApiEndpoint::serve_all))
         .layer(cors)
         .with_state(server_state);
