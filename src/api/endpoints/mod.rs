@@ -1,5 +1,4 @@
-// TODO: Maybe find better names/structure for these
-pub mod formatted;
+pub mod processed;
 pub mod raw;
 pub mod utils;
 

@@ -10,12 +10,12 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use api::endpoints::formatted::customers::CustomersApiEndpoint;
-use api::endpoints::formatted::device_models::DeviceModelsApiEndpoint;
-use api::endpoints::formatted::devices::DevicesApiEndpoint;
-use api::endpoints::formatted::parts::PartsApiEndpoint;
-use api::endpoints::formatted::tickets::TicketsApiEndpoint;
-use api::endpoints::formatted::vendors::VendorsApiEndpoint;
+use api::endpoints::processed::customers::CustomersApiEndpoint;
+use api::endpoints::processed::device_models::DeviceModelsApiEndpoint;
+use api::endpoints::processed::devices::DevicesApiEndpoint;
+use api::endpoints::processed::parts::PartsApiEndpoint;
+use api::endpoints::processed::tickets::TicketsApiEndpoint;
+use api::endpoints::processed::vendors::VendorsApiEndpoint;
 use api::endpoints::raw::invoices::InvoicesApiEndpoint;
 use api::endpoints::raw::items::ItemsApiEndpoint;
 use api::endpoints::raw::products::ProductsApiEndpoint;
