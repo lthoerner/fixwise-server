@@ -1,22 +1,23 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
+use proc_macros::{ServeEntityJson, ServeRowJson};
+
 use crate::api::endpoints::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{
-    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
-};
+use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::parts::{PartsDatabaseView, PartsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
-#[derive(Serialize)]
+#[derive(ServeEntityJson, Serialize)]
 pub struct PartsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<PartsApiEndpointRow>,
 }
 
-#[derive(Serialize)]
+#[derive(ServeRowJson, Serialize)]
+#[id_param(GenericIdParameter)]
 pub struct PartsApiEndpointRow {
     id: ViewCell<u32>,
     display_name: ViewCell<String>,
@@ -118,7 +119,6 @@ impl EndpointMetadata {
     }
 }
 
-impl ServeEntityJson for PartsApiEndpoint {}
 impl FromDatabaseEntity for PartsApiEndpoint {
     type Entity = PartsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
@@ -133,7 +133,6 @@ impl FromDatabaseEntity for PartsApiEndpoint {
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for PartsApiEndpointRow {}
 impl FromDatabaseRow for PartsApiEndpointRow {
     type Row = PartsDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {

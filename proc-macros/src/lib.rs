@@ -12,6 +12,16 @@ macro_rules! synerror {
 
 pub(crate) use synerror;
 
+#[proc_macro_derive(ServeEntityJson)]
+pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
+    derives::api::derive_serve_entity_json(input)
+}
+
+#[proc_macro_derive(ServeRowJson, attributes(id_param))]
+pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
+    derives::api::derive_serve_row_json(input)
+}
+
 #[proc_macro_derive(IdParameter)]
 pub fn derive_id_parameter(input: TokenStream) -> TokenStream {
     derives::api::derive_id_parameter(input)

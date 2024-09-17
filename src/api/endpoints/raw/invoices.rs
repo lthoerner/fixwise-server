@@ -2,18 +2,19 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use crate::api::{
-    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
-};
+use proc_macros::{ServeEntityJson, ServeRowJson};
+
+use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::invoices::{InvoicesDatabaseView, InvoicesDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
-#[derive(Serialize)]
+#[derive(ServeEntityJson, Serialize)]
 pub struct InvoicesApiEndpoint {
     rows: Vec<InvoicesApiEndpointRow>,
 }
 
-#[derive(Serialize)]
+#[derive(ServeRowJson, Serialize)]
+#[id_param(GenericIdParameter)]
 pub struct InvoicesApiEndpointRow {
     pub id: i32,
     pub created_at: NaiveDateTime,
@@ -22,7 +23,6 @@ pub struct InvoicesApiEndpointRow {
     pub payment_total: Decimal,
 }
 
-impl ServeEntityJson for InvoicesApiEndpoint {}
 impl FromDatabaseEntity for InvoicesApiEndpoint {
     type Entity = InvoicesDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
@@ -36,7 +36,6 @@ impl FromDatabaseEntity for InvoicesApiEndpoint {
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for InvoicesApiEndpointRow {}
 impl FromDatabaseRow for InvoicesApiEndpointRow {
     type Row = InvoicesDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {

@@ -1,23 +1,24 @@
 use serde::Serialize;
 
+use proc_macros::{ServeEntityJson, ServeRowJson};
+
 use crate::api::endpoints::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{
-    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
-};
+use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::device_models::{
     DeviceModelsDatabaseView, DeviceModelsDatabaseViewRow,
 };
 use crate::database::DatabaseEntity;
 
-#[derive(Serialize)]
+#[derive(ServeEntityJson, Serialize)]
 pub struct DeviceModelsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<DeviceModelsApiEndpointRow>,
 }
 
-#[derive(Serialize)]
+#[derive(ServeRowJson, Serialize)]
+#[id_param(GenericIdParameter)]
 pub struct DeviceModelsApiEndpointRow {
     id: ViewCell<u32>,
     display_name: ViewCell<String>,
@@ -86,7 +87,6 @@ impl EndpointMetadata {
     }
 }
 
-impl ServeEntityJson for DeviceModelsApiEndpoint {}
 impl FromDatabaseEntity for DeviceModelsApiEndpoint {
     type Entity = DeviceModelsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
@@ -101,7 +101,6 @@ impl FromDatabaseEntity for DeviceModelsApiEndpoint {
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for DeviceModelsApiEndpointRow {}
 impl FromDatabaseRow for DeviceModelsApiEndpointRow {
     type Row = DeviceModelsDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {

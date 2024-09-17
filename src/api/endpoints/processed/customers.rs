@@ -1,21 +1,22 @@
 use serde::Serialize;
 
+use proc_macros::{ServeEntityJson, ServeRowJson};
+
 use crate::api::endpoints::{
     ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
 };
-use crate::api::{
-    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
-};
+use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
-#[derive(Serialize)]
+#[derive(ServeEntityJson, Serialize)]
 pub struct CustomersApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<CustomersApiEndpointRow>,
 }
 
-#[derive(Serialize)]
+#[derive(ServeRowJson, Serialize)]
+#[id_param(GenericIdParameter)]
 pub struct CustomersApiEndpointRow {
     id: ViewCell<u32>,
     name: ViewCell<String>,
@@ -95,7 +96,6 @@ impl EndpointMetadata {
     }
 }
 
-impl ServeEntityJson for CustomersApiEndpoint {}
 impl FromDatabaseEntity for CustomersApiEndpoint {
     type Entity = CustomersDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
@@ -110,7 +110,6 @@ impl FromDatabaseEntity for CustomersApiEndpoint {
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for CustomersApiEndpointRow {}
 impl FromDatabaseRow for CustomersApiEndpointRow {
     type Row = CustomersDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {

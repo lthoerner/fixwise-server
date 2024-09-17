@@ -2,24 +2,25 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
+use proc_macros::{ServeEntityJson, ServeRowJson};
+
 use crate::api::endpoints::{
     ColumnFormat, CssColor, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType,
     TagOption, ViewCell,
 };
-use crate::api::{
-    FromDatabaseEntity, FromDatabaseRow, GenericIdParameter, ServeEntityJson, ServeRowJson,
-};
+use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::shared_models::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
-#[derive(Serialize)]
+#[derive(ServeEntityJson, Serialize)]
 pub struct TicketsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<TicketsApiEndpointRow>,
 }
 
-#[derive(Serialize)]
+#[derive(ServeRowJson, Serialize)]
+#[id_param(GenericIdParameter)]
 pub struct TicketsApiEndpointRow {
     id: ViewCell<u32>,
     status: ViewCell<TicketStatus>,
@@ -153,7 +154,6 @@ impl EndpointMetadata {
     }
 }
 
-impl ServeEntityJson for TicketsApiEndpoint {}
 impl FromDatabaseEntity for TicketsApiEndpoint {
     type Entity = TicketsDatabaseView;
     fn from_database_entity(entity: Self::Entity) -> Self {
@@ -168,7 +168,6 @@ impl FromDatabaseEntity for TicketsApiEndpoint {
     }
 }
 
-impl ServeRowJson<GenericIdParameter> for TicketsApiEndpointRow {}
 impl FromDatabaseRow for TicketsApiEndpointRow {
     type Row = TicketsDatabaseViewRow;
     fn from_database_row(row: Self::Row) -> Self {

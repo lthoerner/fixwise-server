@@ -13,7 +13,7 @@ struct DatabaseEntityAttributes {
     primary_key: String,
 }
 
-#[derive(Debug, ExtractAttributes)]
+#[derive(ExtractAttributes)]
 #[deluxe(attributes(defaultable))]
 struct DefaultableRowAttribute;
 
