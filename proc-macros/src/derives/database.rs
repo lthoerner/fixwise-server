@@ -107,7 +107,6 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
     };
 
     let fields: Vec<(String, Ident, bool)> = {
-        // TODO: Maybe parse don't validate
         let Fields::Named(_) = &data_struct.fields else {
             synerror!(
                 type_name,
@@ -118,7 +117,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
         let mut defaultable_fields: Vec<(String, Ident, bool)> = Vec::new();
         for mut field in data_struct.fields.into_iter() {
             let field_ident = field.ident.clone().unwrap();
-            // TODO: Use the #[slqx(rename = "<name>")] attribute
+            // TODO: Use the #[sqlx(rename = "<name>")] attribute
             let field_name = field_ident
                 .clone()
                 .to_string()
