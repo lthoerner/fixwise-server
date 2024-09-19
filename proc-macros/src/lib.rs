@@ -12,6 +12,11 @@ macro_rules! synerror {
 
 pub(crate) use synerror;
 
+#[proc_macro_derive(ProcessEndpoint, attributes(col_format))]
+pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
+    derives::api::derive_process_endpoint(input)
+}
+
 #[proc_macro_derive(ServeEntityJson)]
 pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
     derives::api::derive_serve_entity_json(input)

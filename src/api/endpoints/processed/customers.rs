@@ -1,10 +1,8 @@
 use serde::Serialize;
 
-use proc_macros::{ServeEntityJson, ServeRowJson};
+use proc_macros::{ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
-use crate::api::endpoints::{
-    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
-};
+use crate::api::endpoints::ViewCell;
 use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
 use crate::database::DatabaseEntity;
@@ -15,85 +13,24 @@ pub struct CustomersApiEndpoint {
     rows: Vec<CustomersApiEndpointRow>,
 }
 
-#[derive(ServeRowJson, Serialize)]
+#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct CustomersApiEndpointRow {
+    #[col_format(
+        format = "id",
+        data_type = "integer",
+        display_name = "ID",
+        trimmable = false
+    )]
     id: ViewCell<u32>,
+    #[col_format(data_type = "string", trimmable = false)]
     name: ViewCell<String>,
+    #[col_format(data_type = "string", trimmable = true)]
     email_address: ViewCell<Option<String>>,
+    #[col_format(data_type = "string", trimmable = true)]
     phone_number: ViewCell<Option<String>>,
+    #[col_format(data_type = "string", trimmable = true)]
     street_address: ViewCell<Option<String>>,
-}
-
-struct EndpointFormatting {
-    id: ColumnFormat,
-    name: ColumnFormat,
-    email_address: ColumnFormat,
-    phone_number: ColumnFormat,
-    street_address: ColumnFormat,
-}
-
-#[derive(Serialize)]
-struct EndpointMetadata {
-    id: FrontendColumnMetadata,
-    name: FrontendColumnMetadata,
-    email_address: FrontendColumnMetadata,
-    phone_number: FrontendColumnMetadata,
-    street_address: FrontendColumnMetadata,
-}
-
-impl EndpointFormatting {
-    const fn new() -> Self {
-        Self {
-            id: ColumnFormat::Id,
-            name: ColumnFormat::None,
-            email_address: ColumnFormat::None,
-            phone_number: ColumnFormat::None,
-            street_address: ColumnFormat::None,
-        }
-    }
-}
-
-impl EndpointMetadata {
-    const fn new() -> Self {
-        Self {
-            id: FrontendColumnMetadata {
-                data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay::Text {
-                    name: "ID",
-                    trimmable: false,
-                },
-            },
-            name: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Name",
-                    trimmable: false,
-                },
-            },
-            email_address: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Email Address",
-                    trimmable: true,
-                },
-            },
-            phone_number: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Phone Number",
-                    trimmable: true,
-                },
-            },
-            street_address: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Street Address",
-                    trimmable: true,
-                },
-            },
-        }
-    }
 }
 
 impl FromDatabaseEntity for CustomersApiEndpoint {

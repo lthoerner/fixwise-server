@@ -2,16 +2,58 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{ServeEntityJson, ServeRowJson};
+use proc_macros::{ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
-use crate::api::endpoints::{
-    ColumnFormat, CssColor, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType,
-    TagOption, ViewCell,
-};
+use crate::api::endpoints::{CssColor, TagOption, ViewCell};
 use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::shared_models::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
 use crate::database::DatabaseEntity;
+
+const STATUS_TAG_OPTIONS: &[TagOption] = &[
+    TagOption {
+        name: "new",
+        color: CssColor::Preset {
+            name: "royalblue",
+            opacity: 0.45,
+        },
+    },
+    TagOption {
+        name: "waiting_for_parts",
+        color: CssColor::Preset {
+            name: "red",
+            opacity: 0.37,
+        },
+    },
+    TagOption {
+        name: "waiting_for_customer",
+        color: CssColor::Preset {
+            name: "yellow",
+            opacity: 0.43,
+        },
+    },
+    TagOption {
+        name: "in_repair",
+        color: CssColor::Preset {
+            name: "orange",
+            opacity: 0.54,
+        },
+    },
+    TagOption {
+        name: "ready_for_pickup",
+        color: CssColor::Preset {
+            name: "limegreen",
+            opacity: 0.37,
+        },
+    },
+    TagOption {
+        name: "closed",
+        color: CssColor::Preset {
+            name: "gray",
+            opacity: 0.45,
+        },
+    },
+];
 
 #[derive(ServeEntityJson, Serialize)]
 pub struct TicketsApiEndpoint {
@@ -19,139 +61,36 @@ pub struct TicketsApiEndpoint {
     rows: Vec<TicketsApiEndpointRow>,
 }
 
-#[derive(ServeRowJson, Serialize)]
+#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct TicketsApiEndpointRow {
+    #[col_format(
+        format = "id",
+        data_type = "integer",
+        display_name = "ID",
+        trimmable = false
+    )]
     id: ViewCell<u32>,
+    #[col_format(format = "tag", data_type = "tag", tag_options = STATUS_TAG_OPTIONS)]
     status: ViewCell<TicketStatus>,
+    #[col_format(data_type = "string", trimmable = true)]
     customer: ViewCell<Option<String>>,
+    #[col_format(format = "currency", data_type = "string", trimmable = false)]
     balance: ViewCell<Decimal>,
+    #[col_format(
+        format = "date",
+        data_type = "timestamp",
+        display_name = "Created",
+        trimmable = false
+    )]
     created_at: ViewCell<NaiveDateTime>,
+    #[col_format(
+        format = "date",
+        data_type = "timestamp",
+        display_name = "Updated",
+        trimmable = false
+    )]
     updated_at: ViewCell<NaiveDateTime>,
-}
-
-struct EndpointFormatting {
-    id: ColumnFormat,
-    status: ColumnFormat,
-    customer: ColumnFormat,
-    balance: ColumnFormat,
-    created_at: ColumnFormat,
-    updated_at: ColumnFormat,
-}
-
-#[derive(Serialize)]
-struct EndpointMetadata {
-    id: FrontendColumnMetadata,
-    status: FrontendColumnMetadata,
-    customer: FrontendColumnMetadata,
-    balance: FrontendColumnMetadata,
-    created_at: FrontendColumnMetadata,
-    updated_at: FrontendColumnMetadata,
-}
-
-impl EndpointFormatting {
-    const fn new() -> Self {
-        Self {
-            id: ColumnFormat::Id,
-            status: ColumnFormat::Tag,
-            customer: ColumnFormat::None,
-            balance: ColumnFormat::Currency,
-            created_at: ColumnFormat::Date,
-            updated_at: ColumnFormat::Date,
-        }
-    }
-}
-
-impl EndpointMetadata {
-    const fn new() -> Self {
-        Self {
-            id: FrontendColumnMetadata {
-                data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay::Text {
-                    name: "ID",
-                    trimmable: false,
-                },
-            },
-            status: FrontendColumnMetadata {
-                data_type: FrontendDataType::Tag,
-                display: FrontendColumnDisplay::Tag {
-                    name: "Status",
-                    options: &[
-                        TagOption {
-                            name: "new",
-                            color: CssColor::Preset {
-                                name: "royalblue",
-                                opacity: 0.45,
-                            },
-                        },
-                        TagOption {
-                            name: "waiting_for_parts",
-                            color: CssColor::Preset {
-                                name: "red",
-                                opacity: 0.37,
-                            },
-                        },
-                        TagOption {
-                            name: "waiting_for_customer",
-                            color: CssColor::Preset {
-                                name: "yellow",
-                                opacity: 0.43,
-                            },
-                        },
-                        TagOption {
-                            name: "in_repair",
-                            color: CssColor::Preset {
-                                name: "orange",
-                                opacity: 0.54,
-                            },
-                        },
-                        TagOption {
-                            name: "ready_for_pickup",
-                            color: CssColor::Preset {
-                                name: "limegreen",
-                                opacity: 0.37,
-                            },
-                        },
-                        TagOption {
-                            name: "closed",
-                            color: CssColor::Preset {
-                                name: "gray",
-                                opacity: 0.45,
-                            },
-                        },
-                    ],
-                },
-            },
-            customer: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Customer",
-                    trimmable: true,
-                },
-            },
-            balance: FrontendColumnMetadata {
-                data_type: FrontendDataType::Decimal,
-                display: FrontendColumnDisplay::Text {
-                    name: "Balance",
-                    trimmable: false,
-                },
-            },
-            created_at: FrontendColumnMetadata {
-                data_type: FrontendDataType::Timestamp,
-                display: FrontendColumnDisplay::Text {
-                    name: "Created",
-                    trimmable: false,
-                },
-            },
-            updated_at: FrontendColumnMetadata {
-                data_type: FrontendDataType::Timestamp,
-                display: FrontendColumnDisplay::Text {
-                    name: "Updated",
-                    trimmable: false,
-                },
-            },
-        }
-    }
 }
 
 impl FromDatabaseEntity for TicketsApiEndpoint {

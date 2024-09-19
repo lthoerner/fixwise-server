@@ -1,10 +1,8 @@
 use serde::Serialize;
 
-use proc_macros::{ServeEntityJson, ServeRowJson};
+use proc_macros::{ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
-use crate::api::endpoints::{
-    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
-};
+use crate::api::endpoints::ViewCell;
 use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::device_models::{
     DeviceModelsDatabaseView, DeviceModelsDatabaseViewRow,
@@ -17,74 +15,22 @@ pub struct DeviceModelsApiEndpoint {
     rows: Vec<DeviceModelsApiEndpointRow>,
 }
 
-#[derive(ServeRowJson, Serialize)]
+#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct DeviceModelsApiEndpointRow {
+    #[col_format(
+        format = "id",
+        data_type = "integer",
+        display_name = "ID",
+        trimmable = false
+    )]
     id: ViewCell<u32>,
+    #[col_format(data_type = "string", display_name = "Name", trimmable = false)]
     display_name: ViewCell<String>,
+    #[col_format(data_type = "string", trimmable = false)]
     manufacturer: ViewCell<String>,
+    #[col_format(data_type = "string", trimmable = false)]
     category: ViewCell<String>,
-}
-
-struct EndpointFormatting {
-    id: ColumnFormat,
-    display_name: ColumnFormat,
-    manufacturer: ColumnFormat,
-    category: ColumnFormat,
-}
-
-#[derive(Serialize)]
-struct EndpointMetadata {
-    id: FrontendColumnMetadata,
-    display_name: FrontendColumnMetadata,
-    manufacturer: FrontendColumnMetadata,
-    category: FrontendColumnMetadata,
-}
-
-impl EndpointFormatting {
-    const fn new() -> Self {
-        Self {
-            id: ColumnFormat::Id,
-            display_name: ColumnFormat::None,
-            manufacturer: ColumnFormat::None,
-            category: ColumnFormat::None,
-        }
-    }
-}
-
-impl EndpointMetadata {
-    const fn new() -> Self {
-        Self {
-            id: FrontendColumnMetadata {
-                data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay::Text {
-                    name: "ID",
-                    trimmable: false,
-                },
-            },
-            display_name: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Name",
-                    trimmable: false,
-                },
-            },
-            manufacturer: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Manufacturer",
-                    trimmable: false,
-                },
-            },
-            category: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Category",
-                    trimmable: false,
-                },
-            },
-        }
-    }
 }
 
 impl FromDatabaseEntity for DeviceModelsApiEndpoint {

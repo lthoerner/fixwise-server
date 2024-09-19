@@ -1,10 +1,8 @@
 use serde::Serialize;
 
-use proc_macros::{ServeEntityJson, ServeRowJson};
+use proc_macros::{ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
-use crate::api::endpoints::{
-    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
-};
+use crate::api::endpoints::ViewCell;
 use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::vendors::{VendorsDatabaseView, VendorsDatabaseViewRow};
 use crate::database::DatabaseEntity;
@@ -15,52 +13,18 @@ pub struct VendorsApiEndpoint {
     rows: Vec<VendorsApiEndpointRow>,
 }
 
-#[derive(ServeRowJson, Serialize)]
+#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct VendorsApiEndpointRow {
+    #[col_format(
+        format = "id",
+        data_type = "integer",
+        display_name = "ID",
+        trimmable = false
+    )]
     id: ViewCell<u32>,
+    #[col_format(data_type = "string", display_name = "Name", trimmable = false)]
     display_name: ViewCell<String>,
-}
-
-struct EndpointFormatting {
-    id: ColumnFormat,
-    display_name: ColumnFormat,
-}
-
-#[derive(Serialize)]
-struct EndpointMetadata {
-    id: FrontendColumnMetadata,
-    display_name: FrontendColumnMetadata,
-}
-
-impl EndpointFormatting {
-    const fn new() -> Self {
-        Self {
-            id: ColumnFormat::Id,
-            display_name: ColumnFormat::None,
-        }
-    }
-}
-
-impl EndpointMetadata {
-    const fn new() -> Self {
-        Self {
-            id: FrontendColumnMetadata {
-                data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay::Text {
-                    name: "ID",
-                    trimmable: false,
-                },
-            },
-            display_name: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Name",
-                    trimmable: false,
-                },
-            },
-        }
-    }
 }
 
 impl FromDatabaseEntity for VendorsApiEndpoint {

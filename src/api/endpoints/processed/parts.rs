@@ -1,11 +1,9 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{ServeEntityJson, ServeRowJson};
+use proc_macros::{ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
-use crate::api::endpoints::{
-    ColumnFormat, FrontendColumnDisplay, FrontendColumnMetadata, FrontendDataType, ViewCell,
-};
+use crate::api::endpoints::ViewCell;
 use crate::api::{FromDatabaseEntity, FromDatabaseRow, GenericIdParameter};
 use crate::database::views::parts::{PartsDatabaseView, PartsDatabaseViewRow};
 use crate::database::DatabaseEntity;
@@ -16,107 +14,28 @@ pub struct PartsApiEndpoint {
     rows: Vec<PartsApiEndpointRow>,
 }
 
-#[derive(ServeRowJson, Serialize)]
+#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct PartsApiEndpointRow {
+    #[col_format(
+        format = "id",
+        data_type = "integer",
+        display_name = "ID",
+        trimmable = false
+    )]
     id: ViewCell<u32>,
+    #[col_format(data_type = "string", display_name = "Name", trimmable = false)]
     display_name: ViewCell<String>,
+    #[col_format(data_type = "string", trimmable = true)]
     vendor: ViewCell<String>,
+    #[col_format(data_type = "string", trimmable = true)]
     manufacturer: ViewCell<Option<String>>,
+    #[col_format(data_type = "string", trimmable = true)]
     category: ViewCell<String>,
+    #[col_format(format = "currency", data_type = "decimal", trimmable = false)]
     cost: ViewCell<Option<Decimal>>,
+    #[col_format(format = "currency", data_type = "decimal", trimmable = false)]
     price: ViewCell<Option<Decimal>>,
-}
-
-struct EndpointFormatting {
-    id: ColumnFormat,
-    display_name: ColumnFormat,
-    vendor: ColumnFormat,
-    manufacturer: ColumnFormat,
-    category: ColumnFormat,
-    cost: ColumnFormat,
-    price: ColumnFormat,
-}
-
-#[derive(Serialize)]
-struct EndpointMetadata {
-    id: FrontendColumnMetadata,
-    display_name: FrontendColumnMetadata,
-    vendor: FrontendColumnMetadata,
-    manufacturer: FrontendColumnMetadata,
-    category: FrontendColumnMetadata,
-    cost: FrontendColumnMetadata,
-    price: FrontendColumnMetadata,
-}
-
-impl EndpointFormatting {
-    const fn new() -> Self {
-        Self {
-            id: ColumnFormat::Id,
-            display_name: ColumnFormat::None,
-            vendor: ColumnFormat::None,
-            manufacturer: ColumnFormat::None,
-            category: ColumnFormat::None,
-            cost: ColumnFormat::Currency,
-            price: ColumnFormat::Currency,
-        }
-    }
-}
-
-impl EndpointMetadata {
-    const fn new() -> Self {
-        Self {
-            id: FrontendColumnMetadata {
-                data_type: FrontendDataType::Integer,
-                display: FrontendColumnDisplay::Text {
-                    name: "ID",
-                    trimmable: false,
-                },
-            },
-            display_name: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Name",
-                    trimmable: false,
-                },
-            },
-            vendor: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Vendor",
-                    trimmable: true,
-                },
-            },
-            manufacturer: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Manufacturer",
-                    trimmable: true,
-                },
-            },
-            category: FrontendColumnMetadata {
-                data_type: FrontendDataType::String,
-                display: FrontendColumnDisplay::Text {
-                    name: "Category",
-                    trimmable: true,
-                },
-            },
-            cost: FrontendColumnMetadata {
-                data_type: FrontendDataType::Decimal,
-                display: FrontendColumnDisplay::Text {
-                    name: "Cost",
-                    trimmable: false,
-                },
-            },
-            price: FrontendColumnMetadata {
-                data_type: FrontendDataType::Decimal,
-                display: FrontendColumnDisplay::Text {
-                    name: "Price",
-                    trimmable: false,
-                },
-            },
-        }
-    }
 }
 
 impl FromDatabaseEntity for PartsApiEndpoint {
