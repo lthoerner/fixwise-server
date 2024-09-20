@@ -20,6 +20,8 @@ struct DefaultableRowAttribute;
 pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
     let type_name = input.ident.clone();
+    let row_type_name = Ident::new(&format!("{}Row", type_name), type_name.span());
+
     let Data::Struct(_) = input.data else {
         synerror!(
             type_name,
@@ -27,7 +29,6 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
         )
     };
 
-    let row_type_name = Ident::new(&format!("{}Row", type_name), type_name.span());
     let Ok(DatabaseEntityAttributes {
         schema_name,
         entity_name,
