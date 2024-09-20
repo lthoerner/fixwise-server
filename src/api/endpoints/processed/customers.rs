@@ -17,20 +17,15 @@ pub struct CustomersApiEndpoint {
 #[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct CustomersApiEndpointRow {
-    #[col_format(
-        format = "id",
-        data_type = "integer",
-        display_name = "ID",
-        trimmable = false
-    )]
+    #[col_format(preset = "id")]
     id: ViewCell<u32>,
-    #[col_format(data_type = "string", trimmable = false)]
+    #[col_format(preset = "string-notrim")]
     name: ViewCell<String>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     email_address: ViewCell<Option<String>>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     phone_number: ViewCell<Option<String>>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     street_address: ViewCell<Option<String>>,
 }
 

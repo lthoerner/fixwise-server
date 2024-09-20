@@ -17,14 +17,9 @@ pub struct VendorsApiEndpoint {
 #[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct VendorsApiEndpointRow {
-    #[col_format(
-        format = "id",
-        data_type = "integer",
-        display_name = "ID",
-        trimmable = false
-    )]
+    #[col_format(preset = "id")]
     id: ViewCell<u32>,
-    #[col_format(data_type = "string", display_name = "Name", trimmable = false)]
+    #[col_format(preset = "string-notrim", display_name = "Name")]
     display_name: ViewCell<String>,
 }
 

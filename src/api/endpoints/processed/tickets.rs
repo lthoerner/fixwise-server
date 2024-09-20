@@ -65,32 +65,17 @@ pub struct TicketsApiEndpoint {
 #[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct TicketsApiEndpointRow {
-    #[col_format(
-        format = "id",
-        data_type = "integer",
-        display_name = "ID",
-        trimmable = false
-    )]
+    #[col_format(preset = "id")]
     id: ViewCell<u32>,
     #[col_format(format = "tag", data_type = "tag", tag_options = STATUS_TAG_OPTIONS)]
     status: ViewCell<TicketStatus>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     customer: ViewCell<Option<String>>,
-    #[col_format(format = "currency", data_type = "string", trimmable = false)]
+    #[col_format(preset = "currency")]
     balance: ViewCell<Decimal>,
-    #[col_format(
-        format = "date",
-        data_type = "timestamp",
-        display_name = "Created",
-        trimmable = false
-    )]
+    #[col_format(preset = "date", display_name = "Created")]
     created_at: ViewCell<NaiveDateTime>,
-    #[col_format(
-        format = "date",
-        data_type = "timestamp",
-        display_name = "Updated",
-        trimmable = false
-    )]
+    #[col_format(preset = "date", display_name = "Updated")]
     updated_at: ViewCell<NaiveDateTime>,
 }
 

@@ -17,16 +17,11 @@ pub struct DevicesApiEndpoint {
 #[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct DevicesApiEndpointRow {
-    #[col_format(
-        format = "id",
-        data_type = "integer",
-        display_name = "ID",
-        trimmable = false
-    )]
+    #[col_format(preset = "id")]
     id: ViewCell<u32>,
-    #[col_format(data_type = "string", trimmable = false)]
+    #[col_format(preset = "string-notrim")]
     model: ViewCell<String>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     owner: ViewCell<Option<String>>,
 }
 

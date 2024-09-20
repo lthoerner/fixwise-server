@@ -18,24 +18,19 @@ pub struct PartsApiEndpoint {
 #[derive(ProcessEndpoint, ServeRowJson, Serialize)]
 #[id_param(GenericIdParameter)]
 pub struct PartsApiEndpointRow {
-    #[col_format(
-        format = "id",
-        data_type = "integer",
-        display_name = "ID",
-        trimmable = false
-    )]
+    #[col_format(preset = "id")]
     id: ViewCell<u32>,
-    #[col_format(data_type = "string", display_name = "Name", trimmable = false)]
+    #[col_format(preset = "string-notrim", display_name = "Name")]
     display_name: ViewCell<String>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     vendor: ViewCell<String>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     manufacturer: ViewCell<Option<String>>,
-    #[col_format(data_type = "string", trimmable = true)]
+    #[col_format(preset = "string")]
     category: ViewCell<String>,
-    #[col_format(format = "currency", data_type = "decimal", trimmable = false)]
+    #[col_format(preset = "currency")]
     cost: ViewCell<Option<Decimal>>,
-    #[col_format(format = "currency", data_type = "decimal", trimmable = false)]
+    #[col_format(preset = "currency")]
     price: ViewCell<Option<Decimal>>,
 }
 

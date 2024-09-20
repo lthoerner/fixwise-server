@@ -9,8 +9,9 @@ use crate::synerror;
 
 #[derive(ExtractAttributes, Clone)]
 struct ColumnFormatAttributes {
+    preset: Option<String>,
     format: Option<String>,
-    data_type: String,
+    data_type: Option<String>,
     display_name: Option<String>,
     trimmable: Option<bool>,
     tag_options: Option<Ident>,
@@ -21,6 +22,55 @@ struct DatabaseEntityAttribute(Ident);
 
 #[derive(ExtractAttributes)]
 struct IdParameterAttribute(Ident);
+
+enum ColumnFormatPreset {
+    Id,
+    String { trimmable: bool },
+    Currency,
+    Date,
+}
+
+impl ColumnFormatAttributes {
+    fn apply_preset(&mut self, preset: ColumnFormatPreset) {
+        match preset {
+            ColumnFormatPreset::Id => {
+                self.format = Some("id".to_owned());
+                self.data_type = Some("integer".to_owned());
+
+                if self.display_name.is_none() {
+                    self.display_name = Some("ID".to_owned());
+                }
+
+                if self.trimmable.is_none() {
+                    self.trimmable = Some(false);
+                }
+            },
+            ColumnFormatPreset::String { trimmable } => {
+                self.data_type = Some("string".to_owned());
+
+                if self.trimmable.is_none() {
+                    self.trimmable = Some(trimmable);
+                }
+            },
+            ColumnFormatPreset::Currency => {
+                self.format = Some("currency".to_owned());
+                self.data_type = Some("decimal".to_owned());
+                
+                if self.trimmable.is_none() {
+                    self.trimmable = Some(false);
+                }
+            },
+            ColumnFormatPreset::Date => {
+                self.format = Some("date".to_owned());
+                self.data_type = Some("timestamp".to_owned());
+                
+                if self.trimmable.is_none() {
+                    self.trimmable = Some(false);
+                }
+            }
+        }
+    }
+}
 
 pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
     let DeriveInput {
@@ -48,7 +98,7 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
         for mut field in data_struct.fields.into_iter() {
             let field_ident = field.ident.clone().unwrap();
             let field_name = field_ident.clone().to_string();
-            let Ok(format_attributes): Result<ColumnFormatAttributes, syn::Error> =
+            let Ok(mut format_attributes): Result<ColumnFormatAttributes, syn::Error> =
                 deluxe::extract_attributes(&mut field)
             else {
                 synerror!(
@@ -56,6 +106,20 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
                     "cannot derive `ProcessEndpoint` without `#[col_format(...)]` attribute on each column"
                 )
             };
+
+            if let Some(preset) = format_attributes.preset.clone() {
+                format_attributes.apply_preset(match preset.as_str() {
+                    "id" => ColumnFormatPreset::Id,
+                    "string" => ColumnFormatPreset::String { trimmable: true },
+                    "string-notrim" => ColumnFormatPreset::String { trimmable: false },
+                    "currency" => ColumnFormatPreset::Currency,
+                    "date" => ColumnFormatPreset::Date,
+                    _ => synerror!(
+                        field_ident,
+                        "invalid value for `preset` in `#[col_format(...)]` attribute"
+                    ),
+                });
+            }
 
             fields.push((field_name, field_ident, format_attributes));
         }
@@ -94,7 +158,11 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
             let column_ident = f.1.clone();
             let column_format = f.2.clone();
 
-            let data_type = match column_format.data_type.as_str() {
+            if column_format.data_type.is_none() {
+                synerror!(column_ident, "either `preset` or `data_type` must be specified in `#[col_format(...)]` attribute")
+            }
+
+            let data_type = match column_format.data_type.unwrap().as_str() {
                 "integer" => quote!(crate::api::endpoints::FrontendDataType::Integer),
                 "decimal" => quote!(crate::api::endpoints::FrontendDataType::Decimal),
                 "string" => quote!(crate::api::endpoints::FrontendDataType::String),
@@ -170,7 +238,8 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
                 }
             }
         }
-    }.into()
+    }
+    .into()
 }
 
 pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
@@ -185,7 +254,9 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
         )
     };
 
-    let Ok(DatabaseEntityAttribute(database_entity_type_name)) = deluxe::extract_attributes(&mut input) else {
+    let Ok(DatabaseEntityAttribute(database_entity_type_name)) =
+        deluxe::extract_attributes(&mut input)
+    else {
         synerror!(
             type_name,
             "cannot derive `FromDatabaseEntity` without `#[database_entity(...)]` attribute"
@@ -206,7 +277,8 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
                 }
             }
         }
-    }.into()
+    }
+    .into()
 }
 
 pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
