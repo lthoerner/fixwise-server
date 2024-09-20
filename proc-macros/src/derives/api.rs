@@ -17,6 +17,9 @@ struct ColumnFormatAttributes {
 }
 
 #[derive(ExtractAttributes)]
+struct DatabaseEntityAttribute(Ident);
+
+#[derive(ExtractAttributes)]
 struct IdParameterAttribute(Ident);
 
 pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
@@ -164,6 +167,42 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
                     #(
                         #column_metadata,
                     )*
+                }
+            }
+        }
+    }.into()
+}
+
+pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
+    let mut input: DeriveInput = parse_macro_input!(input);
+    let type_name = input.ident.clone();
+    let row_type_name = Ident::new(&format!("{}Row", type_name), type_name.span());
+
+    let Data::Struct(_) = input.data else {
+        synerror!(
+            type_name,
+            "cannot derive `FromDatabaseEntity` for non-struct types"
+        )
+    };
+
+    let Ok(DatabaseEntityAttribute(database_entity_type_name)) = deluxe::extract_attributes(&mut input) else {
+        synerror!(
+            type_name,
+            "cannot derive `FromDatabaseEntity` without `#[database_entity(...)]` attribute"
+        )
+    };
+
+    quote! {
+        impl crate::api::FromDatabaseEntity for #type_name {
+            type Entity = #database_entity_type_name;
+            fn from_database_entity(entity: Self::Entity) -> Self {
+                Self {
+                    metadata: EndpointMetadata::new(),
+                    rows: entity
+                        .take_rows()
+                        .into_iter()
+                        .map(#row_type_name::from_database_row)
+                        .collect(),
                 }
             }
         }

@@ -17,6 +17,11 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
     derives::api::derive_process_endpoint(input)
 }
 
+#[proc_macro_derive(FromDatabaseEntity, attributes(database_entity))]
+pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
+    derives::api::derive_from_database_entity(input)
+}
+
 #[proc_macro_derive(ServeEntityJson)]
 pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
     derives::api::derive_serve_entity_json(input)
