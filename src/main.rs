@@ -13,13 +13,16 @@ use tower_http::cors::{Any, CorsLayer};
 use api::endpoints::processed::customers::CustomersApiEndpoint;
 use api::endpoints::processed::device_models::DeviceModelsApiEndpoint;
 use api::endpoints::processed::devices::DevicesApiEndpoint;
+use api::endpoints::processed::invoices::InvoicesApiEndpoint;
 use api::endpoints::processed::parts::PartsApiEndpoint;
+use api::endpoints::processed::products::ProductsApiEndpoint;
+use api::endpoints::processed::services::ServicesApiEndpoint;
 use api::endpoints::processed::tickets::TicketsApiEndpoint;
 use api::endpoints::processed::vendors::VendorsApiEndpoint;
-use api::endpoints::raw::invoices::InvoicesApiEndpoint;
+use api::endpoints::raw::invoices::InvoicesApiEndpoint as InvoicesRawApiEndpoint;
 use api::endpoints::raw::items::ItemsApiEndpoint;
-use api::endpoints::raw::products::ProductsApiEndpoint;
-use api::endpoints::raw::services::ServicesApiEndpoint;
+use api::endpoints::raw::products::ProductsApiEndpoint as ProductsRawApiEndpoint;
+use api::endpoints::raw::services::ServicesApiEndpoint as ServicesRawApiEndpoint;
 use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
 use api::{ServeEntityJson, ServeRowJson};
 use database::Database;
@@ -65,12 +68,15 @@ async fn main() {
         .route("/devices", get(DevicesApiEndpoint::serve_all))
         .route("/parts", get(PartsApiEndpoint::serve_all))
         .route("/tickets", get(TicketsApiEndpoint::serve_all))
+        .route("/invoices", get(InvoicesApiEndpoint::serve_all))
         .route("/vendors", get(VendorsApiEndpoint::serve_all))
+        .route("/products", get(ProductsApiEndpoint::serve_all))
+        .route("/services", get(ServicesApiEndpoint::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
-        .route("/raw/products", get(ProductsApiEndpoint::serve_all))
-        .route("/raw/services", get(ServicesApiEndpoint::serve_all))
+        .route("/raw/products", get(ProductsRawApiEndpoint::serve_all))
+        .route("/raw/services", get(ServicesRawApiEndpoint::serve_all))
         .route("/raw/items", get(ItemsApiEndpoint::serve_all))
-        .route("/raw/invoices", get(InvoicesApiEndpoint::serve_all))
+        .route("/raw/invoices", get(InvoicesRawApiEndpoint::serve_all))
         .layer(cors)
         .with_state(server_state);
 
