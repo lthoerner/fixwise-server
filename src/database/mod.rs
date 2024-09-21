@@ -464,56 +464,56 @@ impl Database {
         let service_types = ServiceTypesDatabaseTable::generate();
         service_types.clone().insert_all(self).await;
 
-        println!("Generating {VENDORS_COUNT} vendors");
+        eprintln!("Generating {VENDORS_COUNT} vendors");
         let vendors = VendorsDatabaseTable::generate(VENDORS_COUNT, ());
         vendors.clone().insert_all(self).await;
 
-        println!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
+        eprintln!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
         let device_manufacturers =
             DeviceManufacturersDatabaseTable::generate(DEVICE_MANUFACTURERS_COUNT, ());
         device_manufacturers.clone().insert_all(self).await;
 
-        println!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
+        eprintln!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
         let part_manufacturers =
             PartManufacturersDatabaseTable::generate(PART_MANUFACTURERS_COUNT, ());
         part_manufacturers.clone().insert_all(self).await;
 
-        println!("Generating {DEVICE_MODELS_COUNT} device models");
+        eprintln!("Generating {DEVICE_MODELS_COUNT} device models");
         let device_models = DeviceModelsDatabaseTable::generate(
             DEVICE_MODELS_COUNT,
             (&device_manufacturers, &device_categories),
         );
         device_models.clone().insert_all(self).await;
 
-        println!("Generating {PARTS_COUNT} parts");
+        eprintln!("Generating {PARTS_COUNT} parts");
         let parts = PartsDatabaseTable::generate(
             PARTS_COUNT,
             (&vendors, &part_manufacturers, &part_categories),
         );
         parts.clone().insert_all(self).await;
 
-        println!("Generating {PRODUCTS_COUNT} products");
+        eprintln!("Generating {PRODUCTS_COUNT} products");
         let products = ProductsDatabaseTable::generate(PRODUCTS_COUNT, ());
         products.clone().insert_all(self).await;
 
-        println!("Generating {PRODUCT_PRICES_COUNT} product_prices");
+        eprintln!("Generating {PRODUCT_PRICES_COUNT} product_prices");
         let product_prices = ProductPricesDatabaseTable::generate(PRODUCT_PRICES_COUNT, &products);
         product_prices.clone().insert_all(self).await;
 
-        println!("Generating {SERVICES_COUNT} services");
+        eprintln!("Generating {SERVICES_COUNT} services");
         let services =
             ServicesDatabaseTable::generate(SERVICES_COUNT, (&service_types, &device_models));
         services.clone().insert_all(self).await;
 
-        println!("Generating {SERVICE_PRICES_COUNT} service_prices");
+        eprintln!("Generating {SERVICE_PRICES_COUNT} service_prices");
         let service_prices = ServicePricesDatabaseTable::generate(SERVICE_PRICES_COUNT, &services);
         service_prices.clone().insert_all(self).await;
 
-        println!("Generating {CUSTOMERS_COUNT} customers");
+        eprintln!("Generating {CUSTOMERS_COUNT} customers");
         let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT, ());
         customers.clone().insert_all(self).await;
 
-        println!("Generating {DEVICES_COUNT} devices");
+        eprintln!("Generating {DEVICES_COUNT} devices");
         let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, (&device_models, &customers));
         devices.clone().insert_all(self).await;
 
