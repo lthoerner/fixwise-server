@@ -56,9 +56,12 @@ impl GenerateRowData for InvoicePaymentsDatabaseTableRow {
                 .iter()
                 .filter(|i| i.invoice == random_invoice.id())
                 .map(|i| {
-                    dependencies
-                        .2
-                        .get_item_price_by_id(i.item, dependencies.3, dependencies.4)
+                    dependencies.2.get_item_price_by_id(
+                        i.item,
+                        dependencies.3,
+                        dependencies.4,
+                        random_invoice.created_at.unwrap(),
+                    )
                 })
                 .sum();
             let current_payment_total: Decimal = existing_rows

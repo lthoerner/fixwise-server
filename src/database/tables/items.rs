@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
 use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
@@ -19,13 +20,14 @@ impl ItemsDatabaseTable {
         item_id: i32,
         product_prices: &ProductPricesDatabaseTable,
         service_prices: &ServicePricesDatabaseTable,
+        timestamp: NaiveDateTime,
     ) -> Decimal {
         self.rows
             .iter()
             .find(|r| r.id == item_id)
             // TODO: Remove this unwrap (probably)
             .unwrap()
-            .get_item_price(product_prices, service_prices)
+            .get_item_price_at_time(product_prices, service_prices, timestamp)
     }
 }
 
@@ -38,10 +40,11 @@ pub struct ItemsDatabaseTableRow {
 }
 
 impl ItemsDatabaseTableRow {
-    pub fn get_item_price(
+    pub fn get_item_price_at_time(
         &self,
         product_prices: &ProductPricesDatabaseTable,
         service_prices: &ServicePricesDatabaseTable,
+        timestamp: NaiveDateTime,
     ) -> Decimal {
         let product_or_service_id = self.product_or_service;
         match self.r#type {
@@ -49,7 +52,9 @@ impl ItemsDatabaseTableRow {
                 let most_recent_price = product_prices
                     .rows()
                     .iter()
-                    .filter(|p| p.product == product_or_service_id)
+                    .filter(|p| {
+                        p.product == product_or_service_id && p.time_set.unwrap() <= timestamp
+                    })
                     .max_by_key(|p| p.time_set);
 
                 match most_recent_price {
@@ -61,7 +66,9 @@ impl ItemsDatabaseTableRow {
                 let most_recent_price = service_prices
                     .rows()
                     .iter()
-                    .filter(|p| p.service == product_or_service_id)
+                    .filter(|p| {
+                        p.service == product_or_service_id && p.time_set.unwrap() <= timestamp
+                    })
                     .max_by_key(|p| p.time_set);
 
                 match most_recent_price {

@@ -18,12 +18,12 @@ impl LoadingBar {
             current_item: 0,
         };
 
-        print!(
+        eprint!(
             "\x1b[30m[{}]\x1b[39m",
             " ".repeat(TABLE_GENERATION_LOADING_BAR_LENGTH)
         );
-        print!("\x1B[2G");
-        std::io::stdout().flush().unwrap();
+        eprint!("\x1B[2G");
+        std::io::stderr().flush().unwrap();
 
         loading_bar
     }
@@ -39,12 +39,12 @@ impl LoadingBar {
             && self.percent != 100.0
         {
             self.previous_print_percent = normalized_percent;
-            print!("\x1b[32m=\x1b[39m");
-            std::io::stdout().flush().unwrap();
+            eprint!("\x1b[32m=\x1b[39m");
+            std::io::stderr().flush().unwrap();
         }
 
         if self.current_item == self.item_count {
-            println!();
+            eprintln!();
         }
     }
 }
