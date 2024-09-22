@@ -18,13 +18,17 @@ struct ColumnFormatAttributes {
 }
 
 #[derive(ExtractAttributes)]
-struct EntityRowAttributes {
-    id_param: Option<Ident>,
-    database_row: Option<Ident>,
+struct EndpointAttributes {
+    database_entity: Ident,
+    raw: bool,
 }
 
 #[derive(ExtractAttributes)]
-struct DatabaseEntityAttribute(Ident);
+struct EndpointRowAttributes {
+    id_param: Ident,
+    database_row: Ident,
+    raw: bool,
+}
 
 enum ColumnFormatPreset {
     Id,
@@ -47,26 +51,26 @@ impl ColumnFormatAttributes {
                 if self.trimmable.is_none() {
                     self.trimmable = Some(false);
                 }
-            },
+            }
             ColumnFormatPreset::String { trimmable } => {
                 self.data_type = Some("string".to_owned());
 
                 if self.trimmable.is_none() {
                     self.trimmable = Some(trimmable);
                 }
-            },
+            }
             ColumnFormatPreset::Currency => {
                 self.format = Some("currency".to_owned());
                 self.data_type = Some("decimal".to_owned());
-                
+
                 if self.trimmable.is_none() {
                     self.trimmable = Some(false);
                 }
-            },
+            }
             ColumnFormatPreset::Date => {
                 self.format = Some("date".to_owned());
                 self.data_type = Some("timestamp".to_owned());
-                
+
                 if self.trimmable.is_none() {
                     self.trimmable = Some(false);
                 }
@@ -257,13 +261,20 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
         )
     };
 
-    let Ok(DatabaseEntityAttribute(database_entity_type_name)) =
-        deluxe::extract_attributes(&mut input)
+    let Ok(EndpointAttributes {
+        database_entity: database_entity_type_name,
+        raw,
+    }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
             type_name,
-            "cannot derive `FromDatabaseEntity` without `#[database_entity(...)]` attribute"
+            "cannot derive `FromDatabaseEntity` without `#[endpoint(...)]` attribute"
         )
+    };
+
+    let optional_metadata_assignment = match raw {
+        true => None,
+        false => Some(quote!(metadata: EndpointMetadata::new(),)),
     };
 
     quote! {
@@ -271,7 +282,7 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
             type Entity = #database_entity_type_name;
             fn from_database_entity(entity: Self::Entity) -> Self {
                 Self {
-                    metadata: EndpointMetadata::new(),
+                    #optional_metadata_assignment
                     rows: entity
                         .take_rows()
                         .into_iter()
@@ -295,19 +306,15 @@ pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
         )
     };
 
-    let Ok(EntityRowAttributes { database_row: database_row_type_name, .. }) =
-        deluxe::extract_attributes(&mut input)
+    let Ok(EndpointRowAttributes {
+        database_row: database_row_type_name,
+        raw,
+        ..
+    }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
             type_name,
             "cannot derive `FromDatabaseRow` without `#[endpoint_row(...)]` attribute"
-        )
-    };
-
-    let Some(database_row_type_name) = database_row_type_name else {
-        synerror!(
-            type_name,
-            "cannot derive `FromDatabaseRow` without `database_row` value for `#[endpoint_row(...)]` attribute"
         )
     };
 
@@ -329,21 +336,36 @@ pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
         fields
     };
 
-    quote! {
-        impl crate::api::FromDatabaseRow for #type_name {
-            type Row = #database_row_type_name;
-            fn from_database_row(row: Self::Row) -> Self {
-                let formatting = EndpointFormatting::new();
-                let #database_row_type_name {
-                    #(
-                        #columns,
-                    )*
-                } = row;
-        
-                #type_name {
-                    #(
-                        #columns: ViewCell::new(#columns, &formatting.#columns),
-                    )*
+    if raw {
+        quote! {
+            impl crate::api::FromDatabaseRow for #type_name {
+                type Row = #database_row_type_name;
+                fn from_database_row(row: Self::Row) -> Self {
+                    #type_name {
+                        #(
+                            #columns: row.#columns,
+                        )*
+                    }
+                }
+            }
+        }
+    } else {
+        quote! {
+            impl crate::api::FromDatabaseRow for #type_name {
+                type Row = #database_row_type_name;
+                fn from_database_row(row: Self::Row) -> Self {
+                    let formatting = EndpointFormatting::new();
+                    let #database_row_type_name {
+                        #(
+                            #columns,
+                        )*
+                    } = row;
+
+                    #type_name {
+                        #(
+                            #columns: ViewCell::new(#columns, &formatting.#columns),
+                        )*
+                    }
                 }
             }
         }
@@ -381,18 +403,14 @@ pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
         )
     };
 
-    let Ok(EntityRowAttributes { id_param: id_param_type_name, .. }) = deluxe::extract_attributes(&mut input) else {
+    let Ok(EndpointRowAttributes {
+        id_param: id_param_type_name,
+        ..
+    }) = deluxe::extract_attributes(&mut input)
+    else {
         synerror!(
             type_name,
             "cannot derive `ServeRowJson` without `#[endpoint_row(...)]` attribute"
-        )
-    };
-
-
-    let Some(id_param_type_name) = id_param_type_name else {
-        synerror!(
-            type_name,
-            "cannot derive `FromDatabaseRow` without `id_param` value for `#[endpoint_row(...)]` attribute"
         )
     };
 

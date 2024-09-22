@@ -58,14 +58,14 @@ const STATUS_TAG_OPTIONS: &[TagOption] = &[
 ];
 
 #[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[database_entity(TicketsDatabaseView)]
+#[endpoint(database_entity = TicketsDatabaseView, raw = false)]
 pub struct TicketsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<TicketsApiEndpointRow>,
 }
 
 #[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = TicketsDatabaseViewRow)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = TicketsDatabaseViewRow, raw = false)]
 pub struct TicketsApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

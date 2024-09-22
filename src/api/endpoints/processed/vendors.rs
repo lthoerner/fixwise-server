@@ -10,14 +10,14 @@ use crate::database::views::vendors::{VendorsDatabaseView, VendorsDatabaseViewRo
 use crate::database::DatabaseEntity;
 
 #[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[database_entity(VendorsDatabaseView)]
+#[endpoint(database_entity = VendorsDatabaseView, raw = false)]
 pub struct VendorsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<VendorsApiEndpointRow>,
 }
 
 #[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = VendorsDatabaseViewRow)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = VendorsDatabaseViewRow, raw = false)]
 pub struct VendorsApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

@@ -12,14 +12,14 @@ use crate::database::views::device_models::{
 use crate::database::DatabaseEntity;
 
 #[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[database_entity(DeviceModelsDatabaseView)]
+#[endpoint(database_entity = DeviceModelsDatabaseView, raw = false)]
 pub struct DeviceModelsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<DeviceModelsApiEndpointRow>,
 }
 
 #[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = DeviceModelsDatabaseViewRow)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = DeviceModelsDatabaseViewRow, raw = false)]
 pub struct DeviceModelsApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

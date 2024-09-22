@@ -12,14 +12,14 @@ use crate::database::views::invoices::{InvoicesDatabaseView, InvoicesDatabaseVie
 use crate::database::DatabaseEntity;
 
 #[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[database_entity(InvoicesDatabaseView)]
+#[endpoint(database_entity = InvoicesDatabaseView, raw = false)]
 pub struct InvoicesApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<InvoicesApiEndpointRow>,
 }
 
 #[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = InvoicesDatabaseViewRow)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = InvoicesDatabaseViewRow, raw = false)]
 pub struct InvoicesApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

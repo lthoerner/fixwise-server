@@ -11,14 +11,14 @@ use crate::database::views::services::{ServicesDatabaseView, ServicesDatabaseVie
 use crate::database::DatabaseEntity;
 
 #[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[database_entity(ServicesDatabaseView)]
+#[endpoint(database_entity = ServicesDatabaseView, raw = false)]
 pub struct ServicesApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<ServicesApiEndpointRow>,
 }
 
 #[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = ServicesDatabaseViewRow)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = ServicesDatabaseViewRow, raw = false)]
 pub struct ServicesApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,
