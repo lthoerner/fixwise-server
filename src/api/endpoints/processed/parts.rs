@@ -1,10 +1,12 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromDatabaseEntity, ProcessEndpoint, ServeEntityJson, ServeRowJson};
+use proc_macros::{
+    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
+};
 
 use crate::api::endpoints::ViewCell;
-use crate::api::{FromDatabaseRow, GenericIdParameter};
+use crate::api::GenericIdParameter;
 use crate::database::views::parts::{PartsDatabaseView, PartsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
@@ -15,11 +17,11 @@ pub struct PartsApiEndpoint {
     rows: Vec<PartsApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
-#[id_param(GenericIdParameter)]
+#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = PartsDatabaseViewRow)]
 pub struct PartsApiEndpointRow {
     #[col_format(preset = "id")]
-    id: ViewCell<u32>,
+    id: ViewCell<i32>,
     #[col_format(preset = "string-notrim", display_name = "Name")]
     display_name: ViewCell<String>,
     #[col_format(preset = "string")]
@@ -32,31 +34,4 @@ pub struct PartsApiEndpointRow {
     cost: ViewCell<Option<Decimal>>,
     #[col_format(preset = "currency")]
     price: ViewCell<Option<Decimal>>,
-}
-
-impl FromDatabaseRow for PartsApiEndpointRow {
-    type Row = PartsDatabaseViewRow;
-    fn from_database_row(row: Self::Row) -> Self {
-        let formatting = EndpointFormatting::new();
-
-        let PartsDatabaseViewRow {
-            id,
-            display_name,
-            vendor,
-            manufacturer,
-            category,
-            cost,
-            price,
-        } = row;
-
-        PartsApiEndpointRow {
-            id: ViewCell::new(id as u32, &formatting.id),
-            display_name: ViewCell::new(display_name, &formatting.display_name),
-            vendor: ViewCell::new(vendor, &formatting.vendor),
-            manufacturer: ViewCell::new(manufacturer, &formatting.manufacturer),
-            category: ViewCell::new(category, &formatting.category),
-            cost: ViewCell::new(cost, &formatting.cost),
-            price: ViewCell::new(price, &formatting.price),
-        }
-    }
 }

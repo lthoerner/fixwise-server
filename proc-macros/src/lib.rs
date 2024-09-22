@@ -22,12 +22,17 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
     derives::api::derive_from_database_entity(input)
 }
 
+#[proc_macro_derive(FromDatabaseRow, attributes(endpoint_row))]
+pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
+    derives::api::derive_from_database_row(input)
+}
+
 #[proc_macro_derive(ServeEntityJson)]
 pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
     derives::api::derive_serve_entity_json(input)
 }
 
-#[proc_macro_derive(ServeRowJson, attributes(id_param))]
+#[proc_macro_derive(ServeRowJson, attributes(endpoint_row))]
 pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
     derives::api::derive_serve_row_json(input)
 }

@@ -88,7 +88,7 @@ impl<T: Debug + Clone + Serialize + ViewFormat> ViewCell<T> {
     }
 }
 
-impl ViewFormat for u32 {
+impl ViewFormat for i32 {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
         match column_formatting {
             ColumnFormat::None => None,

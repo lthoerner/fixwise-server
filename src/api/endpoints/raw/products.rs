@@ -13,7 +13,7 @@ pub struct ProductsApiEndpoint {
 }
 
 #[derive(ServeRowJson, Serialize)]
-#[id_param(GenericIdParameter)]
+#[endpoint_row(id_param = GenericIdParameter)]
 pub struct ProductsApiEndpointRow {
     pub sku: i32,
     pub display_name: String,

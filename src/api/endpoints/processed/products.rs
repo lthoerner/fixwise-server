@@ -1,10 +1,12 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromDatabaseEntity, ProcessEndpoint, ServeEntityJson, ServeRowJson};
+use proc_macros::{
+    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
+};
 
 use crate::api::endpoints::ViewCell;
-use crate::api::{FromDatabaseRow, GenericIdParameter};
+use crate::api::GenericIdParameter;
 use crate::database::views::products::{ProductsDatabaseView, ProductsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
@@ -15,36 +17,15 @@ pub struct ProductsApiEndpoint {
     rows: Vec<ProductsApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
-#[id_param(GenericIdParameter)]
+#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = ProductsDatabaseViewRow)]
 pub struct ProductsApiEndpointRow {
     #[col_format(preset = "id", display_name = "SKU")]
-    sku: ViewCell<u32>,
+    sku: ViewCell<i32>,
     #[col_format(preset = "string-notrim", display_name = "Name")]
     display_name: ViewCell<String>,
     #[col_format(preset = "currency")]
     cost: ViewCell<Decimal>,
     #[col_format(preset = "currency")]
     price: ViewCell<Decimal>,
-}
-
-impl FromDatabaseRow for ProductsApiEndpointRow {
-    type Row = ProductsDatabaseViewRow;
-    fn from_database_row(row: Self::Row) -> Self {
-        let formatting = EndpointFormatting::new();
-
-        let ProductsDatabaseViewRow {
-            sku,
-            display_name,
-            cost,
-            price,
-        } = row;
-
-        ProductsApiEndpointRow {
-            sku: ViewCell::new(sku as u32, &formatting.sku),
-            display_name: ViewCell::new(display_name, &formatting.display_name),
-            cost: ViewCell::new(cost, &formatting.cost),
-            price: ViewCell::new(price, &formatting.price),
-        }
-    }
 }

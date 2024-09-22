@@ -2,10 +2,12 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromDatabaseEntity, ProcessEndpoint, ServeEntityJson, ServeRowJson};
+use proc_macros::{
+    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
+};
 
 use crate::api::endpoints::{CssColor, TagOption, ViewCell};
-use crate::api::{FromDatabaseRow, GenericIdParameter};
+use crate::api::GenericIdParameter;
 use crate::database::shared_models::TicketStatus;
 use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
 use crate::database::DatabaseEntity;
@@ -62,11 +64,11 @@ pub struct TicketsApiEndpoint {
     rows: Vec<TicketsApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
-#[id_param(GenericIdParameter)]
+#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = TicketsDatabaseViewRow)]
 pub struct TicketsApiEndpointRow {
     #[col_format(preset = "id")]
-    id: ViewCell<u32>,
+    id: ViewCell<i32>,
     #[col_format(format = "tag", data_type = "tag", tag_options = STATUS_TAG_OPTIONS)]
     status: ViewCell<TicketStatus>,
     #[col_format(preset = "string")]
@@ -77,29 +79,4 @@ pub struct TicketsApiEndpointRow {
     created_at: ViewCell<NaiveDateTime>,
     #[col_format(preset = "date", display_name = "Updated")]
     updated_at: ViewCell<NaiveDateTime>,
-}
-
-impl FromDatabaseRow for TicketsApiEndpointRow {
-    type Row = TicketsDatabaseViewRow;
-    fn from_database_row(row: Self::Row) -> Self {
-        let formatting = EndpointFormatting::new();
-
-        let TicketsDatabaseViewRow {
-            id,
-            status,
-            customer,
-            balance,
-            created_at,
-            updated_at,
-        } = row;
-
-        TicketsApiEndpointRow {
-            id: ViewCell::new(id as u32, &formatting.id),
-            status: ViewCell::new(status, &formatting.status),
-            customer: ViewCell::new(customer, &formatting.customer),
-            balance: ViewCell::new(balance, &formatting.balance),
-            created_at: ViewCell::new(created_at, &formatting.created_at),
-            updated_at: ViewCell::new(updated_at, &formatting.updated_at),
-        }
-    }
 }

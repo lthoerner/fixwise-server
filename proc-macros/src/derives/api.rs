@@ -18,10 +18,13 @@ struct ColumnFormatAttributes {
 }
 
 #[derive(ExtractAttributes)]
-struct DatabaseEntityAttribute(Ident);
+struct EntityRowAttributes {
+    id_param: Option<Ident>,
+    database_row: Option<Ident>,
+}
 
 #[derive(ExtractAttributes)]
-struct IdParameterAttribute(Ident);
+struct DatabaseEntityAttribute(Ident);
 
 enum ColumnFormatPreset {
     Id,
@@ -272,8 +275,75 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
                     rows: entity
                         .take_rows()
                         .into_iter()
-                        .map(#row_type_name::from_database_row)
+                        .map(<#row_type_name as crate::api::FromDatabaseRow>::from_database_row)
                         .collect(),
+                }
+            }
+        }
+    }
+    .into()
+}
+
+pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
+    let mut input: DeriveInput = parse_macro_input!(input);
+    let type_name = input.ident.clone();
+
+    let Data::Struct(data_struct) = input.data.clone() else {
+        synerror!(
+            type_name,
+            "cannot derive `FromDatabaseRow` for non-struct types"
+        )
+    };
+
+    let Ok(EntityRowAttributes { database_row: database_row_type_name, .. }) =
+        deluxe::extract_attributes(&mut input)
+    else {
+        synerror!(
+            type_name,
+            "cannot derive `FromDatabaseRow` without `#[endpoint_row(...)]` attribute"
+        )
+    };
+
+    let Some(database_row_type_name) = database_row_type_name else {
+        synerror!(
+            type_name,
+            "cannot derive `FromDatabaseRow` without `database_row` value for `#[endpoint_row(...)]` attribute"
+        )
+    };
+
+    // let fields: Vec<(String, Ident)> = {
+    let columns: Vec<Ident> = {
+        let Fields::Named(_) = &data_struct.fields else {
+            synerror!(
+                type_name,
+                "cannot derive `FromDatabaseRow` for unit or tuple structs"
+            )
+        };
+
+        let mut fields = Vec::new();
+        for field in data_struct.fields.into_iter() {
+            let field_ident = field.ident.clone().unwrap();
+            fields.push(field_ident);
+        }
+
+        fields
+    };
+
+    quote! {
+        impl crate::api::FromDatabaseRow for #type_name {
+            type Row = #database_row_type_name;
+            fn from_database_row(row: Self::Row) -> Self {
+                let formatting = EndpointFormatting::new();
+                let #database_row_type_name {
+                    #(
+                        #columns,
+                    )*
+                } = row;
+        
+                #type_name {
+                    #(
+                        #columns: ViewCell::new(#columns, &formatting.#columns),
+                    )*
                 }
             }
         }
@@ -311,15 +381,23 @@ pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
         )
     };
 
-    let Ok(IdParameterAttribute(id_param_type)) = deluxe::extract_attributes(&mut input) else {
+    let Ok(EntityRowAttributes { id_param: id_param_type_name, .. }) = deluxe::extract_attributes(&mut input) else {
         synerror!(
             type_name,
-            "cannot derive `ServeRowJson` without `#[id_param(...)]` attribute"
+            "cannot derive `ServeRowJson` without `#[endpoint_row(...)]` attribute"
+        )
+    };
+
+
+    let Some(id_param_type_name) = id_param_type_name else {
+        synerror!(
+            type_name,
+            "cannot derive `FromDatabaseRow` without `id_param` value for `#[endpoint_row(...)]` attribute"
         )
     };
 
     quote! {
-        impl crate::api::ServeRowJson<#id_param_type> for #type_name {}
+        impl crate::api::ServeRowJson<#id_param_type_name> for #type_name {}
     }
     .into()
 }

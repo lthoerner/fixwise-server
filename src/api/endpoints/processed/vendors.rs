@@ -1,9 +1,11 @@
 use serde::Serialize;
 
-use proc_macros::{FromDatabaseEntity, ProcessEndpoint, ServeEntityJson, ServeRowJson};
+use proc_macros::{
+    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
+};
 
 use crate::api::endpoints::ViewCell;
-use crate::api::{FromDatabaseRow, GenericIdParameter};
+use crate::api::GenericIdParameter;
 use crate::database::views::vendors::{VendorsDatabaseView, VendorsDatabaseViewRow};
 use crate::database::DatabaseEntity;
 
@@ -14,23 +16,11 @@ pub struct VendorsApiEndpoint {
     rows: Vec<VendorsApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, ServeRowJson, Serialize)]
-#[id_param(GenericIdParameter)]
+#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, database_row = VendorsDatabaseViewRow)]
 pub struct VendorsApiEndpointRow {
     #[col_format(preset = "id")]
-    id: ViewCell<u32>,
+    id: ViewCell<i32>,
     #[col_format(preset = "string-notrim", display_name = "Name")]
     display_name: ViewCell<String>,
-}
-
-impl FromDatabaseRow for VendorsApiEndpointRow {
-    type Row = VendorsDatabaseViewRow;
-    fn from_database_row(row: Self::Row) -> Self {
-        let formatting = EndpointFormatting::new();
-        let VendorsDatabaseViewRow { id, display_name } = row;
-        VendorsApiEndpointRow {
-            id: ViewCell::new(id as u32, &formatting.id),
-            display_name: ViewCell::new(display_name, &formatting.display_name),
-        }
-    }
 }
