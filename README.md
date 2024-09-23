@@ -1,5 +1,5 @@
-# TechTriage
-TechTriage is an inventory, ticket, and customer management software designed for use by electronics
+# Fixwise
+Fixwise is an inventory, ticket, and customer management software designed for use by electronics
 repair businesses. It is currently in active development.
 
 ## Goals

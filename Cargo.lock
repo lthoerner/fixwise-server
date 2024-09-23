@@ -609,6 +609,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fc0510504f03c51ada170672ac806f1f105a88aa97a5281117e1ddc3368e51a"
 
 [[package]]
+name = "fixwise-server"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "dotenvy",
+ "fake",
+ "http",
+ "http-body-util",
+ "imei-info",
+ "itertools",
+ "proc-macros",
+ "rand",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "toml",
+ "tower-http",
+]
+
+[[package]]
 name = "flume"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2309,29 +2332,6 @@ name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
-
-[[package]]
-name = "techtriage-server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "chrono",
- "dotenvy",
- "fake",
- "http",
- "http-body-util",
- "imei-info",
- "itertools",
- "proc-macros",
- "rand",
- "rust_decimal",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "toml",
- "tower-http",
-]
 
 [[package]]
 name = "tempfile"

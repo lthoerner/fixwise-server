@@ -83,7 +83,7 @@ pub trait FromDatabaseRow {
 /// A trait that allows queries including an ID field to use unique nomenclature if desired.
 ///
 /// The format for the URL will look like
-/// `https://techtriage.io/some/record/endpoint?id_parameter_name=123456`. If the ID parameter is
+/// `https://fixwise.io/some/record/endpoint?id_parameter_name=123456`. If the ID parameter is
 /// just named `id`, simply use [`GenericIdParameter`].
 pub trait IdParameter {
     /// Create the parameter with an inner [`usize`].
@@ -95,7 +95,7 @@ pub trait IdParameter {
 /// A generic ID query parameter type.
 ///
 /// Endpoints using this ID parameter will have URLs like
-/// `https://techtriage.io/some/record/endpoint?id=123456`.
+/// `https://fixwise.io/some/record/endpoint?id=123456`.
 #[derive(Clone, Deserialize, IdParameter)]
 pub struct GenericIdParameter {
     id: usize,

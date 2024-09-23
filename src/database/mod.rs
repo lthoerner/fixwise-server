@@ -87,8 +87,8 @@ pub trait DatabaseEntity: Sized {
     ///
     /// This defaults to "main" but can be changed in case an entity lives in a different schema.
     /// The main alternate schema which would be used here is "persistent" for items which are not
-    /// deleted each time the application is run. This will be unnecessary once TechTriage is no
-    /// longer in early development/testing.
+    /// deleted each time the application is run. This will be unnecessary once Fixwise is no longer
+    /// in early development/testing.
     const SCHEMA_NAME: &str = "main";
     /// The name of the entity in the database.
     ///
@@ -437,7 +437,7 @@ impl Database {
 
     async fn connect() -> Self {
         Self {
-            connection: PgPool::connect("postgresql://techtriage:techtriage@localhost:5432")
+            connection: PgPool::connect("postgresql://fixwise:fixwise@localhost:5432")
                 .await
                 .unwrap(),
         }
