@@ -2,8 +2,7 @@ pub mod endpoints;
 
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
-use axum::Json;
+use axum::extract::{Json, Query, State};
 use serde::{Deserialize, Serialize};
 
 use proc_macros::IdParameter;
