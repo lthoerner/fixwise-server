@@ -3,23 +3,23 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
 
 use super::generators::*;
-use super::part_categories::PartCategoriesDatabaseTable;
-use super::part_manufacturers::PartManufacturersDatabaseTable;
-use super::vendors::VendorsDatabaseTable;
+use super::part_categories::PartCategoriesTable;
+use super::part_manufacturers::PartManufacturersTable;
+use super::vendors::VendorsTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(entity_name = "parts", primary_key = "id", foreign_key_name = "part")]
-pub struct PartsDatabaseTable {
-    rows: Vec<PartsDatabaseTableRow>,
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "parts", primary_key = "id", foreign_key_name = "part")]
+pub struct PartsTable {
+    records: Vec<PartsTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct PartsDatabaseTableRow {
+pub struct PartsTableRecord {
     pub id: i32,
     pub display_name: String,
     pub vendor: i32,
@@ -31,16 +31,16 @@ pub struct PartsDatabaseTableRow {
     pub price: Option<Decimal>,
 }
 
-impl GenerateRowData for PartsDatabaseTableRow {
+impl GenerateRecord for PartsTableRecord {
     type Identifier = i32;
     type Dependencies<'a> = (
-        &'a VendorsDatabaseTable,
-        &'a PartManufacturersDatabaseTable,
-        &'a PartCategoriesDatabaseTable,
+        &'a VendorsTable,
+        &'a PartManufacturersTable,
+        &'a PartCategoriesTable,
     );
 
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

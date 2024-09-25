@@ -1,42 +1,38 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert};
 
-use super::devices::DevicesDatabaseTable;
+use super::devices::DevicesTable;
 use super::generators::*;
-use super::services::ServicesDatabaseTable;
-use super::tickets::TicketsDatabaseTable;
+use super::services::ServicesTable;
+use super::tickets::TicketsTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "ticket_devices",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "ticket_devices",
     primary_key = "(ticket, device)",
     foreign_key_name = "ticket_device"
 )]
-pub struct TicketDevicesDatabaseJunctionTable {
-    rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
+pub struct TicketDevicesJunctionTable {
+    records: Vec<TicketDevicesJunctionTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, Clone)]
-pub struct TicketDevicesDatabaseJunctionTableRow {
+pub struct TicketDevicesJunctionTableRecord {
     pub ticket: i32,
     pub device: i32,
     pub service: i32,
     pub diagnostic: Option<String>,
 }
 
-impl GenerateRowData for TicketDevicesDatabaseJunctionTableRow {
+impl GenerateRecord for TicketDevicesJunctionTableRecord {
     type Identifier = (i32, i32);
-    type Dependencies<'a> = (
-        &'a TicketsDatabaseTable,
-        &'a DevicesDatabaseTable,
-        &'a ServicesDatabaseTable,
-    );
+    type Dependencies<'a> = (&'a TicketsTable, &'a DevicesTable, &'a ServicesTable);
 
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

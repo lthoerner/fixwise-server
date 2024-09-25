@@ -1,20 +1,20 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromDatabaseEntity, FromDatabaseRow, ServeEntityJson, ServeRowJson};
+use proc_macros::{FromRecord, FromRelation, ServeEntityJson, ServeRowJson};
 
 use crate::api::GenericIdParameter;
-use crate::database::views::products::{ProductsDatabaseView, ProductsDatabaseViewRow};
-use crate::database::DatabaseEntity;
+use crate::database::views::products::{ProductsView, ProductsViewRecord};
+use crate::database::Relation;
 
-#[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[endpoint(database_entity = ProductsDatabaseView, raw = true)]
+#[derive(FromRelation, ServeEntityJson, Serialize)]
+#[endpoint(relation = ProductsView, raw = true)]
 pub struct ProductsApiEndpoint {
     rows: Vec<ProductsApiEndpointRow>,
 }
 
-#[derive(FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = ProductsDatabaseViewRow, raw = true)]
+#[derive(FromRecord, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, record = ProductsViewRecord, raw = true)]
 pub struct ProductsApiEndpointRow {
     pub sku: i32,
     pub display_name: String,

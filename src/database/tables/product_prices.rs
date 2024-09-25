@@ -4,25 +4,25 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
-use super::products::ProductsDatabaseTable;
+use super::products::ProductsTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "product_prices",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "product_prices",
     primary_key = "id",
     foreign_key_name = "product_price"
 )]
-pub struct ProductPricesDatabaseTable {
-    rows: Vec<ProductPricesDatabaseTableRow>,
+pub struct ProductPricesTable {
+    records: Vec<ProductPricesTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct ProductPricesDatabaseTableRow {
+pub struct ProductPricesTableRecord {
     pub id: i32,
     pub product: i32,
     #[defaultable]
@@ -33,11 +33,11 @@ pub struct ProductPricesDatabaseTableRow {
     pub time_set: Option<NaiveDateTime>,
 }
 
-impl GenerateRowData for ProductPricesDatabaseTableRow {
+impl GenerateRecord for ProductPricesTableRecord {
     type Identifier = i32;
-    type Dependencies<'a> = &'a ProductsDatabaseTable;
+    type Dependencies<'a> = &'a ProductsTable;
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

@@ -3,25 +3,25 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
-use super::services::ServicesDatabaseTable;
+use super::services::ServicesTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{Relation, GenerateRecord};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "service_prices",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "service_prices",
     primary_key = "id",
     foreign_key_name = "service_price"
 )]
-pub struct ServicePricesDatabaseTable {
-    rows: Vec<ServicePricesDatabaseTableRow>,
+pub struct ServicePricesTable {
+    records: Vec<ServicePricesTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct ServicePricesDatabaseTableRow {
+pub struct ServicePricesTableRecord {
     pub id: i32,
     pub service: i32,
     #[defaultable]
@@ -32,11 +32,11 @@ pub struct ServicePricesDatabaseTableRow {
     pub time_set: Option<NaiveDateTime>,
 }
 
-impl GenerateRowData for ServicePricesDatabaseTableRow {
+impl GenerateRecord for ServicePricesTableRecord {
     type Identifier = i32;
-    type Dependencies<'a> = &'a ServicesDatabaseTable;
+    type Dependencies<'a> = &'a ServicesTable;
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

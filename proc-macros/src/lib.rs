@@ -17,14 +17,14 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
     derives::api::derive_process_endpoint(input)
 }
 
-#[proc_macro_derive(FromDatabaseEntity, attributes(endpoint))]
-pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
-    derives::api::derive_from_database_entity(input)
+#[proc_macro_derive(FromRelation, attributes(endpoint))]
+pub fn derive_from_relation(input: TokenStream) -> TokenStream {
+    derives::api::derive_from_relation(input)
 }
 
-#[proc_macro_derive(FromDatabaseRow, attributes(endpoint_row))]
-pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
-    derives::api::derive_from_database_row(input)
+#[proc_macro_derive(FromRecord, attributes(endpoint_row))]
+pub fn derive_from_record(input: TokenStream) -> TokenStream {
+    derives::api::derive_from_record(input)
 }
 
 #[proc_macro_derive(ServeEntityJson)]
@@ -42,9 +42,9 @@ pub fn derive_id_parameter(input: TokenStream) -> TokenStream {
     derives::api::derive_id_parameter(input)
 }
 
-#[proc_macro_derive(DatabaseEntity, attributes(entity))]
-pub fn derive_database_entity(input: TokenStream) -> TokenStream {
-    derives::database::derive_database_entity(input)
+#[proc_macro_derive(Relation, attributes(relation))]
+pub fn derive_relation(input: TokenStream) -> TokenStream {
+    derives::database::derive_relation(input)
 }
 
 #[proc_macro_derive(GenerateTableData)]

@@ -2,15 +2,13 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{
-    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
-};
+use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
 use crate::api::endpoints::{CssColor, TagOption, ViewCell};
 use crate::api::GenericIdParameter;
 use crate::database::shared_models::TicketStatus;
-use crate::database::views::tickets::{TicketsDatabaseView, TicketsDatabaseViewRow};
-use crate::database::DatabaseEntity;
+use crate::database::views::tickets::{TicketsView, TicketsViewRecord};
+use crate::database::Relation;
 
 const STATUS_TAG_OPTIONS: &[TagOption] = &[
     TagOption {
@@ -57,15 +55,15 @@ const STATUS_TAG_OPTIONS: &[TagOption] = &[
     },
 ];
 
-#[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[endpoint(database_entity = TicketsDatabaseView, raw = false)]
+#[derive(FromRelation, ServeEntityJson, Serialize)]
+#[endpoint(relation = TicketsView, raw = false)]
 pub struct TicketsApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<TicketsApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = TicketsDatabaseViewRow, raw = false)]
+#[derive(ProcessEndpoint, FromRecord, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, record = TicketsViewRecord, raw = false)]
 pub struct TicketsApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

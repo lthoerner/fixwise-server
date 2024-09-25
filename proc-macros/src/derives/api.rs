@@ -8,6 +8,7 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident};
 use crate::synerror;
 
 #[derive(ExtractAttributes, Clone)]
+#[deluxe(attributes(col_format))]
 struct ColumnFormatAttributes {
     preset: Option<String>,
     format: Option<String>,
@@ -18,15 +19,17 @@ struct ColumnFormatAttributes {
 }
 
 #[derive(ExtractAttributes)]
+#[deluxe(attributes(endpoint))]
 struct EndpointAttributes {
-    database_entity: Ident,
+    relation: Ident,
     raw: bool,
 }
 
 #[derive(ExtractAttributes)]
+#[deluxe(attributes(endpoint_row))]
 struct EndpointRowAttributes {
     id_param: Ident,
-    database_row: Ident,
+    record: Ident,
     raw: bool,
 }
 
@@ -249,7 +252,7 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
+pub fn derive_from_relation(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
     let type_name = input.ident.clone();
     let row_type_name = Ident::new(&format!("{}Row", type_name), type_name.span());
@@ -257,18 +260,18 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
     let Data::Struct(_) = input.data else {
         synerror!(
             type_name,
-            "cannot derive `FromDatabaseEntity` for non-struct types"
+            "cannot derive `FromRelation` for non-struct types"
         )
     };
 
     let Ok(EndpointAttributes {
-        database_entity: database_entity_type_name,
+        relation: relation_type_name,
         raw,
     }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
             type_name,
-            "cannot derive `FromDatabaseEntity` without `#[endpoint(...)]` attribute"
+            "cannot derive `FromRelation` without `#[relation(...)]` attribute"
         )
     };
 
@@ -278,15 +281,15 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
     };
 
     quote! {
-        impl crate::api::FromDatabaseEntity for #type_name {
-            type Entity = #database_entity_type_name;
-            fn from_database_entity(entity: Self::Entity) -> Self {
+        impl crate::api::FromRelation for #type_name {
+            type Relation = #relation_type_name;
+            fn from_relation(relation: Self::Relation) -> Self {
                 Self {
                     #optional_metadata_assignment
-                    rows: entity
-                        .take_rows()
+                    rows: relation
+                        .take_records()
                         .into_iter()
-                        .map(<#row_type_name as crate::api::FromDatabaseRow>::from_database_row)
+                        .map(<#row_type_name as crate::api::FromRecord>::from_record)
                         .collect(),
                 }
             }
@@ -295,26 +298,26 @@ pub fn derive_from_database_entity(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
+pub fn derive_from_record(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
     let type_name = input.ident.clone();
 
     let Data::Struct(data_struct) = input.data.clone() else {
         synerror!(
             type_name,
-            "cannot derive `FromDatabaseRow` for non-struct types"
+            "cannot derive `FromRecord` for non-struct types"
         )
     };
 
     let Ok(EndpointRowAttributes {
-        database_row: database_row_type_name,
+        record: record_type_name,
         raw,
         ..
     }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
             type_name,
-            "cannot derive `FromDatabaseRow` without `#[endpoint_row(...)]` attribute"
+            "cannot derive `FromRecord` without `#[endpoint_row(...)]` attribute"
         )
     };
 
@@ -323,7 +326,7 @@ pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
         let Fields::Named(_) = &data_struct.fields else {
             synerror!(
                 type_name,
-                "cannot derive `FromDatabaseRow` for unit or tuple structs"
+                "cannot derive `FromRecord` for unit or tuple structs"
             )
         };
 
@@ -338,12 +341,12 @@ pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
 
     if raw {
         quote! {
-            impl crate::api::FromDatabaseRow for #type_name {
-                type Row = #database_row_type_name;
-                fn from_database_row(row: Self::Row) -> Self {
+            impl crate::api::FromRecord for #type_name {
+                type Record = #record_type_name;
+                fn from_record(record: Self::Record) -> Self {
                     #type_name {
                         #(
-                            #columns: row.#columns,
+                            #columns: record.#columns,
                         )*
                     }
                 }
@@ -351,15 +354,15 @@ pub fn derive_from_database_row(input: TokenStream) -> TokenStream {
         }
     } else {
         quote! {
-            impl crate::api::FromDatabaseRow for #type_name {
-                type Row = #database_row_type_name;
-                fn from_database_row(row: Self::Row) -> Self {
+            impl crate::api::FromRecord for #type_name {
+                type Record = #record_type_name;
+                fn from_record(record: Self::Record) -> Self {
                     let formatting = EndpointFormatting::new();
-                    let #database_row_type_name {
+                    let #record_type_name {
                         #(
                             #columns,
                         )*
-                    } = row;
+                    } = record;
 
                     #type_name {
                         #(

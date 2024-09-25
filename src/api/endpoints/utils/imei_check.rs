@@ -4,9 +4,11 @@ use axum::extract::{Json, Query, State};
 use imei_info::{Imei, PhoneInfo, Tac};
 use serde::{Deserialize, Serialize};
 
-use crate::api::{FromDatabaseRow, IdParameter, ServeRowJson};
-use crate::database::tables::type_allocation_codes::TypeAllocationCodesDatabaseTableRow;
-use crate::database::{DatabaseRow, SingleInsert};
+use proc_macros::FromRecord;
+
+use crate::api::{IdParameter, ServeRowJson};
+use crate::database::tables::type_allocation_codes::TypeAllocationCodesTableRecord;
+use crate::database::{Record, SingleInsert};
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]
@@ -14,7 +16,8 @@ pub struct ImeiParameter {
     imei: usize,
 }
 
-#[derive(Serialize)]
+#[derive(FromRecord, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, record = TypeAllocationCodesTableRecord, raw = true)]
 pub struct ImeiInfoApiUtil {
     manufacturer: String,
     model: String,
@@ -27,13 +30,15 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
     ) -> Json<Option<Self>> {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
-        if let Some(existing_row) = Self::Row::query_one_handler(
+        if let Some(existing_row) = Self::Record::query_one_handler(
             state.clone(),
             Query(ImeiParameter::new(tac.clone().into())),
         )
         .await
         {
-            Json(Some(Self::from_database_row(existing_row)))
+            Json(Some(<Self as crate::api::FromRecord>::from_record(
+                existing_row,
+            )))
         } else {
             let PhoneInfo {
                 manufacturer,
@@ -43,7 +48,7 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
                 .await
                 .unwrap();
 
-            let database_imei_info = TypeAllocationCodesDatabaseTableRow {
+            let database_imei_info = TypeAllocationCodesTableRecord {
                 tac: tac.into(),
                 manufacturer: manufacturer.clone(),
                 model: model.clone(),
@@ -57,16 +62,6 @@ impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
             };
 
             Json(Some(frontend_imei_info))
-        }
-    }
-}
-
-impl FromDatabaseRow for ImeiInfoApiUtil {
-    type Row = TypeAllocationCodesDatabaseTableRow;
-    fn from_database_row(row: Self::Row) -> Self {
-        ImeiInfoApiUtil {
-            manufacturer: row.manufacturer,
-            model: row.model,
         }
     }
 }

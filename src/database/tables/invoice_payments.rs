@@ -4,30 +4,30 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
 
 use super::generators::*;
-use super::invoice_items::InvoiceItemsDatabaseTable;
-use super::invoices::InvoicesDatabaseTable;
-use super::items::ItemsDatabaseTable;
-use super::product_prices::ProductPricesDatabaseTable;
-use super::service_prices::ServicePricesDatabaseTable;
+use super::invoice_items::InvoiceItemsTable;
+use super::invoices::InvoicesTable;
+use super::items::ItemsTable;
+use super::product_prices::ProductPricesTable;
+use super::service_prices::ServicePricesTable;
 use super::IdentifiableRow;
 use crate::database::shared_models::PaymentType;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "invoice_payments",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "invoice_payments",
     primary_key = "id",
     foreign_key_name = "invoice_payment"
 )]
-pub struct InvoicePaymentsDatabaseTable {
-    rows: Vec<InvoicePaymentsDatabaseTableRow>,
+pub struct InvoicePaymentsTable {
+    records: Vec<InvoicePaymentsTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct InvoicePaymentsDatabaseTableRow {
+pub struct InvoicePaymentsTableRecord {
     pub id: i32,
     pub invoice: i32,
     pub amount: Decimal,
@@ -37,18 +37,18 @@ pub struct InvoicePaymentsDatabaseTableRow {
     pub timestamp: Option<NaiveDateTime>,
 }
 
-impl GenerateRowData for InvoicePaymentsDatabaseTableRow {
+impl GenerateRecord for InvoicePaymentsTableRecord {
     type Identifier = i32;
     type Dependencies<'a> = (
-        &'a InvoicesDatabaseTable,
-        &'a InvoiceItemsDatabaseTable,
-        &'a ItemsDatabaseTable,
-        &'a ProductPricesDatabaseTable,
-        &'a ServicePricesDatabaseTable,
+        &'a InvoicesTable,
+        &'a InvoiceItemsTable,
+        &'a ItemsTable,
+        &'a ProductPricesTable,
+        &'a ServicePricesTable,
     );
 
     fn generate(
-        existing_rows: &[Self],
+        existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
@@ -56,7 +56,7 @@ impl GenerateRowData for InvoicePaymentsDatabaseTableRow {
             let random_invoice = dependencies.0.pick_random();
             let invoice_total: Decimal = dependencies
                 .1
-                .rows()
+                .records()
                 .iter()
                 .filter(|i| i.invoice == random_invoice.id())
                 .map(|i| {
@@ -68,7 +68,7 @@ impl GenerateRowData for InvoicePaymentsDatabaseTableRow {
                     )
                 })
                 .sum();
-            let current_payment_total: Decimal = existing_rows
+            let current_payment_total: Decimal = existing_records
                 .iter()
                 .filter(|r| r.invoice == random_invoice.id())
                 .map(|r| r.amount)

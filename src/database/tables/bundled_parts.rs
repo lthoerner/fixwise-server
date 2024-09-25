@@ -1,38 +1,38 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, SingleInsert};
+use proc_macros::{BulkInsert, Relation, GenerateTableData, SingleInsert};
 
-use super::parts::PartsDatabaseTable;
-use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
+use super::parts::PartsTable;
+use super::ticket_devices::TicketDevicesJunctionTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "bundled_parts",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "bundled_parts",
     primary_key = "(ticket, device, part)",
     foreign_key_name = "bundled_part"
 )]
-pub struct BundledPartsDatabaseJunctionTable {
-    rows: Vec<BundledPartsDatabaseJunctionTableRow>,
+pub struct BundledPartsJunctionTable {
+    records: Vec<BundledPartsJunctionTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, Clone)]
-pub struct BundledPartsDatabaseJunctionTableRow {
+pub struct BundledPartsJunctionTableRecord {
     pub ticket: i32,
     pub device: i32,
     pub part: i32,
 }
 
-impl GenerateRowData for BundledPartsDatabaseJunctionTableRow {
+impl GenerateRecord for BundledPartsJunctionTableRecord {
     type Identifier = (i32, i32, i32);
     type Dependencies<'a> = (
-        &'a TicketDevicesDatabaseJunctionTable,
-        &'a PartsDatabaseTable,
+        &'a TicketDevicesJunctionTable,
+        &'a PartsTable,
     );
 
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

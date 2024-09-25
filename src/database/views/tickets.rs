@@ -1,22 +1,22 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::Relation;
 
 use crate::database::shared_models::TicketStatus;
 
-#[derive(DatabaseEntity)]
-#[entity(
-    entity_name = "tickets_view",
+#[derive(Relation)]
+#[relation(
+    relation_name = "tickets_view",
     primary_key = "id",
     foreign_key_name = "PLACEHOLDER"
 )]
-pub struct TicketsDatabaseView {
-    rows: Vec<TicketsDatabaseViewRow>,
+pub struct TicketsView {
+    records: Vec<TicketsViewRecord>,
 }
 
 #[derive(sqlx::FromRow, Clone)]
-pub struct TicketsDatabaseViewRow {
+pub struct TicketsViewRecord {
     pub id: i32,
     pub status: TicketStatus,
     pub customer: Option<String>,

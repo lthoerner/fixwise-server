@@ -1,24 +1,24 @@
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, IdentifiableRow, SingleInsert};
 
-use crate::database::{GenerateStaticRowData, GenerateStaticTableData};
+use crate::database::{GenerateStaticRecord, GenerateStaticRelation};
 
-#[derive(DatabaseEntity, BulkInsert, Clone)]
-#[entity(
-    entity_name = "service_types",
+#[derive(Relation, BulkInsert, Clone)]
+#[relation(
+    relation_name = "service_types",
     primary_key = "id",
     foreign_key_name = "service_type"
 )]
-pub struct ServiceTypesDatabaseTable {
-    rows: Vec<ServiceTypesDatabaseTableRow>,
+pub struct ServiceTypesTable {
+    records: Vec<ServiceTypesTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct ServiceTypesDatabaseTableRow {
+pub struct ServiceTypesTableRecord {
     pub id: i32,
     pub display_name: String,
 }
 
-impl GenerateStaticTableData for ServiceTypesDatabaseTable {
+impl GenerateStaticRelation for ServiceTypesTable {
     const ITEMS: &[&str] = &[
         "Screen Repair",
         "Battery Repair",
@@ -29,7 +29,7 @@ impl GenerateStaticTableData for ServiceTypesDatabaseTable {
     ];
 }
 
-impl GenerateStaticRowData for ServiceTypesDatabaseTableRow {
+impl GenerateStaticRecord for ServiceTypesTableRecord {
     fn new(id: i32, display_name: impl Into<String>) -> Self {
         Self {
             id,

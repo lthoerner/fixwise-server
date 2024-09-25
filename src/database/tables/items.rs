@@ -1,28 +1,28 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, IdentifiableRow, Relation, SingleInsert};
 
-use super::product_prices::ProductPricesDatabaseTable;
-use super::service_prices::ServicePricesDatabaseTable;
+use super::product_prices::ProductPricesTable;
+use super::service_prices::ServicePricesTable;
 use crate::database::shared_models::ItemType;
-use crate::database::DatabaseEntity;
+use crate::database::Relation;
 
-#[derive(DatabaseEntity, BulkInsert, Clone)]
-#[entity(entity_name = "items", primary_key = "id", foreign_key_name = "item")]
-pub struct ItemsDatabaseTable {
-    rows: Vec<ItemsDatabaseTableRow>,
+#[derive(Relation, BulkInsert, Clone)]
+#[relation(relation_name = "items", primary_key = "id", foreign_key_name = "item")]
+pub struct ItemsTable {
+    records: Vec<ItemsTableRecord>,
 }
 
-impl ItemsDatabaseTable {
+impl ItemsTable {
     pub fn get_item_price_by_id(
         &self,
         item_id: i32,
-        product_prices: &ProductPricesDatabaseTable,
-        service_prices: &ServicePricesDatabaseTable,
+        product_prices: &ProductPricesTable,
+        service_prices: &ServicePricesTable,
         timestamp: NaiveDateTime,
     ) -> Decimal {
-        self.rows
+        self.records
             .iter()
             .find(|r| r.id == item_id)
             // TODO: Remove this unwrap (probably)
@@ -32,25 +32,25 @@ impl ItemsDatabaseTable {
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct ItemsDatabaseTableRow {
+pub struct ItemsTableRecord {
     pub id: i32,
     pub product_or_service: i32,
     #[sqlx(rename = "type")]
     pub r#type: ItemType,
 }
 
-impl ItemsDatabaseTableRow {
+impl ItemsTableRecord {
     pub fn get_item_price_at_time(
         &self,
-        product_prices: &ProductPricesDatabaseTable,
-        service_prices: &ServicePricesDatabaseTable,
+        product_prices: &ProductPricesTable,
+        service_prices: &ServicePricesTable,
         timestamp: NaiveDateTime,
     ) -> Decimal {
         let product_or_service_id = self.product_or_service;
         match self.r#type {
             ItemType::Product => {
                 let most_recent_price = product_prices
-                    .rows()
+                    .records()
                     .iter()
                     .filter(|p| {
                         p.product == product_or_service_id && p.time_set.unwrap() <= timestamp
@@ -64,7 +64,7 @@ impl ItemsDatabaseTableRow {
             }
             ItemType::Service => {
                 let most_recent_price = service_prices
-                    .rows()
+                    .records()
                     .iter()
                     .filter(|p| {
                         p.service == product_or_service_id && p.time_set.unwrap() <= timestamp

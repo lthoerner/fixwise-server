@@ -1,33 +1,33 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert};
 
-use super::device_models::DeviceModelsDatabaseTable;
-use super::parts::PartsDatabaseTable;
+use super::device_models::DeviceModelsTable;
+use super::parts::PartsTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "compatible_parts",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "compatible_parts",
     primary_key = "(device, part)",
     foreign_key_name = "compatible_part"
 )]
-pub struct CompatiblePartsDatabaseJunctionTable {
-    rows: Vec<CompatiblePartsDatabaseJunctionTableRow>,
+pub struct CompatiblePartsJunctionTable {
+    records: Vec<CompatiblePartsJunctionTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, Clone)]
-pub struct CompatiblePartsDatabaseJunctionTableRow {
+pub struct CompatiblePartsJunctionTableRecord {
     pub device: i32,
     pub part: i32,
 }
 
-impl GenerateRowData for CompatiblePartsDatabaseJunctionTableRow {
+impl GenerateRecord for CompatiblePartsJunctionTableRecord {
     type Identifier = (i32, i32);
-    type Dependencies<'a> = (&'a DeviceModelsDatabaseTable, &'a PartsDatabaseTable);
+    type Dependencies<'a> = (&'a DeviceModelsTable, &'a PartsTable);
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

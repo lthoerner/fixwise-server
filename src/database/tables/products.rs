@@ -1,31 +1,31 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
 
 use super::generators::*;
-use crate::database::GenerateRowData;
+use crate::database::GenerateRecord;
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "products",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "products",
     primary_key = "sku",
     foreign_key_name = "product"
 )]
-pub struct ProductsDatabaseTable {
-    rows: Vec<ProductsDatabaseTableRow>,
+pub struct ProductsTable {
+    records: Vec<ProductsTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct ProductsDatabaseTableRow {
+pub struct ProductsTableRecord {
     pub sku: i32,
     pub display_name: String,
 }
 
-impl GenerateRowData for ProductsDatabaseTableRow {
+impl GenerateRecord for ProductsTableRecord {
     type Identifier = i32;
     type Dependencies<'a> = ();
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         _dependencies: Self::Dependencies<'_>,
     ) -> Self {

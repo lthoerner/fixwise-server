@@ -1,19 +1,19 @@
 use rust_decimal::Decimal;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::Relation;
 
-#[derive(DatabaseEntity)]
-#[entity(
-    entity_name = "products_view",
+#[derive(Relation)]
+#[relation(
+    relation_name = "products_view",
     primary_key = "sku",
     foreign_key_name = "PLACEHOLDER"
 )]
-pub struct ProductsDatabaseView {
-    rows: Vec<ProductsDatabaseViewRow>,
+pub struct ProductsView {
+    records: Vec<ProductsViewRecord>,
 }
 
 #[derive(sqlx::FromRow, Clone)]
-pub struct ProductsDatabaseViewRow {
+pub struct ProductsViewRecord {
     pub sku: i32,
     pub display_name: String,
     pub cost: Decimal,

@@ -1,33 +1,33 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
 
-use super::invoices::InvoicesDatabaseTable;
-use super::items::ItemsDatabaseTable;
+use super::invoices::InvoicesTable;
+use super::items::ItemsTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "invoice_items",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "invoice_items",
     primary_key = "(invoice, item)",
     foreign_key_name = "invoice_item"
 )]
-pub struct InvoiceItemsDatabaseTable {
-    rows: Vec<InvoiceItemsDatabaseTableRow>,
+pub struct InvoiceItemsTable {
+    records: Vec<InvoiceItemsTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct InvoiceItemsDatabaseTableRow {
+pub struct InvoiceItemsTableRecord {
     pub invoice: i32,
     pub item: i32,
 }
 
-impl GenerateRowData for InvoiceItemsDatabaseTableRow {
+impl GenerateRecord for InvoiceItemsTableRecord {
     type Identifier = (i32, i32);
-    type Dependencies<'a> = (&'a InvoicesDatabaseTable, &'a ItemsDatabaseTable);
+    type Dependencies<'a> = (&'a InvoicesTable, &'a ItemsTable);
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_pairs: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

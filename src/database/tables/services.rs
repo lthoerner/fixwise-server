@@ -1,36 +1,36 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
 
-use super::device_models::DeviceModelsDatabaseTable;
+use super::device_models::DeviceModelsTable;
 use super::generators::*;
-use super::service_types::ServiceTypesDatabaseTable;
+use super::service_types::ServiceTypesTable;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "services",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "services",
     primary_key = "id",
     foreign_key_name = "service"
 )]
-pub struct ServicesDatabaseTable {
-    rows: Vec<ServicesDatabaseTableRow>,
+pub struct ServicesTable {
+    records: Vec<ServicesTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct ServicesDatabaseTableRow {
+pub struct ServicesTableRecord {
     pub id: i32,
     #[sqlx(rename = "type")]
     pub r#type: i32,
     pub device: i32,
 }
 
-impl GenerateRowData for ServicesDatabaseTableRow {
+impl GenerateRecord for ServicesTableRecord {
     type Identifier = i32;
-    type Dependencies<'a> = (&'a ServiceTypesDatabaseTable, &'a DeviceModelsDatabaseTable);
+    type Dependencies<'a> = (&'a ServiceTypesTable, &'a DeviceModelsTable);
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

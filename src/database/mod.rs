@@ -18,29 +18,29 @@ use sqlx::{raw_sql, PgPool, Postgres};
 use crate::api::IdParameter;
 use crate::ServerState;
 use loading_bar::LoadingBar;
-use tables::bundled_parts::BundledPartsDatabaseJunctionTable;
-use tables::compatible_parts::CompatiblePartsDatabaseJunctionTable;
-use tables::customers::CustomersDatabaseTable;
-use tables::device_categories::DeviceCategoriesDatabaseTable;
-use tables::device_manufacturers::DeviceManufacturersDatabaseTable;
-use tables::device_models::DeviceModelsDatabaseTable;
-use tables::devices::DevicesDatabaseTable;
+use tables::bundled_parts::BundledPartsJunctionTable;
+use tables::compatible_parts::CompatiblePartsJunctionTable;
+use tables::customers::CustomersTable;
+use tables::device_categories::DeviceCategoriesTable;
+use tables::device_manufacturers::DeviceManufacturersTable;
+use tables::device_models::DeviceModelsTable;
+use tables::devices::DevicesTable;
 use tables::generators::*;
-use tables::invoice_items::InvoiceItemsDatabaseTable;
-use tables::invoice_payments::InvoicePaymentsDatabaseTable;
-use tables::invoices::InvoicesDatabaseTable;
-use tables::items::ItemsDatabaseTable;
-use tables::part_categories::PartCategoriesDatabaseTable;
-use tables::part_manufacturers::PartManufacturersDatabaseTable;
-use tables::parts::PartsDatabaseTable;
-use tables::product_prices::ProductPricesDatabaseTable;
-use tables::products::ProductsDatabaseTable;
-use tables::service_prices::ServicePricesDatabaseTable;
-use tables::service_types::ServiceTypesDatabaseTable;
-use tables::services::ServicesDatabaseTable;
-use tables::ticket_devices::TicketDevicesDatabaseJunctionTable;
-use tables::tickets::TicketsDatabaseTable;
-use tables::vendors::VendorsDatabaseTable;
+use tables::invoice_items::InvoiceItemsTable;
+use tables::invoice_payments::InvoicePaymentsTable;
+use tables::invoices::InvoicesTable;
+use tables::items::ItemsTable;
+use tables::part_categories::PartCategoriesTable;
+use tables::part_manufacturers::PartManufacturersTable;
+use tables::parts::PartsTable;
+use tables::product_prices::ProductPricesTable;
+use tables::products::ProductsTable;
+use tables::service_prices::ServicePricesTable;
+use tables::service_types::ServiceTypesTable;
+use tables::services::ServicesTable;
+use tables::ticket_devices::TicketDevicesJunctionTable;
+use tables::tickets::TicketsTable;
+use tables::vendors::VendorsTable;
 
 const TABLE_GENERATION_LOADING_BAR_LENGTH: usize = 33;
 const SQL_PARAMETER_BIND_LIMIT: usize = u16::MAX as usize;
@@ -71,71 +71,71 @@ pub struct Database {
 
 /// A trait that allows table and view types to interoperate with and be queried from the database.
 ///
-/// This does not implement any insertion methods because "entities" can be views, which are
+/// This does not implement any insertion methods because "relations" can be views, which are
 /// read-only. For inserting items to tables, see the [`SingleInsert`] and [`BulkInsert`] traits.
 ///
-/// This trait does not do a lot on its own but it, along with [`DatabaseRow`], provides the
+/// This trait does not do a lot on its own but it, along with [`Record`], provides the
 /// functionality which allows almost all of the other database traits to be auto-implemented or
 /// conveniently derived.
-pub trait DatabaseEntity: Sized {
-    /// The row type which this entity contains a collection of.
+pub trait Relation: Sized {
+    /// The record type which this relation contains a collection of.
     ///
-    /// This type and the [`DatabaseRow::Entity`] type are directly interreferential to allow
+    /// This type and the [`Record::Relation`] type are directly interreferential to allow
     /// "upcasting" and "downcasting," mostly for auto-implementations in other traits.
-    type Row: DatabaseRow<Entity = Self>;
+    type Record: Record<Relation = Self>;
 
-    /// The name of the schema in which this entity exists in the database.
+    /// The name of the schema in which this relation exists in the database.
     ///
-    /// This defaults to "main" but can be changed in case an entity lives in a different schema.
+    /// This defaults to "main" but can be changed in case a relation lives in a different schema.
     /// The main alternate schema which would be used here is "persistent" for items which are not
     /// deleted each time the application is run. This will be unnecessary once Fixwise is no longer
     /// in early development/testing.
     const SCHEMA_NAME: &str = "main";
-    /// The name of the entity in the database.
+    /// The name of the relation in the database.
     ///
-    /// It is recommended that all [`DatabaseEntity`] types should have an identical name to the one
-    /// they have in the database (with different case conventions, of course), but this is not
-    /// assumed in order to be slightly less restrictive.
-    const ENTITY_NAME: &str;
-    /// The primary key of this entity in the database.
+    /// It is recommended that all [`Relation`] types should have an identical name to the one they
+    /// have in the database (with different case conventions, of course), but this is not assumed
+    /// in order to be slightly less restrictive.
+    const RELATION_NAME: &str;
+    /// The primary column of this relation in the database.
     ///
-    /// This is used directly in the SQL for querying the entity, so it should be in the format
-    /// expected by SQL. For most entities, this will be a standalone column name, but for junction
+    /// This is used directly in the SQL for querying the relation, so it should be in the format
+    /// expected by SQL. For most relations, this will be a standalone column name, but for junction
     /// tables, it will be multiple column names written as a parenthesized, comma-separated list,
     /// such as `"(column_a, column_b, column_c)"`.
     const PRIMARY_KEY: &str;
-    /// The name given to foreign keys pointing to this entity from other entities.
+    /// The name given to foreign keys pointing to this relation from other relations.
     ///
     /// This key name must be the same for every dependent table. Usually it will just be the
     /// singular version of the table name ("tickets" becomes "ticket", etc.).
     const FOREIGN_KEY_NAME: &str;
-    /// The tables which contain foreign keys pointing to this entity.
+    /// The tables which contain foreign keys pointing to this relation.
     ///
-    /// This is used to ensure referential integrity when deleting rows from the database. The
+    /// This is used to ensure referential integrity when deleting records from the database. The
     /// tables must be defined in an order that ensures no foreign key constraint still exists when
-    /// deleting any row. This would mostly be relevant when one dependent table has a foreign key
-    /// that references another dependent table.
+    /// deleting any record. This would mostly be relevant when one dependent table has a foreign
+    /// key that references another dependent table.
     const DEPENDENT_TABLES: &[&str] = &[];
 
-    /// Create the entity from a collection of rows.
-    // TODO: Take `Into<Vec<Self::Row>>` here
-    fn with_rows(rows: Vec<Self::Row>) -> Self;
-    /// Convert the entity into a collection of rows.
-    fn take_rows(self) -> Vec<Self::Row>;
-    /// Borrow the entity's rows.
-    fn rows(&self) -> &[Self::Row];
+    /// Create the relation from a collection of records.
+    // TODO: Take `Into<Vec<Self::Record>>` here
+    fn with_records(records: Vec<Self::Record>) -> Self;
+    /// Convert the relation into a collection of records.
+    fn take_records(self) -> Vec<Self::Record>;
+    /// Borrow the relation's records.
+    fn records(&self) -> &[Self::Record];
 
-    /// Query (select) a single row from the database using an identifying key.
+    /// Query (select) a single record from the database using an identifying key.
     ///
-    /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
+    /// If the record exists in the database, it is returned. Otherwise, [`None`] is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseEntity::query_one_handler()`].
-    async fn query_one(database: &Database, id: impl IdParameter) -> Option<Self::Row> {
+    /// For the handler method, use [`Relation::query_one_handler()`].
+    async fn query_one(database: &Database, id: impl IdParameter) -> Option<Self::Record> {
         sqlx::query_as(&format!(
             "SELECT * FROM {}.{} WHERE {} = #1",
             Self::SCHEMA_NAME,
-            Self::ENTITY_NAME,
+            Self::RELATION_NAME,
             Self::PRIMARY_KEY,
         ))
         .bind(id.id() as i32)
@@ -144,30 +144,30 @@ pub trait DatabaseEntity: Sized {
         .ok()
     }
 
-    /// Query (select) a single row from the database using an identifying key.
+    /// Query (select) a single record from the database using an identifying key.
     ///
-    /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
+    /// If the record exists in the database, it is returned. Otherwise, [`None`] is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseEntity::query_one()`].
+    /// called outside of an Axum context, see [`Relation::query_one()`].
     // TODO: Check how this interacts with junction tables
     async fn query_one_handler(
         State(state): State<Arc<ServerState>>,
         Query(id_param): Query<impl IdParameter>,
-    ) -> Option<Self::Row> {
+    ) -> Option<Self::Record> {
         Self::query_one(&state.database, id_param).await
     }
 
-    /// Query (select) all rows for this entity from the database.
+    /// Query (select) all records for this relation from the database.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseEntity::query_all_handler()`].
+    /// For the handler method, use [`Relation::query_all_handler()`].
     async fn query_all(database: &Database) -> Self {
-        Self::with_rows(
+        Self::with_records(
             sqlx::query_as(&format!(
                 "SELECT * FROM {}.{} ORDER BY {}",
                 Self::SCHEMA_NAME,
-                Self::ENTITY_NAME,
+                Self::RELATION_NAME,
                 Self::PRIMARY_KEY,
             ))
             .fetch_all(&database.connection)
@@ -176,21 +176,21 @@ pub trait DatabaseEntity: Sized {
         )
     }
 
-    /// Query (select) all rows for this entity from the database.
+    /// Query (select) all records for this relation from the database.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseEntity::query_all()`].
+    /// called outside of an Axum context, see [`Relation::query_all()`].
     async fn query_all_handler(State(state): State<Arc<ServerState>>) -> Self {
         Self::query_all(&state.database).await
     }
 
-    /// Delete a single row from the database using an identifying key.
+    /// Delete a single record from the database using an identifying key.
     ///
-    /// If the row is successfully deleted from the database, this method returns `true`. If an
-    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    /// If the record is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseEntity::delete_one_handler()`].
+    /// For the handler method, use [`Relation::delete_one_handler()`].
     async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
         for dependent_table in Self::DEPENDENT_TABLES {
             if sqlx::query(&format!(
@@ -209,7 +209,7 @@ pub trait DatabaseEntity: Sized {
         sqlx::query(&format!(
             "DELETE FROM {}.{} WHERE {} = $1",
             Self::SCHEMA_NAME,
-            Self::ENTITY_NAME,
+            Self::RELATION_NAME,
             Self::PRIMARY_KEY,
         ))
         .bind(id.id() as i32)
@@ -218,13 +218,13 @@ pub trait DatabaseEntity: Sized {
         .is_ok()
     }
 
-    /// Delete a single row from the database using an identifying key.
+    /// Delete a single record from the database using an identifying key.
     ///
-    /// If the row is successfully deleted from the database, this method returns `true`. If an
-    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    /// If the record is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseEntity::delete_one()`].
+    /// called outside of an Axum context, see [`Relation::delete_one()`].
     async fn delete_one_handler<I: IdParameter>(
         State(state): State<Arc<ServerState>>,
         Query(id_param): Query<I>,
@@ -232,13 +232,13 @@ pub trait DatabaseEntity: Sized {
         Json(Self::delete_one(&state.database, id_param).await)
     }
 
-    /// Delete all rows for this entity from the database.
+    /// Delete all records for this relation from the database.
     ///
-    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// If the records are successfully deleted from the database, this method returns `true`. If an
     /// error occurs, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseEntity::delete_all_handler()`].
+    /// For the handler method, use [`Relation::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
         for dependent_table in Self::DEPENDENT_TABLES {
             if sqlx::query(&format!("DELETE FROM {dependent_table}"))
@@ -253,193 +253,200 @@ pub trait DatabaseEntity: Sized {
         sqlx::query(&format!(
             "DELETE FROM {}.{}",
             Self::SCHEMA_NAME,
-            Self::ENTITY_NAME,
+            Self::RELATION_NAME,
         ))
         .execute(&database.connection)
         .await
         .is_ok()
     }
 
-    /// Delete all rows for this entity from the database.
+    /// Delete all records for this relation from the database.
     ///
-    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// If the records are successfully deleted from the database, this method returns `true`. If an
     /// error occurs, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseEntity::delete_all()`].
+    /// called outside of an Axum context, see [`Relation::delete_all()`].
     async fn delete_all_handler(State(state): State<Arc<ServerState>>) -> bool {
         Self::delete_all(&state.database).await
     }
 
-    /// Pick a random row from the entity.
+    /// Pick a random record from the relation.
     ///
     /// This is used mostly for randomly generating foreign keys, but can be used elsewhere if
     /// needed.
-    fn pick_random(&self) -> Self::Row {
-        let rows = self.rows();
-        rows[thread_rng().gen_range(0..rows.len())].clone()
+    fn pick_random(&self) -> Self::Record {
+        let records = self.records();
+        records[thread_rng().gen_range(0..records.len())].clone()
     }
 }
 
-/// A trait that allows table/view row types to interoperate with and be queried from the database.
+/// A trait that allows table/view record types to interoperate with and be queried from the
+/// database.
 ///
-/// This does not implement any insertion methods because "entities" can be views, which are
+/// This does not implement any insertion methods because "relations" can be views, which are
 /// read-only. For inserting items to tables, see the [`SingleInsert`] and [`BulkInsert`] traits.
 ///
 /// This trait mostly exists for use with insertion traits, but also acts as a passthrough to allow
-/// items to be queried using the row type instead of the entity type when convenient.
-pub trait DatabaseRow: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
-    /// The entity type which contains a collection of this row type.
+/// items to be queried using the record type instead of the relation type when convenient.
+pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
+    /// The relation type which contains a collection of this record type.
     ///
-    /// This type and the [`DatabaseEntity::Row`] type are directly interreferential to allow
+    /// This type and the [`Relation::Record`] type are directly interreferential to allow
     /// "upcasting" and "downcasting," mostly for auto-implementations in other traits.
-    type Entity: DatabaseEntity<Row = Self>;
+    type Relation: Relation<Record = Self>;
 
     #[allow(dead_code)]
-    /// Query (select) a single row from the database using an identifying key.
+    /// Query (select) a single record from the database using an identifying key.
     ///
-    /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
+    /// If the record exists in the database, it is returned. Otherwise, [`None`] is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseRow::query_one_handler()`].
+    /// For the handler method, use [`Record::query_one_handler()`].
     async fn query_one(database: &Database, id_param: impl IdParameter) -> Option<Self> {
-        Self::Entity::query_one(database, id_param).await
+        Self::Relation::query_one(database, id_param).await
     }
 
-    /// Query (select) a single row from the database using an identifying key.
+    /// Query (select) a single record from the database using an identifying key.
     ///
-    /// If the row exists in the database, it is returned. Otherwise, [`None`] is returned.
+    /// If the record exists in the database, it is returned. Otherwise, [`None`] is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseRow::query_one()`].
+    /// called outside of an Axum context, see [`Record::query_one()`].
     async fn query_one_handler(
         state: State<Arc<ServerState>>,
         id_param: Query<impl IdParameter>,
     ) -> Option<Self> {
-        Self::Entity::query_one_handler(state, id_param).await
+        Self::Relation::query_one_handler(state, id_param).await
     }
 
     #[allow(dead_code)]
-    /// Query (select) all rows for this entity from the database.
+    /// Query (select) all records for this relation from the database.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseRow::query_all_handler()`].
-    async fn query_all(database: &Database) -> Self::Entity {
-        Self::Entity::query_all(database).await
+    /// For the handler method, use [`Record::query_all_handler()`].
+    async fn query_all(database: &Database) -> Self::Relation {
+        Self::Relation::query_all(database).await
     }
 
     #[allow(dead_code)]
-    /// Query (select) all rows for this entity from the database.
+    /// Query (select) all records for this relation from the database.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseRow::query_all()`].
-    async fn query_all_handler(state: State<Arc<ServerState>>) -> Self::Entity {
-        Self::Entity::query_all_handler(state).await
+    /// called outside of an Axum context, see [`Record::query_all()`].
+    async fn query_all_handler(state: State<Arc<ServerState>>) -> Self::Relation {
+        Self::Relation::query_all_handler(state).await
     }
 
     #[allow(dead_code)]
-    /// Delete a single row from the database using an identifying key.
+    /// Delete a single record from the database using an identifying key.
     ///
-    /// If the row is successfully deleted from the database, this method returns `true`. If an
-    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    /// If the record is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseRow::delete_one_handler()`].
+    /// For the handler method, use [`Record::delete_one_handler()`].
     async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
-        Self::Entity::delete_one(database, id).await
+        Self::Relation::delete_one(database, id).await
     }
 
     #[allow(dead_code)]
-    /// Delete a single row from the database using an identifying key.
+    /// Delete a single record from the database using an identifying key.
     ///
-    /// If the row is successfully deleted from the database, this method returns `true`. If an
-    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    /// If the record is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseRow::delete_one()`].
+    /// called outside of an Axum context, see [`Record::delete_one()`].
     async fn delete_one_handler(
         state: State<Arc<ServerState>>,
         id_param: Query<impl IdParameter>,
     ) -> Json<bool> {
-        Self::Entity::delete_one_handler(state, id_param).await
+        Self::Relation::delete_one_handler(state, id_param).await
     }
 
     #[allow(dead_code)]
-    /// Delete all rows for this entity from the database.
+    /// Delete all records for this relation from the database.
     ///
-    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// If the records are successfully deleted from the database, this method returns `true`. If an
     /// error occurs, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`DatabaseRow::delete_all_handler()`].
+    /// For the handler method, use [`Record::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
-        Self::Entity::delete_all(database).await
+        Self::Relation::delete_all(database).await
     }
 
     #[allow(dead_code)]
-    /// Delete all rows for this entity from the database.
+    /// Delete all records for this relation from the database.
     ///
-    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// If the records are successfully deleted from the database, this method returns `true`. If an
     /// error occurs, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`DatabaseRow::delete_all()`].
+    /// called outside of an Axum context, see [`Record::delete_all()`].
     async fn delete_all_handler(state: State<Arc<ServerState>>) -> bool {
-        Self::Entity::delete_all_handler(state).await
+        Self::Relation::delete_all_handler(state).await
     }
 }
 
 /// A trait that allows a database table to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-trait GenerateTableData: DatabaseEntity<Row: GenerateRowData> {
-    /// Randomly generate the database table with a given number of rows.
+trait GenerateTableData: Relation<Record: GenerateRecord> {
+    /// Randomly generate the database table with a given number of records.
     ///
-    /// Some row types (those with foreign key columns) can only be generated if a set of existing
-    /// tables are provided. This means that, when generating multiple database tables, they must be
-    /// generated in the correct order such that each will have access to its dependency tables.
+    /// Some record types (those with foreign key columns) can only be generated if a set of
+    /// existing tables are provided. This means that, when generating multiple database tables,
+    /// they must be generated in the correct order such that each will have access to its
+    /// dependency tables.
     fn generate(
         count: usize,
-        dependencies: <Self::Row as GenerateRowData>::Dependencies<'_>,
+        dependencies: <Self::Record as GenerateRecord>::Dependencies<'_>,
     ) -> Self {
-        let mut rows = Vec::new();
+        let mut records = Vec::new();
         let mut existing_ids = HashSet::new();
         let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
             loading_bar.update();
-            rows.push(Self::Row::generate(&rows, &mut existing_ids, dependencies))
+            records.push(Self::Record::generate(
+                &records,
+                &mut existing_ids,
+                dependencies,
+            ))
         }
 
-        Self::with_rows(rows)
+        Self::with_records(records)
     }
 }
 
-/// A trait that allows a database row to be randomly generated.
+/// A trait that allows a database record to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-trait GenerateRowData: Sized {
-    /// The primary identifier type for this row.
+trait GenerateRecord: Sized {
+    /// The primary identifier type for this record.
     ///
     /// Usually this will be an [`i32`] (signed integers are used for database compatibility, even
     /// though negative values are not expected), but if needed it can be any type that can be put
-    /// in a [`HashSet`] to ensure that duplicate rows are not generated.
+    /// in a [`HashSet`] to ensure that duplicate records are not generated.
     type Identifier: Copy;
-    /// The existing tables which must be provided in order for rows of this type to be generated.
+    /// The existing tables which must be provided in order for records of this type to be
+    /// generated.
     ///
-    /// This should be in the form of a tuple of [`DatabaseEntity`] types.
+    /// This should be in the form of a tuple of [`Relation`] types.
     ///
-    /// It is mandatory to utilize this feature for any row type with one or more foreign key
-    /// columns to ensure referential integrity when the rows are inserted into the database.
+    /// It is mandatory to utilize this feature for any record type with one or more foreign key
+    /// columns to ensure referential integrity when the records are inserted into the database.
     type Dependencies<'a>: Copy;
 
-    /// Randomly generate a single row of synthetic data.
+    /// Randomly generate a single record of synthetic data.
     ///
     /// This is usually implemented using a mix of basic RNG and the [`fake`] crate, which can
     /// generate more complex data such as names, phone numbers, email/street addresses, etc. The
-    /// implementation must return a row with a unique ID. Any foreign key column must only use IDs
-    /// found within its respective dependency table.
+    /// implementation must return a record with a unique ID. Any foreign key column must only use
+    /// IDs found within its respective dependency table.
     fn generate(
-        existing_rows: &[Self],
+        existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self;
@@ -448,13 +455,13 @@ trait GenerateRowData: Sized {
 /// A trait that allows a database table to be generated from values known at compile-time.
 ///
 /// This is mostly useful for small tables that have a fixed set of data for whom randomly-generated
-/// data would not make sense, such as [`tables::device_categories::DeviceCategoriesDatabaseTable`].
-trait GenerateStaticTableData: DatabaseEntity<Row: GenerateStaticRowData> {
+/// data would not make sense, such as [`tables::device_categories::DeviceCategoriesTable`].
+trait GenerateStaticRelation: Relation<Record: GenerateStaticRecord> {
     /// The items that are to be inserted into the database table.
     ///
-    /// This is a string array because [`GenerateStaticTableData`] is only implemented for simple
-    /// tables with ID-string pairs, using the [`GenerateStaticRowData`] trait to convert the
-    /// strings to database entries.
+    /// This is a string array because [`GenerateStaticRelation`] is only implemented for simple
+    /// tables with ID-string pairs, using the [`GenerateStaticRecord`] trait to convert the strings
+    /// to database entries.
     const ITEMS: &[&str];
 
     /// Generate the table from static data, usually so it can be inserted into the database.
@@ -463,65 +470,65 @@ trait GenerateStaticTableData: DatabaseEntity<Row: GenerateStaticRowData> {
     /// which uses actual random data generation.
     fn generate() -> Self {
         let mut existing_ids = HashSet::new();
-        let rows = Self::ITEMS
+        let records = Self::ITEMS
             .iter()
-            .map(|item| Self::Row::new(generate_unique_i32(0, &mut existing_ids), *item))
+            .map(|item| Self::Record::new(generate_unique_i32(0, &mut existing_ids), *item))
             .collect();
 
-        Self::with_rows(rows)
+        Self::with_records(records)
     }
 }
 
-/// A helper trait that allows database rows to be generated using a string.
+/// A helper trait that allows database records to be generated using a string.
 ///
-/// This trait should only be implemented for row types with simple ID-string pairs.
-trait GenerateStaticRowData {
-    /// Turn a string into a database row.
+/// This trait should only be implemented for record types with simple ID-string pairs.
+trait GenerateStaticRecord {
+    /// Turn a string into a database record.
     ///
-    /// This method should only be used for [`GenerateStaticTableData::generate`].
+    /// This method should only be used for [`GenerateStaticRelation::generate`].
     fn new(id: i32, display_name: impl Into<String>) -> Self;
 }
 
-/// A trait that allows a single row to be inserted to the database.
+/// A trait that allows a single record to be inserted to the database.
 ///
-/// Though generic over [`DatabaseRow`], this trait is only meant to be implemented on database
-/// table row types, as items cannot be inserted into a database view. In the future there may be a
+/// Though generic over [`Record`], this trait is only meant to be implemented on database table
+/// record types, as items cannot be inserted into a database view. In the future there may be a
 /// trait bound to prevent this from happening accidentally.
 ///
-/// For bulk-insertion of rows, see the related [`BulkInsert`] trait.
-pub trait SingleInsert: DatabaseRow {
+/// For bulk-insertion of records, see the related [`BulkInsert`] trait.
+pub trait SingleInsert: Record {
     /// The names of all columns in the database table.
     ///
-    /// This was going to be a member of [`DatabaseEntity`] but was placed here because it is needed
-    /// for [`SingleInsert::get_query_builder`] to generate the SQL for inserting rows to the
+    /// This was going to be a member of [`Relation`] but was placed here because it is needed for
+    /// [`SingleInsert::get_query_builder`] to generate the SQL for inserting records to the
     /// database, as well as determining the [`BulkInsert::CHUNK_SIZE`].
     const COLUMN_NAMES: &[&str];
 
-    /// Get the [`QueryBuilder`] necessary to insert one or more rows of data into the database.
+    /// Get the [`QueryBuilder`] necessary to insert one or more records of data into the database.
     ///
     /// This is used by both [`SingleInsert`] and [`BulkInsert`] and is meant mostly for
     /// auto-implementations.
     fn get_query_builder<'a>() -> QueryBuilder<'a, Postgres> {
         QueryBuilder::new(&format!(
             "INSERT INTO {}.{} ({}) ",
-            Self::Entity::SCHEMA_NAME,
-            Self::Entity::ENTITY_NAME,
+            Self::Relation::SCHEMA_NAME,
+            Self::Relation::RELATION_NAME,
             Self::COLUMN_NAMES.join(", ")
         ))
     }
 
-    /// Push the row's data into the [`QueryBuilder`] so it can be built and executed against the
+    /// Push the record's data into the [`QueryBuilder`] so it can be built and executed against the
     /// database.
     ///
     /// This method is used as a function parameter for [`QueryBuilder::push_values`] and should
     /// only be used within auto-implementations.
-    fn push_column_bindings(builder: Separated<Postgres, &str>, row: Self);
+    fn push_column_bindings(builder: Separated<Postgres, &str>, record: Self);
 
-    /// Insert the row into the database.
+    /// Insert the record into the database.
     ///
-    /// This should not be used repeatedly for a collection of rows. Inserting multiple rows can be
-    /// done much more efficiently using [`BulkInsert::insert_all`], which should be implemented for
-    /// any database table type.
+    /// This should not be used repeatedly for a collection of records. Inserting multiple records
+    /// can be done much more efficiently using [`BulkInsert::insert_all`], which should be
+    /// implemented for any database table type.
     async fn insert(self, database: &Database) {
         let mut query_builder = Self::get_query_builder();
         query_builder.push_values(std::iter::once(self), Self::push_column_bindings);
@@ -529,34 +536,34 @@ pub trait SingleInsert: DatabaseRow {
     }
 }
 
-/// A trait that allows an entire table of rows to be inserted to the database in large batches.
+/// A trait that allows an entire table of records to be inserted to the database in large batches.
 ///
 /// Bulk-inserting items removes the need for establishing a network connection to the database
 /// repeatedly. In initial testing, this proved to be about 20x more efficient than single insertion
 /// when working with large tables. Of course, this is mostly used with synthetic data for testing
-/// purposes, as it is relatively rare for a significant number of rows to be inserted at once
+/// purposes, as it is relatively rare for a significant number of records to be inserted at once
 /// during normal operation.
 ///
-/// Though generic over [`DatabaseEntity`], this trait is only meant to be implemented on database
-/// table types, as items cannot be inserted into a database view. In the future there may be a
-/// trait bound to prevent this from happening accidentally.
+/// Though generic over [`Relation`], this trait is only meant to be implemented on database table
+/// types, as items cannot be inserted into a database view. In the future there may be a trait
+/// bound to prevent this from happening accidentally.
 ///
-/// For single-insertion of rows, see the related [`SingleInsert`] trait.
-// TODO: Maybe add a marker `DatabaseTable` trait to prevent this being implemented for view types
-pub trait BulkInsert: DatabaseEntity<Row: SingleInsert> {
-    /// The amount of rows that can be inserted per batch/chunk.
+/// For single-insertion of records, see the related [`SingleInsert`] trait.
+// TODO: Maybe add a marker `Table` trait to prevent this being implemented for view types
+pub trait BulkInsert: Relation<Record: SingleInsert> {
+    /// The amount of records that can be inserted per batch/chunk.
     ///
     /// The batch limit is determined by the number of columns in a table. This is because a single
     /// SQL statement only supports up to [`u16::MAX`] parameter bindings, and each column takes up
     /// one parameter. Effectively, this means that tables with more columns are split into more
     /// batches, making bulk insertion take longer.
-    const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::Row::COLUMN_NAMES.len();
+    const CHUNK_SIZE: usize = SQL_PARAMETER_BIND_LIMIT / Self::Record::COLUMN_NAMES.len();
 
-    /// Convert a table of rows into a series of batches to be inserted to the database.
+    /// Convert a table of records into a series of batches to be inserted to the database.
     ///
     /// This method should only be used within auto-implementations.
-    fn into_chunks(self) -> impl Iterator<Item = Vec<Self::Row>> {
-        let mut iter = self.take_rows().into_iter();
+    fn into_chunks(self) -> impl Iterator<Item = Vec<Self::Record>> {
+        let mut iter = self.take_records().into_iter();
         // TODO: Annotate this code or something, I have very little idea what it does
         // * This was done because `itertools::IntoChunks` was causing issues with the axum handlers
         std::iter::from_fn(move || Some(iter.by_ref().take(Self::CHUNK_SIZE).collect()))
@@ -566,11 +573,11 @@ pub trait BulkInsert: DatabaseEntity<Row: SingleInsert> {
     /// Insert the entire table into the database in a series of batches (or "chunks").
     ///
     /// This can insert tables of arbitrary size, but each batch is limited in size by number of
-    /// parameters (table column count * row count).
+    /// parameters (table column count * record count).
     async fn insert_all(self, database: &Database) {
         for chunk in self.into_chunks() {
-            let mut query_builder = Self::Row::get_query_builder();
-            query_builder.push_values(chunk, Self::Row::push_column_bindings);
+            let mut query_builder = Self::Record::get_query_builder();
+            query_builder.push_values(chunk, Self::Record::push_column_bindings);
             database.execute_query_builder(query_builder).await;
         }
     }
@@ -608,81 +615,78 @@ impl Database {
     pub async fn add_generated_items(&self) {
         let start_time = Instant::now();
 
-        let device_categories = DeviceCategoriesDatabaseTable::generate();
+        let device_categories = DeviceCategoriesTable::generate();
         device_categories.clone().insert_all(self).await;
-        let part_categories = PartCategoriesDatabaseTable::generate();
+        let part_categories = PartCategoriesTable::generate();
         part_categories.clone().insert_all(self).await;
-        let service_types = ServiceTypesDatabaseTable::generate();
+        let service_types = ServiceTypesTable::generate();
         service_types.clone().insert_all(self).await;
 
         eprintln!("Generating {VENDORS_COUNT} vendors");
-        let vendors = VendorsDatabaseTable::generate(VENDORS_COUNT, ());
+        let vendors = VendorsTable::generate(VENDORS_COUNT, ());
         vendors.clone().insert_all(self).await;
 
         eprintln!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
         let device_manufacturers =
-            DeviceManufacturersDatabaseTable::generate(DEVICE_MANUFACTURERS_COUNT, ());
+            DeviceManufacturersTable::generate(DEVICE_MANUFACTURERS_COUNT, ());
         device_manufacturers.clone().insert_all(self).await;
 
         eprintln!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
-        let part_manufacturers =
-            PartManufacturersDatabaseTable::generate(PART_MANUFACTURERS_COUNT, ());
+        let part_manufacturers = PartManufacturersTable::generate(PART_MANUFACTURERS_COUNT, ());
         part_manufacturers.clone().insert_all(self).await;
 
         eprintln!("Generating {DEVICE_MODELS_COUNT} device models");
-        let device_models = DeviceModelsDatabaseTable::generate(
+        let device_models = DeviceModelsTable::generate(
             DEVICE_MODELS_COUNT,
             (&device_manufacturers, &device_categories),
         );
         device_models.clone().insert_all(self).await;
 
         eprintln!("Generating {PARTS_COUNT} parts");
-        let parts = PartsDatabaseTable::generate(
+        let parts = PartsTable::generate(
             PARTS_COUNT,
             (&vendors, &part_manufacturers, &part_categories),
         );
         parts.clone().insert_all(self).await;
 
         eprintln!("Generating {PRODUCTS_COUNT} products");
-        let products = ProductsDatabaseTable::generate(PRODUCTS_COUNT, ());
+        let products = ProductsTable::generate(PRODUCTS_COUNT, ());
         products.clone().insert_all(self).await;
 
         eprintln!("Generating {PRODUCT_PRICES_COUNT} product_prices");
-        let product_prices = ProductPricesDatabaseTable::generate(PRODUCT_PRICES_COUNT, &products);
+        let product_prices = ProductPricesTable::generate(PRODUCT_PRICES_COUNT, &products);
         product_prices.clone().insert_all(self).await;
 
         eprintln!("Generating {SERVICES_COUNT} services");
-        let services =
-            ServicesDatabaseTable::generate(SERVICES_COUNT, (&service_types, &device_models));
+        let services = ServicesTable::generate(SERVICES_COUNT, (&service_types, &device_models));
         services.clone().insert_all(self).await;
 
         eprintln!("Generating {SERVICE_PRICES_COUNT} service_prices");
-        let service_prices = ServicePricesDatabaseTable::generate(SERVICE_PRICES_COUNT, &services);
+        let service_prices = ServicePricesTable::generate(SERVICE_PRICES_COUNT, &services);
         service_prices.clone().insert_all(self).await;
 
         eprintln!("Generating {CUSTOMERS_COUNT} customers");
-        let customers = CustomersDatabaseTable::generate(CUSTOMERS_COUNT, ());
+        let customers = CustomersTable::generate(CUSTOMERS_COUNT, ());
         customers.clone().insert_all(self).await;
 
         eprintln!("Generating {DEVICES_COUNT} devices");
-        let devices = DevicesDatabaseTable::generate(DEVICES_COUNT, (&device_models, &customers));
+        let devices = DevicesTable::generate(DEVICES_COUNT, (&device_models, &customers));
         devices.clone().insert_all(self).await;
 
         // * Items must be fetched from the database as they are generated by triggers when
         // * inserting products and services and not separately generated.
-        let items = ItemsDatabaseTable::query_all(self).await;
+        let items = ItemsTable::query_all(self).await;
 
         println!("Generating {INVOICES_COUNT} invoices");
-        let invoices = InvoicesDatabaseTable::generate(INVOICES_COUNT, ());
+        let invoices = InvoicesTable::generate(INVOICES_COUNT, ());
         invoices.clone().insert_all(self).await;
 
         println!("Generating {INVOICE_ITEMS_COUNT} invoice items");
-        let invoice_items =
-            InvoiceItemsDatabaseTable::generate(INVOICE_ITEMS_COUNT, (&invoices, &items));
+        let invoice_items = InvoiceItemsTable::generate(INVOICE_ITEMS_COUNT, (&invoices, &items));
         invoice_items.clone().insert_all(self).await;
 
         println!("Generating {INVOICE_PAYMENTS_COUNT} invoice payments");
-        let invoice_payments = InvoicePaymentsDatabaseTable::generate(
+        let invoice_payments = InvoicePaymentsTable::generate(
             INVOICE_PAYMENTS_COUNT,
             (
                 &invoices,
@@ -695,28 +699,26 @@ impl Database {
         invoice_payments.insert_all(self).await;
 
         println!("Generating {TICKETS_COUNT} tickets");
-        let tickets = TicketsDatabaseTable::generate(TICKETS_COUNT, (&customers, &invoices));
+        let tickets = TicketsTable::generate(TICKETS_COUNT, (&customers, &invoices));
         tickets.clone().insert_all(self).await;
 
         println!("Generating {COMPATIBLE_PARTS_COUNT} compatible parts");
-        let compatible_parts = CompatiblePartsDatabaseJunctionTable::generate(
+        let compatible_parts = CompatiblePartsJunctionTable::generate(
             COMPATIBLE_PARTS_COUNT,
             (&device_models, &parts),
         );
         compatible_parts.insert_all(self).await;
 
         println!("Generating {TICKET_DEVICES_COUNT} ticket devices");
-        let ticket_devices = TicketDevicesDatabaseJunctionTable::generate(
+        let ticket_devices = TicketDevicesJunctionTable::generate(
             TICKET_DEVICES_COUNT,
             (&tickets, &devices, &services),
         );
         ticket_devices.clone().insert_all(self).await;
 
         println!("Generating {BUNDLED_PARTS_COUNT} bundled parts");
-        let bundled_parts = BundledPartsDatabaseJunctionTable::generate(
-            BUNDLED_PARTS_COUNT,
-            (&ticket_devices, &parts),
-        );
+        let bundled_parts =
+            BundledPartsJunctionTable::generate(BUNDLED_PARTS_COUNT, (&ticket_devices, &parts));
         bundled_parts.insert_all(self).await;
 
         println!(

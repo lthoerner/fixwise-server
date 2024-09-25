@@ -6,10 +6,10 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident};
 use crate::synerror;
 
 #[derive(ExtractAttributes)]
-#[deluxe(attributes(entity))]
-struct DatabaseEntityAttributes {
+#[deluxe(attributes(relation))]
+struct RelationAttributes {
     schema_name: Option<String>,
-    entity_name: String,
+    relation_name: String,
     primary_key: String,
     foreign_key_name: String,
     dependent_tables: Option<Vec<Ident>>,
@@ -17,23 +17,20 @@ struct DatabaseEntityAttributes {
 
 #[derive(ExtractAttributes)]
 #[deluxe(attributes(defaultable))]
-struct DefaultableRowAttribute;
+struct DefaultableRecordAttribute;
 
-pub fn derive_database_entity(input: TokenStream) -> TokenStream {
+pub fn derive_relation(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
     let type_name = input.ident.clone();
-    let row_type_name = Ident::new(&format!("{}Row", type_name), type_name.span());
+    let record_type_name = Ident::new(&format!("{}Record", type_name), type_name.span());
 
     let Data::Struct(_) = input.data else {
-        synerror!(
-            type_name,
-            "cannot derive `DatabaseEntity` for non-struct types"
-        )
+        synerror!(type_name, "cannot derive `Relation` for non-struct types")
     };
 
-    let Ok(DatabaseEntityAttributes {
+    let Ok(RelationAttributes {
         schema_name,
-        entity_name,
+        relation_name,
         primary_key,
         foreign_key_name,
         dependent_tables,
@@ -41,7 +38,7 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     else {
         synerror!(
             type_name,
-            "cannot derive `DatabaseEntity` without `#[entity(...)]` attribute"
+            "cannot derive `Relation` without `#[relation(...)]` attribute"
         )
     };
 
@@ -57,8 +54,8 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
                 #(
                     const_format::formatcp!(
                         "{}.{}",
-                        <#dependent_tables as crate::database::DatabaseEntity>::SCHEMA_NAME,
-                        <#dependent_tables as crate::database::DatabaseEntity>::ENTITY_NAME
+                        <#dependent_tables as crate::database::Relation>::SCHEMA_NAME,
+                        <#dependent_tables as crate::database::Relation>::RELATION_NAME
                     ),
                 )*
             ];
@@ -66,29 +63,29 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
     });
 
     quote! {
-        impl crate::database::DatabaseEntity for #type_name {
-            type Row = #row_type_name;
+        impl crate::database::Relation for #type_name {
+            type Record = #record_type_name;
             #optional_schema_definition
-            const ENTITY_NAME: &str = #entity_name;
+            const RELATION_NAME: &str = #relation_name;
             const PRIMARY_KEY: &str = #primary_key;
             const FOREIGN_KEY_NAME: &str = #foreign_key_name;
             #optional_dependent_tables_definition
 
-            fn with_rows(rows: Vec<Self::Row>) -> Self {
-                Self { rows }
+            fn with_records(records: Vec<Self::Record>) -> Self {
+                Self { records }
             }
 
-            fn take_rows(self) -> Vec<Self::Row> {
-                self.rows
+            fn take_records(self) -> Vec<Self::Record> {
+                self.records
             }
 
-            fn rows(&self) -> &[Self::Row] {
-                &self.rows
+            fn records(&self) -> &[Self::Record] {
+                &self.records
             }
         }
 
-        impl crate::database::DatabaseRow for #row_type_name {
-            type Entity = #type_name;
+        impl crate::database::Record for #record_type_name {
+            type Relation = #type_name;
         }
     }
     .into()
@@ -144,7 +141,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
                 .to_string()
                 .trim_start_matches("r#")
                 .to_owned();
-            let defaultable_attribute: Option<DefaultableRowAttribute> =
+            let defaultable_attribute: Option<DefaultableRecordAttribute> =
                 deluxe::extract_attributes(&mut field).ok();
 
             defaultable_fields.push((field_name, field_ident, defaultable_attribute.is_some()));
@@ -159,13 +156,13 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
         let binding_or_default = match defaultable {
             true => {
                 quote! {
-                    match row.#column_ident {
+                    match record.#column_ident {
                         Some(column_value) => { builder.push_bind(column_value); },
                         None => { builder.push("DEFAULT"); },
                     }
                 }
             }
-            false => quote!(builder.push_bind(row.#column_ident);),
+            false => quote!(builder.push_bind(record.#column_ident);),
         };
 
         column_names.push(column_name);
@@ -178,7 +175,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
 
             fn push_column_bindings(
                 mut builder: crate::database::Separated<crate::database::Postgres, &str>,
-                row: Self,
+                record: Self,
             ) {
                 #(
                     #binding_statements

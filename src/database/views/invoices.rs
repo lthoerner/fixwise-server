@@ -1,20 +1,20 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::Relation;
 
-#[derive(DatabaseEntity)]
-#[entity(
-    entity_name = "invoices_view",
+#[derive(Relation)]
+#[relation(
+    relation_name = "invoices_view",
     primary_key = "id",
     foreign_key_name = "PLACEHOLDER"
 )]
-pub struct InvoicesDatabaseView {
-    rows: Vec<InvoicesDatabaseViewRow>,
+pub struct InvoicesView {
+    records: Vec<InvoicesViewRecord>,
 }
 
 #[derive(sqlx::FromRow, Clone)]
-pub struct InvoicesDatabaseViewRow {
+pub struct InvoicesViewRecord {
     pub id: i32,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,

@@ -1,24 +1,24 @@
-use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, IdentifiableRow, SingleInsert};
 
-use crate::database::{GenerateStaticRowData, GenerateStaticTableData};
+use crate::database::{GenerateStaticRecord, GenerateStaticRelation};
 
-#[derive(DatabaseEntity, BulkInsert, Clone)]
-#[entity(
-    entity_name = "device_categories",
+#[derive(Relation, BulkInsert, Clone)]
+#[relation(
+    relation_name = "device_categories",
     primary_key = "id",
     foreign_key_name = "device_category"
 )]
-pub struct DeviceCategoriesDatabaseTable {
-    rows: Vec<DeviceCategoriesDatabaseTableRow>,
+pub struct DeviceCategoriesTable {
+    records: Vec<DeviceCategoriesTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct DeviceCategoriesDatabaseTableRow {
+pub struct DeviceCategoriesTableRecord {
     pub id: i32,
     pub display_name: String,
 }
 
-impl GenerateStaticTableData for DeviceCategoriesDatabaseTable {
+impl GenerateStaticRelation for DeviceCategoriesTable {
     const ITEMS: &[&str] = &[
         "Phone",
         "Tablet",
@@ -30,7 +30,7 @@ impl GenerateStaticTableData for DeviceCategoriesDatabaseTable {
     ];
 }
 
-impl GenerateStaticRowData for DeviceCategoriesDatabaseTableRow {
+impl GenerateStaticRecord for DeviceCategoriesTableRecord {
     fn new(id: i32, display_name: impl Into<String>) -> Self {
         Self {
             id,

@@ -1,24 +1,22 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{
-    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
-};
+use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;
-use crate::database::views::services::{ServicesDatabaseView, ServicesDatabaseViewRow};
-use crate::database::DatabaseEntity;
+use crate::database::views::services::{ServicesView, ServicesViewRecord};
+use crate::database::Relation;
 
-#[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[endpoint(database_entity = ServicesDatabaseView, raw = false)]
+#[derive(FromRelation, ServeEntityJson, Serialize)]
+#[endpoint(relation = ServicesView, raw = false)]
 pub struct ServicesApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<ServicesApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = ServicesDatabaseViewRow, raw = false)]
+#[derive(ProcessEndpoint, FromRecord, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, record = ServicesViewRecord, raw = false)]
 pub struct ServicesApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

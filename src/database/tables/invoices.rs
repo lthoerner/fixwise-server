@@ -2,23 +2,23 @@ use std::collections::HashSet;
 
 use chrono::NaiveDateTime;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
-use crate::database::GenerateRowData;
+use crate::database::GenerateRecord;
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "invoices",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "invoices",
     primary_key = "id",
     foreign_key_name = "invoice"
 )]
-pub struct InvoicesDatabaseTable {
-    rows: Vec<InvoicesDatabaseTableRow>,
+pub struct InvoicesTable {
+    records: Vec<InvoicesTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct InvoicesDatabaseTableRow {
+pub struct InvoicesTableRecord {
     pub id: i32,
     #[defaultable]
     pub created_at: Option<NaiveDateTime>,
@@ -26,11 +26,11 @@ pub struct InvoicesDatabaseTableRow {
     pub updated_at: Option<NaiveDateTime>,
 }
 
-impl GenerateRowData for InvoicesDatabaseTableRow {
+impl GenerateRecord for InvoicesTableRecord {
     type Identifier = i32;
     type Dependencies<'a> = ();
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         _dependencies: Self::Dependencies<'_>,
     ) -> Self {

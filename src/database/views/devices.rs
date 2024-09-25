@@ -1,17 +1,17 @@
-use proc_macros::DatabaseEntity;
+use proc_macros::Relation;
 
-#[derive(DatabaseEntity)]
-#[entity(
-    entity_name = "devices_view",
+#[derive(Relation)]
+#[relation(
+    relation_name = "devices_view",
     primary_key = "id",
     foreign_key_name = "PLACEHOLDER"
 )]
-pub struct DevicesDatabaseView {
-    rows: Vec<DevicesDatabaseViewRow>,
+pub struct DevicesView {
+    records: Vec<DevicesViewRecord>,
 }
 
 #[derive(sqlx::FromRow, Clone)]
-pub struct DevicesDatabaseViewRow {
+pub struct DevicesViewRecord {
     pub id: i32,
     pub model: String,
     pub owner: Option<String>,

@@ -1,23 +1,21 @@
 use serde::Serialize;
 
-use proc_macros::{
-    FromDatabaseEntity, FromDatabaseRow, ProcessEndpoint, ServeEntityJson, ServeRowJson,
-};
+use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeEntityJson, ServeRowJson};
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;
-use crate::database::views::customers::{CustomersDatabaseView, CustomersDatabaseViewRow};
-use crate::database::DatabaseEntity;
+use crate::database::views::customers::{CustomersView, CustomersViewRecord};
+use crate::database::Relation;
 
-#[derive(FromDatabaseEntity, ServeEntityJson, Serialize)]
-#[endpoint(database_entity = CustomersDatabaseView, raw = false)]
+#[derive(FromRelation, ServeEntityJson, Serialize)]
+#[endpoint(relation = CustomersView, raw = false)]
 pub struct CustomersApiEndpoint {
     metadata: EndpointMetadata,
     rows: Vec<CustomersApiEndpointRow>,
 }
 
-#[derive(ProcessEndpoint, FromDatabaseRow, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, database_row = CustomersDatabaseViewRow, raw = false)]
+#[derive(ProcessEndpoint, FromRecord, ServeRowJson, Serialize)]
+#[endpoint_row(id_param = GenericIdParameter, record = CustomersViewRecord, raw = false)]
 pub struct CustomersApiEndpointRow {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,

@@ -1,21 +1,21 @@
 use rust_decimal::Decimal;
 
-use proc_macros::DatabaseEntity;
+use proc_macros::Relation;
 
 use crate::database::shared_models::ItemType;
 
-#[derive(DatabaseEntity)]
-#[entity(
-    entity_name = "items_view",
+#[derive(Relation)]
+#[relation(
+    relation_name = "items_view",
     primary_key = "item_id",
     foreign_key_name = "PLACEHOLDER"
 )]
-pub struct ItemsDatabaseView {
-    rows: Vec<ItemsDatabaseViewRow>,
+pub struct ItemsView {
+    records: Vec<ItemsViewRecord>,
 }
 
 #[derive(sqlx::FromRow, Clone)]
-pub struct ItemsDatabaseViewRow {
+pub struct ItemsViewRecord {
     pub item_id: i32,
     pub item_type: ItemType,
     pub product_sku: Option<i32>,

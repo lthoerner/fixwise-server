@@ -1,22 +1,22 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRow, SingleInsert};
 
 use super::generators::*;
-use crate::database::GenerateRowData;
+use crate::database::GenerateRecord;
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "customers",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "customers",
     primary_key = "id",
     foreign_key_name = "customer"
 )]
-pub struct CustomersDatabaseTable {
-    rows: Vec<CustomersDatabaseTableRow>,
+pub struct CustomersTable {
+    records: Vec<CustomersTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRow)]
-pub struct CustomersDatabaseTableRow {
+pub struct CustomersTableRecord {
     pub id: i32,
     pub name: String,
     pub email_address: Option<String>,
@@ -24,11 +24,11 @@ pub struct CustomersDatabaseTableRow {
     pub street_address: Option<String>,
 }
 
-impl GenerateRowData for CustomersDatabaseTableRow {
+impl GenerateRecord for CustomersTableRecord {
     type Identifier = i32;
     type Dependencies<'a> = ();
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         _dependencies: Self::Dependencies<'_>,
     ) -> Self {

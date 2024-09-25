@@ -2,29 +2,29 @@ use std::collections::HashSet;
 
 use chrono::NaiveDateTime;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
 
-use super::customers::CustomersDatabaseTable;
+use super::customers::CustomersTable;
 use super::generators::*;
-use super::invoices::InvoicesDatabaseTable;
-use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
+use super::invoices::InvoicesTable;
+use super::ticket_devices::TicketDevicesJunctionTable;
 use super::IdentifiableRow;
 use crate::database::shared_models::TicketStatus;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "tickets",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "tickets",
     primary_key = "id",
     foreign_key_name = "ticket",
-    dependent_tables = [TicketDevicesDatabaseJunctionTable]
+    dependent_tables = [TicketDevicesJunctionTable]
 )]
-pub struct TicketsDatabaseTable {
-    rows: Vec<TicketsDatabaseTableRow>,
+pub struct TicketsTable {
+    records: Vec<TicketsTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct TicketsDatabaseTableRow {
+pub struct TicketsTableRecord {
     pub id: i32,
     #[defaultable]
     pub status: Option<TicketStatus>,
@@ -39,11 +39,11 @@ pub struct TicketsDatabaseTableRow {
     pub updated_at: Option<NaiveDateTime>,
 }
 
-impl GenerateRowData for TicketsDatabaseTableRow {
+impl GenerateRecord for TicketsTableRecord {
     type Identifier = i32;
-    type Dependencies<'a> = (&'a CustomersDatabaseTable, &'a InvoicesDatabaseTable);
+    type Dependencies<'a> = (&'a CustomersTable, &'a InvoicesTable);
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {

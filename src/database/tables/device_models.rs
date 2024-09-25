@@ -1,25 +1,25 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRow, SingleInsert};
 
-use super::device_categories::DeviceCategoriesDatabaseTable;
-use super::device_manufacturers::DeviceManufacturersDatabaseTable;
+use super::device_categories::DeviceCategoriesTable;
+use super::device_manufacturers::DeviceManufacturersTable;
 use super::generators::*;
 use super::IdentifiableRow;
-use crate::database::{DatabaseEntity, GenerateRowData};
+use crate::database::{GenerateRecord, Relation};
 
-#[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(
-    entity_name = "device_models",
+#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[relation(
+    relation_name = "device_models",
     primary_key = "id",
     foreign_key_name = "device_model"
 )]
-pub struct DeviceModelsDatabaseTable {
-    rows: Vec<DeviceModelsDatabaseTableRow>,
+pub struct DeviceModelsTable {
+    records: Vec<DeviceModelsTableRecord>,
 }
 
 #[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
-pub struct DeviceModelsDatabaseTableRow {
+pub struct DeviceModelsTableRecord {
     pub id: i32,
     pub display_name: String,
     pub primary_model_identifiers: Vec<String>,
@@ -28,15 +28,15 @@ pub struct DeviceModelsDatabaseTableRow {
     pub category: i32,
 }
 
-impl GenerateRowData for DeviceModelsDatabaseTableRow {
+impl GenerateRecord for DeviceModelsTableRecord {
     type Identifier = i32;
     type Dependencies<'a> = (
-        &'a DeviceManufacturersDatabaseTable,
-        &'a DeviceCategoriesDatabaseTable,
+        &'a DeviceManufacturersTable,
+        &'a DeviceCategoriesTable,
     );
 
     fn generate(
-        _existing_rows: &[Self],
+        _existing_records: &[Self],
         existing_ids: &mut HashSet<Self::Identifier>,
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
