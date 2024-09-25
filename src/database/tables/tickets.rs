@@ -7,12 +7,18 @@ use proc_macros::{BulkInsert, DatabaseEntity, GenerateTableData, IdentifiableRow
 use super::customers::CustomersDatabaseTable;
 use super::generators::*;
 use super::invoices::InvoicesDatabaseTable;
+use super::ticket_devices::TicketDevicesDatabaseJunctionTable;
 use super::IdentifiableRow;
 use crate::database::shared_models::TicketStatus;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
 #[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(entity_name = "tickets", primary_key = "id")]
+#[entity(
+    entity_name = "tickets",
+    primary_key = "id",
+    foreign_key_name = "ticket",
+    dependent_tables = [TicketDevicesDatabaseJunctionTable]
+)]
 pub struct TicketsDatabaseTable {
     rows: Vec<TicketsDatabaseTableRow>,
 }

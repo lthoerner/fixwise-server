@@ -5,7 +5,11 @@ use proc_macros::DatabaseEntity;
 use crate::database::shared_models::ItemType;
 
 #[derive(DatabaseEntity)]
-#[entity(entity_name = "items_view", primary_key = "item_id")]
+#[entity(
+    entity_name = "items_view",
+    primary_key = "item_id",
+    foreign_key_name = "PLACEHOLDER"
+)]
 pub struct ItemsDatabaseView {
     rows: Vec<ItemsDatabaseViewRow>,
 }

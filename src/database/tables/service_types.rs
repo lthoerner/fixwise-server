@@ -3,7 +3,11 @@ use proc_macros::{BulkInsert, DatabaseEntity, IdentifiableRow, SingleInsert};
 use crate::database::{GenerateStaticRowData, GenerateStaticTableData};
 
 #[derive(DatabaseEntity, BulkInsert, Clone)]
-#[entity(entity_name = "service_types", primary_key = "id")]
+#[entity(
+    entity_name = "service_types",
+    primary_key = "id",
+    foreign_key_name = "service_type"
+)]
 pub struct ServiceTypesDatabaseTable {
     rows: Vec<ServiceTypesDatabaseTableRow>,
 }

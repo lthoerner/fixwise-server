@@ -17,7 +17,11 @@ use crate::database::shared_models::PaymentType;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
 #[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(entity_name = "invoice_payments", primary_key = "id")]
+#[entity(
+    entity_name = "invoice_payments",
+    primary_key = "id",
+    foreign_key_name = "invoice_payment"
+)]
 pub struct InvoicePaymentsDatabaseTable {
     rows: Vec<InvoicePaymentsDatabaseTableRow>,
 }

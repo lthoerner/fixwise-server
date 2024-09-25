@@ -3,7 +3,11 @@ use rust_decimal::Decimal;
 use proc_macros::DatabaseEntity;
 
 #[derive(DatabaseEntity)]
-#[entity(entity_name = "products_view", primary_key = "sku")]
+#[entity(
+    entity_name = "products_view",
+    primary_key = "sku",
+    foreign_key_name = "PLACEHOLDER"
+)]
 pub struct ProductsDatabaseView {
     rows: Vec<ProductsDatabaseViewRow>,
 }

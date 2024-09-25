@@ -9,6 +9,7 @@ use std::time::Instant;
 
 use axum::extract::{Query, State};
 
+use axum::extract::Json;
 use rand::{thread_rng, Rng};
 use sqlx::postgres::PgRow;
 use sqlx::query_builder::{QueryBuilder, Separated};
@@ -56,7 +57,7 @@ const SERVICE_PRICES_COUNT: usize = 1234;
 const CUSTOMERS_COUNT: usize = 1234;
 const DEVICES_COUNT: usize = 1234;
 const INVOICES_COUNT: usize = 1234;
-const INVOICE_ITEMS_COUNT: usize = 1234;
+const INVOICE_ITEMS_COUNT: usize = 12345;
 const INVOICE_PAYMENTS_COUNT: usize = 123;
 const TICKETS_COUNT: usize = 1234;
 const COMPATIBLE_PARTS_COUNT: usize = 1234;
@@ -103,6 +104,18 @@ pub trait DatabaseEntity: Sized {
     /// tables, it will be multiple column names written as a parenthesized, comma-separated list,
     /// such as `"(column_a, column_b, column_c)"`.
     const PRIMARY_KEY: &str;
+    /// The name given to foreign keys pointing to this entity from other entities.
+    ///
+    /// This key name must be the same for every dependent table. Usually it will just be the
+    /// singular version of the table name ("tickets" becomes "ticket", etc.).
+    const FOREIGN_KEY_NAME: &str;
+    /// The tables which contain foreign keys pointing to this entity.
+    ///
+    /// This is used to ensure referential integrity when deleting rows from the database. The
+    /// tables must be defined in an order that ensures no foreign key constraint still exists when
+    /// deleting any row. This would mostly be relevant when one dependent table has a foreign key
+    /// that references another dependent table.
+    const DEPENDENT_TABLES: &[&str];
 
     /// Create the entity from a collection of rows.
     // TODO: Take `Into<Vec<Self::Row>>` here
@@ -120,12 +133,12 @@ pub trait DatabaseEntity: Sized {
     /// For the handler method, use [`DatabaseEntity::query_one_handler()`].
     async fn query_one(database: &Database, id: impl IdParameter) -> Option<Self::Row> {
         sqlx::query_as(&format!(
-            "SELECT * FROM {}.{} WHERE {} = {}",
+            "SELECT * FROM {}.{} WHERE {} = #1",
             Self::SCHEMA_NAME,
             Self::ENTITY_NAME,
             Self::PRIMARY_KEY,
-            id.id(),
         ))
+        .bind(id.id() as i32)
         .fetch_one(&database.connection)
         .await
         .ok()
@@ -155,7 +168,7 @@ pub trait DatabaseEntity: Sized {
                 "SELECT * FROM {}.{} ORDER BY {}",
                 Self::SCHEMA_NAME,
                 Self::ENTITY_NAME,
-                Self::PRIMARY_KEY
+                Self::PRIMARY_KEY,
             ))
             .fetch_all(&database.connection)
             .await
@@ -169,6 +182,93 @@ pub trait DatabaseEntity: Sized {
     /// called outside of an Axum context, see [`DatabaseEntity::query_all()`].
     async fn query_all_handler(State(state): State<Arc<ServerState>>) -> Self {
         Self::query_all(&state.database).await
+    }
+
+    /// Delete a single row from the database using an identifying key.
+    ///
+    /// If the row is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseEntity::delete_one_handler()`].
+    async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
+        for dependent_table in Self::DEPENDENT_TABLES {
+            if sqlx::query(&format!(
+                "DELETE FROM {dependent_table} WHERE {} = $1",
+                Self::FOREIGN_KEY_NAME
+            ))
+            .bind(id.id() as i32)
+            .execute(&database.connection)
+            .await
+            .is_err()
+            {
+                return false;
+            }
+        }
+
+        sqlx::query(&format!(
+            "DELETE FROM {}.{} WHERE {} = $1",
+            Self::SCHEMA_NAME,
+            Self::ENTITY_NAME,
+            Self::PRIMARY_KEY,
+        ))
+        .bind(id.id() as i32)
+        .execute(&database.connection)
+        .await
+        .is_ok()
+    }
+
+    /// Delete a single row from the database using an identifying key.
+    ///
+    /// If the row is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseEntity::delete_one()`].
+    async fn delete_one_handler<I: IdParameter>(
+        State(state): State<Arc<ServerState>>,
+        Query(id_param): Query<I>,
+    ) -> Json<bool> {
+        Json(Self::delete_one(&state.database, id_param).await)
+    }
+
+    /// Delete all rows for this entity from the database.
+    ///
+    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, `false` is returned.
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseEntity::delete_all_handler()`].
+    async fn delete_all(database: &Database) -> bool {
+        for dependent_table in Self::DEPENDENT_TABLES {
+            if sqlx::query(&format!("DELETE FROM {dependent_table}"))
+                .execute(&database.connection)
+                .await
+                .is_err()
+            {
+                return false;
+            }
+        }
+
+        sqlx::query(&format!(
+            "DELETE FROM {}.{}",
+            Self::SCHEMA_NAME,
+            Self::ENTITY_NAME,
+        ))
+        .execute(&database.connection)
+        .await
+        .is_ok()
+    }
+
+    /// Delete all rows for this entity from the database.
+    ///
+    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, `false` is returned.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseEntity::delete_all()`].
+    async fn delete_all_handler(State(state): State<Arc<ServerState>>) -> bool {
+        Self::delete_all(&state.database).await
     }
 
     /// Pick a random row from the entity.
@@ -235,6 +335,57 @@ pub trait DatabaseRow: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// called outside of an Axum context, see [`DatabaseRow::query_all()`].
     async fn query_all_handler(state: State<Arc<ServerState>>) -> Self::Entity {
         Self::Entity::query_all_handler(state).await
+    }
+
+    #[allow(dead_code)]
+    /// Delete a single row from the database using an identifying key.
+    ///
+    /// If the row is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseRow::delete_one_handler()`].
+    async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
+        Self::Entity::delete_one(database, id).await
+    }
+
+    #[allow(dead_code)]
+    /// Delete a single row from the database using an identifying key.
+    ///
+    /// If the row is successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, such as if the row does not exist in the database, `false` is returned.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseRow::delete_one()`].
+    async fn delete_one_handler(
+        state: State<Arc<ServerState>>,
+        id_param: Query<impl IdParameter>,
+    ) -> Json<bool> {
+        Self::Entity::delete_one_handler(state, id_param).await
+    }
+
+    #[allow(dead_code)]
+    /// Delete all rows for this entity from the database.
+    ///
+    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, `false` is returned.
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`DatabaseRow::delete_all_handler()`].
+    async fn delete_all(database: &Database) -> bool {
+        Self::Entity::delete_all(database).await
+    }
+
+    #[allow(dead_code)]
+    /// Delete all rows for this entity from the database.
+    ///
+    /// If the rows are successfully deleted from the database, this method returns `true`. If an
+    /// error occurs, `false` is returned.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`DatabaseRow::delete_all()`].
+    async fn delete_all_handler(state: State<Arc<ServerState>>) -> bool {
+        Self::Entity::delete_all_handler(state).await
     }
 }
 

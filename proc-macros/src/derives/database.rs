@@ -11,6 +11,8 @@ struct DatabaseEntityAttributes {
     schema_name: Option<String>,
     entity_name: String,
     primary_key: String,
+    foreign_key_name: String,
+    dependent_tables: Option<Vec<Ident>>,
 }
 
 #[derive(ExtractAttributes)]
@@ -33,6 +35,8 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
         schema_name,
         entity_name,
         primary_key,
+        foreign_key_name,
+        dependent_tables,
     }) = deluxe::extract_attributes(&mut input)
     else {
         synerror!(
@@ -47,12 +51,31 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
         }
     });
 
+    let dependent_tables_definition = match dependent_tables {
+        Some(dependent_tables) => quote! {
+            const DEPENDENT_TABLES: &[&str] = &[
+                #(
+                    const_format::formatcp!(
+                        "{}.{}",
+                        <#dependent_tables as crate::database::DatabaseEntity>::SCHEMA_NAME,
+                        <#dependent_tables as crate::database::DatabaseEntity>::ENTITY_NAME
+                    ),
+                )*
+            ];
+        },
+        None => quote!(
+            const DEPENDENT_TABLES: &[&str] = &[];
+        ),
+    };
+
     quote! {
         impl crate::database::DatabaseEntity for #type_name {
             type Row = #row_type_name;
             #optional_schema_definition
             const ENTITY_NAME: &str = #entity_name;
             const PRIMARY_KEY: &str = #primary_key;
+            const FOREIGN_KEY_NAME: &str = #foreign_key_name;
+            #dependent_tables_definition
 
             fn with_rows(rows: Vec<Self::Row>) -> Self {
                 Self { rows }

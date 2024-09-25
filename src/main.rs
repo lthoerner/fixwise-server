@@ -59,7 +59,7 @@ async fn main() {
     server_state.database.add_generated_items().await;
 
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::DELETE])
         .allow_origin(Any);
 
     let routes = Router::new()

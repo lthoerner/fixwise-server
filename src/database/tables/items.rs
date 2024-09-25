@@ -9,7 +9,7 @@ use crate::database::shared_models::ItemType;
 use crate::database::DatabaseEntity;
 
 #[derive(DatabaseEntity, BulkInsert, Clone)]
-#[entity(entity_name = "items", primary_key = "id")]
+#[entity(entity_name = "items", primary_key = "id", foreign_key_name = "item")]
 pub struct ItemsDatabaseTable {
     rows: Vec<ItemsDatabaseTableRow>,
 }

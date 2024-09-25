@@ -8,7 +8,11 @@ use super::generators::*;
 use crate::database::GenerateRowData;
 
 #[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(entity_name = "invoices", primary_key = "id")]
+#[entity(
+    entity_name = "invoices",
+    primary_key = "id",
+    foreign_key_name = "invoice"
+)]
 pub struct InvoicesDatabaseTable {
     rows: Vec<InvoicesDatabaseTableRow>,
 }

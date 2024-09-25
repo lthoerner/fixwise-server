@@ -9,7 +9,11 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
 #[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(entity_name = "device_models", primary_key = "id")]
+#[entity(
+    entity_name = "device_models",
+    primary_key = "id",
+    foreign_key_name = "device_model"
+)]
 pub struct DeviceModelsDatabaseTable {
     rows: Vec<DeviceModelsDatabaseTableRow>,
 }

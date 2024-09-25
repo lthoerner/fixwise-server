@@ -1,7 +1,11 @@
 use proc_macros::DatabaseEntity;
 
 #[derive(DatabaseEntity)]
-#[entity(entity_name = "devices_view", primary_key = "id")]
+#[entity(
+    entity_name = "devices_view",
+    primary_key = "id",
+    foreign_key_name = "PLACEHOLDER"
+)]
 pub struct DevicesDatabaseView {
     rows: Vec<DevicesDatabaseViewRow>,
 }

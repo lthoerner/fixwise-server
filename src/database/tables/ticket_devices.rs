@@ -10,7 +10,11 @@ use super::IdentifiableRow;
 use crate::database::{DatabaseEntity, GenerateRowData};
 
 #[derive(DatabaseEntity, BulkInsert, GenerateTableData, Clone)]
-#[entity(entity_name = "ticket_devices", primary_key = "(ticket, device)")]
+#[entity(
+    entity_name = "ticket_devices",
+    primary_key = "(ticket, device)",
+    foreign_key_name = "ticket_device"
+)]
 pub struct TicketDevicesDatabaseJunctionTable {
     rows: Vec<TicketDevicesDatabaseJunctionTableRow>,
 }
