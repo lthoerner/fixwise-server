@@ -115,7 +115,7 @@ pub trait DatabaseEntity: Sized {
     /// tables must be defined in an order that ensures no foreign key constraint still exists when
     /// deleting any row. This would mostly be relevant when one dependent table has a foreign key
     /// that references another dependent table.
-    const DEPENDENT_TABLES: &[&str];
+    const DEPENDENT_TABLES: &[&str] = &[];
 
     /// Create the entity from a collection of rows.
     // TODO: Take `Into<Vec<Self::Row>>` here

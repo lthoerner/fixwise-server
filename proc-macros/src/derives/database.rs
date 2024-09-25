@@ -51,8 +51,8 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
         }
     });
 
-    let dependent_tables_definition = match dependent_tables {
-        Some(dependent_tables) => quote! {
+    let optional_dependent_tables_definition = dependent_tables.map(|dependent_tables| {
+        quote! {
             const DEPENDENT_TABLES: &[&str] = &[
                 #(
                     const_format::formatcp!(
@@ -62,11 +62,8 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
                     ),
                 )*
             ];
-        },
-        None => quote!(
-            const DEPENDENT_TABLES: &[&str] = &[];
-        ),
-    };
+        }
+    });
 
     quote! {
         impl crate::database::DatabaseEntity for #type_name {
@@ -75,7 +72,7 @@ pub fn derive_database_entity(input: TokenStream) -> TokenStream {
             const ENTITY_NAME: &str = #entity_name;
             const PRIMARY_KEY: &str = #primary_key;
             const FOREIGN_KEY_NAME: &str = #foreign_key_name;
-            #dependent_tables_definition
+            #optional_dependent_tables_definition
 
             fn with_rows(rows: Vec<Self::Row>) -> Self {
                 Self { rows }
