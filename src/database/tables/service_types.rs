@@ -1,6 +1,6 @@
 use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
 
-use crate::database::{GenerateStaticRecord, GenerateStaticRelation};
+use crate::database::{GenerateStaticRecord, GenerateStaticTable};
 
 #[derive(Relation, Table, BulkInsert, Clone)]
 #[relation(relation_name = "service_types", primary_key = "id")]
@@ -14,7 +14,7 @@ pub struct ServiceTypesTableRecord {
     pub display_name: String,
 }
 
-impl GenerateStaticRelation for ServiceTypesTable {
+impl GenerateStaticTable for ServiceTypesTable {
     const ITEMS: &[&str] = &[
         "Screen Repair",
         "Battery Repair",

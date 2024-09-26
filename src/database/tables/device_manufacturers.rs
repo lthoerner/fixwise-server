@@ -1,13 +1,11 @@
 use std::collections::HashSet;
 
-use proc_macros::{
-    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
-};
+use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use super::generators::*;
 use crate::database::GenerateRecord;
 
-#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "device_manufacturers", primary_key = "id")]
 pub struct DeviceManufacturersTable {
     records: Vec<DeviceManufacturersTableRecord>,

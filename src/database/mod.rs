@@ -370,7 +370,7 @@ pub trait TableRecord: Record<Relation: Table> {
 /// A trait that allows a database table to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-trait GenerateTableData: Relation<Record: GenerateRecord> {
+trait GenerateTable: Table<Record: GenerateRecord> {
     /// Randomly generate the database table with a given number of records.
     ///
     /// Some record types (those with foreign key columns) can only be generated if a set of
@@ -400,7 +400,7 @@ trait GenerateTableData: Relation<Record: GenerateRecord> {
 /// A trait that allows a database record to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-trait GenerateRecord: Sized {
+trait GenerateRecord: TableRecord + Sized {
     /// The primary identifier type for this record.
     ///
     /// Usually this will be an [`i32`] (signed integers are used for database compatibility, even
@@ -433,17 +433,17 @@ trait GenerateRecord: Sized {
 ///
 /// This is mostly useful for small tables that have a fixed set of data for whom randomly-generated
 /// data would not make sense, such as [`tables::device_categories::DeviceCategoriesTable`].
-trait GenerateStaticRelation: Relation<Record: GenerateStaticRecord> {
+trait GenerateStaticTable: Table<Record: GenerateStaticRecord> {
     /// The items that are to be inserted into the database table.
     ///
-    /// This is a string array because [`GenerateStaticRelation`] is only implemented for simple
-    /// tables with ID-string pairs, using the [`GenerateStaticRecord`] trait to convert the strings
-    /// to database entries.
+    /// This is a string array because [`GenerateStaticTable`] is only implemented for simple tables
+    /// with ID-string pairs, using the [`GenerateStaticRecord`] trait to convert the strings to
+    /// database entries.
     const ITEMS: &[&str];
 
     /// Generate the table from static data, usually so it can be inserted into the database.
     ///
-    /// This is only called `generate` for semantic consistency with the [`GenerateTableData`] trait
+    /// This is only called `generate` for semantic consistency with the [`GenerateTable`] trait
     /// which uses actual random data generation.
     fn generate() -> Self {
         let mut existing_ids = HashSet::new();
@@ -462,7 +462,7 @@ trait GenerateStaticRelation: Relation<Record: GenerateStaticRecord> {
 trait GenerateStaticRecord {
     /// Turn a string into a database record.
     ///
-    /// This method should only be used for [`GenerateStaticRelation::generate`].
+    /// This method should only be used for [`GenerateStaticTable::generate`].
     fn new(id: i32, display_name: impl Into<String>) -> Self;
 }
 

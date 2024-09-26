@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert, Table};
+use proc_macros::{BulkInsert, GenerateTable, Relation, SingleInsert, Table};
 
 use super::parts::PartsTable;
 use super::ticket_devices::TicketDevicesJunctionTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(
     relation_name = "bundled_parts",
     primary_key = "(ticket, device, part)"

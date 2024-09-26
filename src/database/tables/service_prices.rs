@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
 use proc_macros::{
-    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+    BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
 };
 
 use super::generators::*;
@@ -12,7 +12,7 @@ use super::services::ServicesTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "service_prices", primary_key = "id")]
 pub struct ServicePricesTable {
     records: Vec<ServicePricesTableRecord>,

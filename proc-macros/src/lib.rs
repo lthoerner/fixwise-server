@@ -52,9 +52,9 @@ pub fn derive_table(input: TokenStream) -> TokenStream {
     derives::database::derive_table(input)
 }
 
-#[proc_macro_derive(GenerateTableData)]
-pub fn derive_generate_table_data(input: TokenStream) -> TokenStream {
-    derives::database::derive_generate_table_data(input)
+#[proc_macro_derive(GenerateTable)]
+pub fn derive_generate_table(input: TokenStream) -> TokenStream {
+    derives::database::derive_generate_table(input)
 }
 
 #[proc_macro_derive(SingleInsert, attributes(defaultable))]

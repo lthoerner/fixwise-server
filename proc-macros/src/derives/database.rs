@@ -91,7 +91,7 @@ pub fn derive_table(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn derive_generate_table_data(input: TokenStream) -> TokenStream {
+pub fn derive_generate_table(input: TokenStream) -> TokenStream {
     let DeriveInput {
         ident: type_name,
         data,
@@ -100,12 +100,12 @@ pub fn derive_generate_table_data(input: TokenStream) -> TokenStream {
     let Data::Struct(_) = data else {
         synerror!(
             type_name,
-            "cannot derive `GenerateTableData` for non-struct types"
+            "cannot derive `GenerateTable` for non-struct types"
         )
     };
 
     quote! {
-        impl crate::database::GenerateTableData for #type_name {}
+        impl crate::database::GenerateTable for #type_name {}
     }
     .into()
 }

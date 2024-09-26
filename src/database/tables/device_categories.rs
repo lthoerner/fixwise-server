@@ -1,6 +1,6 @@
 use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
 
-use crate::database::{GenerateStaticRecord, GenerateStaticRelation};
+use crate::database::{GenerateStaticRecord, GenerateStaticTable};
 
 #[derive(Relation, Table, BulkInsert, Clone)]
 #[relation(relation_name = "device_categories", primary_key = "id")]
@@ -14,7 +14,7 @@ pub struct DeviceCategoriesTableRecord {
     pub display_name: String,
 }
 
-impl GenerateStaticRelation for DeviceCategoriesTable {
+impl GenerateStaticTable for DeviceCategoriesTable {
     const ITEMS: &[&str] = &[
         "Phone",
         "Tablet",
