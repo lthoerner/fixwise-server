@@ -3,19 +3,18 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use super::services::ServicesTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "service_prices",
-    primary_key = "id",
-    foreign_key_name = "service_price"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "service_prices", primary_key = "id")]
+#[table(foreign_key_name = "service_price")]
 pub struct ServicePricesTable {
     records: Vec<ServicePricesTableRecord>,
 }

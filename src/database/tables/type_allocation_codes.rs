@@ -1,12 +1,12 @@
-use proc_macros::{BulkInsert, Relation, IdentifiableRecord, SingleInsert};
+use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
 
-#[derive(Relation, BulkInsert, Clone)]
+#[derive(Relation, Table, BulkInsert, Clone)]
 #[relation(
     schema_name = "persistent",
     relation_name = "type_allocation_codes",
-    primary_key = "tac",
-    foreign_key_name = "type_allocation_code"
+    primary_key = "tac"
 )]
+#[table(foreign_key_name = "type_allocation_code")]
 pub struct TypeAllocationCodesTable {
     records: Vec<TypeAllocationCodesTableRecord>,
 }

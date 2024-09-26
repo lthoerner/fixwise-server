@@ -5,11 +5,7 @@ use proc_macros::Relation;
 use crate::database::shared_models::ItemType;
 
 #[derive(Relation)]
-#[relation(
-    relation_name = "items_view",
-    primary_key = "item_id",
-    foreign_key_name = "PLACEHOLDER"
-)]
+#[relation(relation_name = "items_view", primary_key = "item_id")]
 pub struct ItemsView {
     records: Vec<ItemsViewRecord>,
 }

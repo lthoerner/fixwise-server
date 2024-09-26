@@ -2,7 +2,9 @@ use std::collections::HashSet;
 
 use chrono::NaiveDateTime;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::customers::CustomersTable;
 use super::generators::*;
@@ -12,13 +14,9 @@ use super::IdentifiableRecord;
 use crate::database::shared_models::TicketStatus;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "tickets",
-    primary_key = "id",
-    foreign_key_name = "ticket",
-    dependent_tables = [TicketDevicesJunctionTable]
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "tickets", primary_key = "id")]
+#[table(foreign_key_name = "ticket", dependent_tables = [TicketDevicesJunctionTable])]
 pub struct TicketsTable {
     records: Vec<TicketsTableRecord>,
 }

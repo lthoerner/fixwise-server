@@ -1,18 +1,17 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::invoices::InvoicesTable;
 use super::items::ItemsTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "invoice_items",
-    primary_key = "(invoice, item)",
-    foreign_key_name = "invoice_item"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "invoice_items", primary_key = "(invoice, item)")]
+#[table(foreign_key_name = "invoice_item")]
 pub struct InvoiceItemsTable {
     records: Vec<InvoiceItemsTableRecord>,
 }

@@ -6,11 +6,7 @@ use proc_macros::Relation;
 use crate::database::shared_models::TicketStatus;
 
 #[derive(Relation)]
-#[relation(
-    relation_name = "tickets_view",
-    primary_key = "id",
-    foreign_key_name = "PLACEHOLDER"
-)]
+#[relation(relation_name = "tickets_view", primary_key = "id")]
 pub struct TicketsView {
     records: Vec<TicketsViewRecord>,
 }

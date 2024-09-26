@@ -1,18 +1,18 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, Relation, GenerateTableData, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert, Table};
 
 use super::parts::PartsTable;
 use super::ticket_devices::TicketDevicesJunctionTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
 #[relation(
     relation_name = "bundled_parts",
-    primary_key = "(ticket, device, part)",
-    foreign_key_name = "bundled_part"
+    primary_key = "(ticket, device, part)"
 )]
+#[table(foreign_key_name = "bundled_part")]
 pub struct BundledPartsJunctionTable {
     records: Vec<BundledPartsJunctionTableRecord>,
 }
@@ -26,10 +26,7 @@ pub struct BundledPartsJunctionTableRecord {
 
 impl GenerateRecord for BundledPartsJunctionTableRecord {
     type Identifier = (i32, i32, i32);
-    type Dependencies<'a> = (
-        &'a TicketDevicesJunctionTable,
-        &'a PartsTable,
-    );
+    type Dependencies<'a> = (&'a TicketDevicesJunctionTable, &'a PartsTable);
 
     fn generate(
         _existing_records: &[Self],

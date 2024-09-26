@@ -3,7 +3,9 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesTable;
@@ -12,8 +14,9 @@ use super::vendors::VendorsTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(relation_name = "parts", primary_key = "id", foreign_key_name = "part")]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "parts", primary_key = "id")]
+#[table(foreign_key_name = "part")]
 pub struct PartsTable {
     records: Vec<PartsTableRecord>,
 }

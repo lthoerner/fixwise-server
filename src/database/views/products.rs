@@ -3,11 +3,7 @@ use rust_decimal::Decimal;
 use proc_macros::Relation;
 
 #[derive(Relation)]
-#[relation(
-    relation_name = "products_view",
-    primary_key = "sku",
-    foreign_key_name = "PLACEHOLDER"
-)]
+#[relation(relation_name = "products_view", primary_key = "sku")]
 pub struct ProductsView {
     records: Vec<ProductsViewRecord>,
 }

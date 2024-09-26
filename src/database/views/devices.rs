@@ -1,11 +1,7 @@
 use proc_macros::Relation;
 
 #[derive(Relation)]
-#[relation(
-    relation_name = "devices_view",
-    primary_key = "id",
-    foreign_key_name = "PLACEHOLDER"
-)]
+#[relation(relation_name = "devices_view", primary_key = "id")]
 pub struct DevicesView {
     records: Vec<DevicesViewRecord>,
 }

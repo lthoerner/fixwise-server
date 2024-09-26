@@ -1,18 +1,15 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert, Table};
 
 use super::device_models::DeviceModelsTable;
 use super::parts::PartsTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "compatible_parts",
-    primary_key = "(device, part)",
-    foreign_key_name = "compatible_part"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "compatible_parts", primary_key = "(device, part)")]
+#[table(foreign_key_name = "compatible_part")]
 pub struct CompatiblePartsJunctionTable {
     records: Vec<CompatiblePartsJunctionTableRecord>,
 }

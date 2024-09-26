@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::device_models::DeviceModelsTable;
 use super::generators::*;
@@ -8,12 +10,9 @@ use super::service_types::ServiceTypesTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "services",
-    primary_key = "id",
-    foreign_key_name = "service"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "services", primary_key = "id")]
+#[table(foreign_key_name = "service")]
 pub struct ServicesTable {
     records: Vec<ServicesTableRecord>,
 }

@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRecord, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::device_categories::DeviceCategoriesTable;
 use super::device_manufacturers::DeviceManufacturersTable;
@@ -8,12 +10,9 @@ use super::generators::*;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "device_models",
-    primary_key = "id",
-    foreign_key_name = "device_model"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "device_models", primary_key = "id")]
+#[table(foreign_key_name = "device_model")]
 pub struct DeviceModelsTable {
     records: Vec<DeviceModelsTableRecord>,
 }
@@ -30,10 +29,7 @@ pub struct DeviceModelsTableRecord {
 
 impl GenerateRecord for DeviceModelsTableRecord {
     type Identifier = i32;
-    type Dependencies<'a> = (
-        &'a DeviceManufacturersTable,
-        &'a DeviceCategoriesTable,
-    );
+    type Dependencies<'a> = (&'a DeviceManufacturersTable, &'a DeviceCategoriesTable);
 
     fn generate(
         _existing_records: &[Self],

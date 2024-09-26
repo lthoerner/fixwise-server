@@ -71,8 +71,9 @@ pub struct Database {
 
 /// A trait that allows table and view types to interoperate with and be queried from the database.
 ///
-/// This does not implement any insertion methods because "relations" can be views, which are
-/// read-only. For inserting items to tables, see the [`SingleInsert`] and [`BulkInsert`] traits.
+/// This does not implement any insertion or deletion methods because "relations" can be views,
+/// which are read-only. For inserting items to tables, see the [`SingleInsert`] and [`BulkInsert`]
+/// traits. For deleting items from tables, see the [`Table`] trait.
 ///
 /// This trait does not do a lot on its own but it, along with [`Record`], provides the
 /// functionality which allows almost all of the other database traits to be auto-implemented or
@@ -104,18 +105,6 @@ pub trait Relation: Sized {
     /// tables, it will be multiple column names written as a parenthesized, comma-separated list,
     /// such as `"(column_a, column_b, column_c)"`.
     const PRIMARY_KEY: &str;
-    /// The name given to foreign keys pointing to this relation from other relations.
-    ///
-    /// This key name must be the same for every dependent table. Usually it will just be the
-    /// singular version of the table name ("tickets" becomes "ticket", etc.).
-    const FOREIGN_KEY_NAME: &str;
-    /// The tables which contain foreign keys pointing to this relation.
-    ///
-    /// This is used to ensure referential integrity when deleting records from the database. The
-    /// tables must be defined in an order that ensures no foreign key constraint still exists when
-    /// deleting any record. This would mostly be relevant when one dependent table has a foreign
-    /// key that references another dependent table.
-    const DEPENDENT_TABLES: &[&str] = &[];
 
     /// Create the relation from a collection of records.
     // TODO: Take `Into<Vec<Self::Record>>` here
@@ -184,13 +173,38 @@ pub trait Relation: Sized {
         Self::query_all(&state.database).await
     }
 
+    /// Pick a random record from the relation.
+    ///
+    /// This is used mostly for randomly generating foreign keys, but can be used elsewhere if
+    /// needed.
+    fn pick_random(&self) -> Self::Record {
+        let records = self.records();
+        records[thread_rng().gen_range(0..records.len())].clone()
+    }
+}
+
+pub trait Table: Relation {
+    /// The name given to foreign keys pointing to this relation from other relations.
+    ///
+    /// This key name must be the same for every dependent table. Usually it will just be the
+    /// singular version of the table name ("tickets" becomes "ticket", etc.).
+    const FOREIGN_KEY_NAME: &str;
+    /// The tables which contain foreign keys pointing to this relation.
+    ///
+    /// This is used to ensure referential integrity when deleting records from the database. The
+    /// tables must be defined in an order that ensures no foreign key constraint still exists when
+    /// deleting any record. This would mostly be relevant when one dependent table has a foreign
+    /// key that references another dependent table.
+    const DEPENDENT_TABLES: &[&str] = &[];
+
     /// Delete a single record from the database using an identifying key.
     ///
     /// If the record is successfully deleted from the database, this method returns `true`. If an
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`Relation::delete_one_handler()`].
+    /// For the handler method, use [`Table::delete_one_handler()`].
+    // TODO: Return a more useful value for error handling
     async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
         for dependent_table in Self::DEPENDENT_TABLES {
             if sqlx::query(&format!(
@@ -224,7 +238,7 @@ pub trait Relation: Sized {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`Relation::delete_one()`].
+    /// called outside of an Axum context, see [`Table::delete_one()`].
     async fn delete_one_handler<I: IdParameter>(
         State(state): State<Arc<ServerState>>,
         Query(id_param): Query<I>,
@@ -238,7 +252,7 @@ pub trait Relation: Sized {
     /// error occurs, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`Relation::delete_all_handler()`].
+    /// For the handler method, use [`Table::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
         for dependent_table in Self::DEPENDENT_TABLES {
             if sqlx::query(&format!("DELETE FROM {dependent_table}"))
@@ -266,18 +280,9 @@ pub trait Relation: Sized {
     /// error occurs, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`Relation::delete_all()`].
+    /// called outside of an Axum context, see [`Table::delete_all()`].
     async fn delete_all_handler(State(state): State<Arc<ServerState>>) -> bool {
         Self::delete_all(&state.database).await
-    }
-
-    /// Pick a random record from the relation.
-    ///
-    /// This is used mostly for randomly generating foreign keys, but can be used elsewhere if
-    /// needed.
-    fn pick_random(&self) -> Self::Record {
-        let records = self.records();
-        records[thread_rng().gen_range(0..records.len())].clone()
     }
 }
 
@@ -337,7 +342,9 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     async fn query_all_handler(state: State<Arc<ServerState>>) -> Self::Relation {
         Self::Relation::query_all_handler(state).await
     }
+}
 
+pub trait TableRecord: Record<Relation: Table> {
     #[allow(dead_code)]
     /// Delete a single record from the database using an identifying key.
     ///
@@ -345,7 +352,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`Record::delete_one_handler()`].
+    /// For the handler method, use [`TableRecord::delete_one_handler()`].
     async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
         Self::Relation::delete_one(database, id).await
     }
@@ -357,7 +364,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`Record::delete_one()`].
+    /// called outside of an Axum context, see [`TableRecord::delete_one()`].
     async fn delete_one_handler(
         state: State<Arc<ServerState>>,
         id_param: Query<impl IdParameter>,
@@ -372,7 +379,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// error occurs, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`Record::delete_all_handler()`].
+    /// For the handler method, use [`TableRecord::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
         Self::Relation::delete_all(database).await
     }
@@ -384,7 +391,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// error occurs, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`Record::delete_all()`].
+    /// called outside of an Axum context, see [`TableRecord::delete_all()`].
     async fn delete_all_handler(state: State<Arc<ServerState>>) -> bool {
         Self::Relation::delete_all_handler(state).await
     }
@@ -496,10 +503,10 @@ trait GenerateStaticRecord {
 /// trait bound to prevent this from happening accidentally.
 ///
 /// For bulk-insertion of records, see the related [`BulkInsert`] trait.
-pub trait SingleInsert: Record {
+pub trait SingleInsert: TableRecord {
     /// The names of all columns in the database table.
     ///
-    /// This was going to be a member of [`Relation`] but was placed here because it is needed for
+    /// This was going to be a member of [`Table`] but was placed here because it is needed for
     /// [`SingleInsert::get_query_builder`] to generate the SQL for inserting records to the
     /// database, as well as determining the [`BulkInsert::CHUNK_SIZE`].
     const COLUMN_NAMES: &[&str];
@@ -544,13 +551,8 @@ pub trait SingleInsert: Record {
 /// purposes, as it is relatively rare for a significant number of records to be inserted at once
 /// during normal operation.
 ///
-/// Though generic over [`Relation`], this trait is only meant to be implemented on database table
-/// types, as items cannot be inserted into a database view. In the future there may be a trait
-/// bound to prevent this from happening accidentally.
-///
 /// For single-insertion of records, see the related [`SingleInsert`] trait.
-// TODO: Maybe add a marker `Table` trait to prevent this being implemented for view types
-pub trait BulkInsert: Relation<Record: SingleInsert> {
+pub trait BulkInsert: Table<Record: SingleInsert> {
     /// The amount of records that can be inserted per batch/chunk.
     ///
     /// The batch limit is determined by the number of columns in a table. This is because a single

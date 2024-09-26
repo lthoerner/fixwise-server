@@ -4,19 +4,18 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, Relation, GenerateTableData, IdentifiableRecord, SingleInsert};
+use proc_macros::{
+    BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use super::products::ProductsTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "product_prices",
-    primary_key = "id",
-    foreign_key_name = "product_price"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "product_prices", primary_key = "id")]
+#[table(foreign_key_name = "product_price")]
 pub struct ProductPricesTable {
     records: Vec<ProductPricesTableRecord>,
 }

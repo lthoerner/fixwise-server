@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert, Table};
 
 use super::devices::DevicesTable;
 use super::generators::*;
@@ -9,12 +9,9 @@ use super::tickets::TicketsTable;
 use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
-#[derive(Relation, BulkInsert, GenerateTableData, Clone)]
-#[relation(
-    relation_name = "ticket_devices",
-    primary_key = "(ticket, device)",
-    foreign_key_name = "ticket_device"
-)]
+#[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
+#[relation(relation_name = "ticket_devices", primary_key = "(ticket, device)")]
+#[table(foreign_key_name = "ticket_device")]
 pub struct TicketDevicesJunctionTable {
     records: Vec<TicketDevicesJunctionTableRecord>,
 }

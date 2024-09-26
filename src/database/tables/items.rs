@@ -1,15 +1,16 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert};
+use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use super::product_prices::ProductPricesTable;
 use super::service_prices::ServicePricesTable;
 use crate::database::shared_models::ItemType;
 use crate::database::Relation;
 
-#[derive(Relation, BulkInsert, Clone)]
-#[relation(relation_name = "items", primary_key = "id", foreign_key_name = "item")]
+#[derive(Relation, Table, BulkInsert, Clone)]
+#[relation(relation_name = "items", primary_key = "id")]
+#[table(foreign_key_name = "item")]
 pub struct ItemsTable {
     records: Vec<ItemsTableRecord>,
 }

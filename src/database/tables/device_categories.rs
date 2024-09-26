@@ -1,13 +1,10 @@
-use proc_macros::{BulkInsert, Relation, IdentifiableRecord, SingleInsert};
+use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use crate::database::{GenerateStaticRecord, GenerateStaticRelation};
 
-#[derive(Relation, BulkInsert, Clone)]
-#[relation(
-    relation_name = "device_categories",
-    primary_key = "id",
-    foreign_key_name = "device_category"
-)]
+#[derive(Relation, Table, BulkInsert, Clone)]
+#[relation(relation_name = "device_categories", primary_key = "id")]
+#[table(foreign_key_name = "device_category")]
 pub struct DeviceCategoriesTable {
     records: Vec<DeviceCategoriesTableRecord>,
 }
