@@ -120,7 +120,7 @@ pub trait Relation: Sized {
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
     /// For the handler method, use [`Relation::query_one_handler()`].
-    async fn query_one(database: &Database, id: impl IdParameter) -> Option<Self::Record> {
+    async fn query_one<I: IdParameter>(database: &Database, id: I) -> Option<Self::Record> {
         sqlx::query_as(&format!(
             "SELECT * FROM {}.{} WHERE {} = #1",
             Self::SCHEMA_NAME,
@@ -140,9 +140,9 @@ pub trait Relation: Sized {
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Relation::query_one()`].
     // TODO: Check how this interacts with junction tables
-    async fn query_one_handler(
+    async fn query_one_handler<I: IdParameter>(
         State(state): State<Arc<ServerState>>,
-        Query(id_param): Query<impl IdParameter>,
+        Query(id_param): Query<I>,
     ) -> Option<Self::Record> {
         Self::query_one(&state.database, id_param).await
     }
@@ -205,7 +205,7 @@ pub trait Table: Relation {
     /// This is the standard version of this method and should not be used as an Axum route handler.
     /// For the handler method, use [`Table::delete_one_handler()`].
     // TODO: Return a more useful value for error handling
-    async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
+    async fn delete_one<I: IdParameter>(database: &Database, id: I) -> bool {
         for dependent_table in Self::DEPENDENT_TABLES {
             if sqlx::query(&format!(
                 "DELETE FROM {dependent_table} WHERE {} = $1",
@@ -308,7 +308,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
     /// For the handler method, use [`Record::query_one_handler()`].
-    async fn query_one(database: &Database, id_param: impl IdParameter) -> Option<Self> {
+    async fn query_one<I: IdParameter>(database: &Database, id_param: I) -> Option<Self> {
         Self::Relation::query_one(database, id_param).await
     }
 
@@ -318,9 +318,9 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Record::query_one()`].
-    async fn query_one_handler(
+    async fn query_one_handler<I: IdParameter>(
         state: State<Arc<ServerState>>,
-        id_param: Query<impl IdParameter>,
+        id_param: Query<I>,
     ) -> Option<Self> {
         Self::Relation::query_one_handler(state, id_param).await
     }
@@ -353,7 +353,7 @@ pub trait TableRecord: Record<Relation: Table> {
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
     /// For the handler method, use [`TableRecord::delete_one_handler()`].
-    async fn delete_one(database: &Database, id: impl IdParameter) -> bool {
+    async fn delete_one<I: IdParameter>(database: &Database, id: I) -> bool {
         Self::Relation::delete_one(database, id).await
     }
 
@@ -365,9 +365,9 @@ pub trait TableRecord: Record<Relation: Table> {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`TableRecord::delete_one()`].
-    async fn delete_one_handler(
+    async fn delete_one_handler<I: IdParameter>(
         state: State<Arc<ServerState>>,
-        id_param: Query<impl IdParameter>,
+        id_param: Query<I>,
     ) -> Json<bool> {
         Self::Relation::delete_one_handler(state, id_param).await
     }
