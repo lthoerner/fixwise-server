@@ -10,7 +10,6 @@ use crate::database::Relation;
 
 #[derive(Relation, Table, BulkInsert, Clone)]
 #[relation(relation_name = "items", primary_key = "id")]
-#[table(foreign_key_name = "item")]
 pub struct ItemsTable {
     records: Vec<ItemsTableRecord>,
 }

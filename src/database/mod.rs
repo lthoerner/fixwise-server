@@ -183,20 +183,14 @@ pub trait Relation: Sized {
     }
 }
 
+/// A trait that allows table types to be deleted from the database.
+///
+/// For now, this trait only implements deletion methods, but it may be expanded in the future.
+/// However, it is used as a trait bound for other traits which implement database write methods.
+///
+/// For querying items from tables, see the [`Relation`] trait. For inserting items to tables, see
+/// the [`SingleInsert`] and [`BulkInsert`] traits.
 pub trait Table: Relation {
-    /// The name given to foreign keys pointing to this relation from other relations.
-    ///
-    /// This key name must be the same for every dependent table. Usually it will just be the
-    /// singular version of the table name ("tickets" becomes "ticket", etc.).
-    const FOREIGN_KEY_NAME: &str;
-    /// The tables which contain foreign keys pointing to this relation.
-    ///
-    /// This is used to ensure referential integrity when deleting records from the database. The
-    /// tables must be defined in an order that ensures no foreign key constraint still exists when
-    /// deleting any record. This would mostly be relevant when one dependent table has a foreign
-    /// key that references another dependent table.
-    const DEPENDENT_TABLES: &[&str] = &[];
-
     /// Delete a single record from the database using an identifying key.
     ///
     /// If the record is successfully deleted from the database, this method returns `true`. If an
@@ -206,20 +200,6 @@ pub trait Table: Relation {
     /// For the handler method, use [`Table::delete_one_handler()`].
     // TODO: Return a more useful value for error handling
     async fn delete_one<I: IdParameter>(database: &Database, id: I) -> bool {
-        for dependent_table in Self::DEPENDENT_TABLES {
-            if sqlx::query(&format!(
-                "DELETE FROM {dependent_table} WHERE {} = $1",
-                Self::FOREIGN_KEY_NAME
-            ))
-            .bind(id.id() as i32)
-            .execute(&database.connection)
-            .await
-            .is_err()
-            {
-                return false;
-            }
-        }
-
         sqlx::query(&format!(
             "DELETE FROM {}.{} WHERE {} = $1",
             Self::SCHEMA_NAME,
@@ -254,16 +234,6 @@ pub trait Table: Relation {
     /// This is the standard version of this method and should not be used as an Axum route handler.
     /// For the handler method, use [`Table::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
-        for dependent_table in Self::DEPENDENT_TABLES {
-            if sqlx::query(&format!("DELETE FROM {dependent_table}"))
-                .execute(&database.connection)
-                .await
-                .is_err()
-            {
-                return false;
-            }
-        }
-
         sqlx::query(&format!(
             "DELETE FROM {}.{}",
             Self::SCHEMA_NAME,

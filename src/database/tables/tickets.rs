@@ -9,14 +9,12 @@ use proc_macros::{
 use super::customers::CustomersTable;
 use super::generators::*;
 use super::invoices::InvoicesTable;
-use super::ticket_devices::TicketDevicesJunctionTable;
 use super::IdentifiableRecord;
 use crate::database::shared_models::TicketStatus;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
 #[relation(relation_name = "tickets", primary_key = "id")]
-#[table(foreign_key_name = "ticket", dependent_tables = [TicketDevicesJunctionTable])]
 pub struct TicketsTable {
     records: Vec<TicketsTableRecord>,
 }

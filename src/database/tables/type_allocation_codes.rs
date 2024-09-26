@@ -6,7 +6,6 @@ use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table}
     relation_name = "type_allocation_codes",
     primary_key = "tac"
 )]
-#[table(foreign_key_name = "type_allocation_code")]
 pub struct TypeAllocationCodesTable {
     records: Vec<TypeAllocationCodesTableRecord>,
 }

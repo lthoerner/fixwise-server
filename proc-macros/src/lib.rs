@@ -47,7 +47,7 @@ pub fn derive_relation(input: TokenStream) -> TokenStream {
     derives::database::derive_relation(input)
 }
 
-#[proc_macro_derive(Table, attributes(table))]
+#[proc_macro_derive(Table)]
 pub fn derive_table(input: TokenStream) -> TokenStream {
     derives::database::derive_table(input)
 }

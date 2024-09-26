@@ -12,7 +12,6 @@ use crate::database::{GenerateRecord, Relation};
     relation_name = "bundled_parts",
     primary_key = "(ticket, device, part)"
 )]
-#[table(foreign_key_name = "bundled_part")]
 pub struct BundledPartsJunctionTable {
     records: Vec<BundledPartsJunctionTableRecord>,
 }

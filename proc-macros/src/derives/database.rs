@@ -14,13 +14,6 @@ struct RelationAttributes {
 }
 
 #[derive(ExtractAttributes)]
-#[deluxe(attributes(table))]
-struct TableAttributes {
-    foreign_key_name: String,
-    dependent_tables: Option<Vec<Ident>>,
-}
-
-#[derive(ExtractAttributes)]
 #[deluxe(attributes(defaultable))]
 struct DefaultableRecordAttribute;
 
@@ -79,45 +72,20 @@ pub fn derive_relation(input: TokenStream) -> TokenStream {
 }
 
 pub fn derive_table(input: TokenStream) -> TokenStream {
-    let mut input: DeriveInput = parse_macro_input!(input);
-    let type_name = input.ident.clone();
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+
     let record_type_name = Ident::new(&format!("{}Record", type_name), type_name.span());
 
-    let Data::Struct(_) = input.data else {
+    let Data::Struct(_) = data else {
         synerror!(type_name, "cannot derive `Table` for non-struct types")
     };
 
-    let Ok(TableAttributes {
-        foreign_key_name,
-        dependent_tables,
-    }) = deluxe::extract_attributes(&mut input)
-    else {
-        synerror!(
-            type_name,
-            "cannot derive `Table` without `#[table(...)]` attribute"
-        )
-    };
-
-    let optional_dependent_tables_definition = dependent_tables.map(|dependent_tables| {
-        quote! {
-            const DEPENDENT_TABLES: &[&str] = &[
-                #(
-                    const_format::formatcp!(
-                        "{}.{}",
-                        <#dependent_tables as crate::database::Relation>::SCHEMA_NAME,
-                        <#dependent_tables as crate::database::Relation>::RELATION_NAME
-                    ),
-                )*
-            ];
-        }
-    });
-
     quote! {
-        impl crate::database::Table for #type_name {
-            const FOREIGN_KEY_NAME: &str = #foreign_key_name;
-            #optional_dependent_tables_definition
-        }
-
+        impl crate::database::Table for #type_name {}
         impl crate::database::TableRecord for #record_type_name {}
     }
     .into()

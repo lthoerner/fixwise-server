@@ -15,7 +15,6 @@ use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
 #[relation(relation_name = "product_prices", primary_key = "id")]
-#[table(foreign_key_name = "product_price")]
 pub struct ProductPricesTable {
     records: Vec<ProductPricesTableRecord>,
 }

@@ -9,7 +9,6 @@ use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, Table, BulkInsert, GenerateTableData, Clone)]
 #[relation(relation_name = "compatible_parts", primary_key = "(device, part)")]
-#[table(foreign_key_name = "compatible_part")]
 pub struct CompatiblePartsJunctionTable {
     records: Vec<CompatiblePartsJunctionTableRecord>,
 }
