@@ -202,7 +202,7 @@ pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
+pub fn derive_identifiable_record(input: TokenStream) -> TokenStream {
     let DeriveInput {
         ident: type_name,
         data,
@@ -215,14 +215,14 @@ pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
             _ => {
                 synerror!(
                     type_name,
-                    "cannot derive `IdentifiableRow` for unit or tuple structs"
+                    "cannot derive `IdentifiableRecord` for unit or tuple structs"
                 )
             }
         },
         _ => {
             synerror!(
                 type_name,
-                "cannot derive `IdentifiableRow` for non-struct types"
+                "cannot derive `IdentifiableRecord` for non-struct types"
             )
         }
     };
@@ -231,7 +231,7 @@ pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
     if let Some(first_field) = first_field {
         let first_field_name = first_field.ident.unwrap();
         quote! {
-            impl crate::database::tables::IdentifiableRow for #type_name {
+            impl crate::database::tables::IdentifiableRecord for #type_name {
                 fn id(&self) -> i32 {
                     self.#first_field_name
                 }
@@ -241,7 +241,7 @@ pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
     } else {
         synerror!(
             type_name,
-            "cannot derive `IdentifiableRow` for structs with no fields"
+            "cannot derive `IdentifiableRecord` for structs with no fields"
         )
     }
 }

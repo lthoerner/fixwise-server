@@ -22,7 +22,7 @@ pub mod tickets;
 pub mod type_allocation_codes;
 pub mod vendors;
 
-pub trait IdentifiableRow {
+pub trait IdentifiableRecord {
     fn id(&self) -> i32;
 }
 

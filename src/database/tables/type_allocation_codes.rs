@@ -1,4 +1,4 @@
-use proc_macros::{BulkInsert, Relation, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, IdentifiableRecord, SingleInsert};
 
 #[derive(Relation, BulkInsert, Clone)]
 #[relation(
@@ -11,7 +11,7 @@ pub struct TypeAllocationCodesTable {
     records: Vec<TypeAllocationCodesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone, Debug)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone, Debug)]
 pub struct TypeAllocationCodesTableRecord {
     pub tac: i32,
     pub manufacturer: String,

@@ -15,7 +15,7 @@ use crate::ServerState;
 /// How this endpoint behaves is entirely dependent on the implementation of [`FromRelation`], which
 /// converts the data from the database into the format used by the API. See its documentation for
 /// more details.
-pub trait ServeEntityJson: FromRelation + Serialize + Sized {
+pub trait ServeResourceJson: FromRelation + Serialize + Sized {
     /// Serve a JSON collection endpoint.
     ///
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
@@ -30,15 +30,15 @@ pub trait ServeEntityJson: FromRelation + Serialize + Sized {
 ///
 /// How this endpoint behaves is entirely dependent on the implementation of [`FromRecord`], which
 /// converts the data from the database into the format used by the API. This is implemented
-/// independently from [`ServeEntityJson`] and implementors need not have a collection (entity) type
-/// associated with them on the API side.
+/// independently from [`ServeResourceJson`] and implementors need not have a collection (relation)
+/// type associated with them on the API side.
 ///
 /// This may need to be changed eventually to use a different underlying trait than [`FromRecord`],
-/// as some [`ServeRowJson::serve_one`] endpoints may need to send different row data than their
-/// [`ServeEntityJson::serve_all`] counterparts. This can be accomplished by writing separate
+/// as some [`ServeRecordJson::serve_one`] endpoints may need to send different row data than their
+/// [`ServeResourceJson::serve_all`] counterparts. This can be accomplished by writing separate
 /// record-level conversions into a [`FromRelation`] implementation, but it would be better for
 /// separation of concerns.
-pub trait ServeRowJson<I: IdParameter>: FromRecord + Serialize + Sized {
+pub trait ServeRecordJson<I: IdParameter>: FromRecord + Serialize + Sized {
     /// Serve a JSON record endpoint.
     ///
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
@@ -64,8 +64,8 @@ pub trait FromRelation {
     /// [`FromRelation::from_relation`].
     type Relation: Relation;
 
-    /// Convert the database entity into the data required for the endpoint.
-    fn from_relation(entity: Self::Relation) -> Self;
+    /// Convert the database relation into the data required for the endpoint.
+    fn from_relation(relation: Self::Relation) -> Self;
 }
 
 /// A trait that allows a database record to be converted into data that can be used by an API
@@ -84,8 +84,8 @@ pub trait FromRecord {
 /// A trait that allows queries including an ID field to use unique nomenclature if desired.
 ///
 /// The format for the URL will look like
-/// `https://fixwise.io/some/record/endpoint?id_parameter_name=123456`. If the ID parameter is
-/// just named `id`, simply use [`GenericIdParameter`].
+/// `https://fixwise.io/some/record/endpoint?id_parameter_name=123456`. If the ID parameter is just
+/// named `id`, simply use [`GenericIdParameter`].
 pub trait IdParameter {
     /// Create the parameter with an inner [`usize`].
     fn new(value: usize) -> Self;

@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
 
 use super::generators::*;
 use super::invoice_items::InvoiceItemsTable;
@@ -12,7 +12,7 @@ use super::invoices::InvoicesTable;
 use super::items::ItemsTable;
 use super::product_prices::ProductPricesTable;
 use super::service_prices::ServicePricesTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::shared_models::PaymentType;
 use crate::database::{GenerateRecord, Relation};
 
@@ -26,7 +26,7 @@ pub struct InvoicePaymentsTable {
     records: Vec<InvoicePaymentsTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct InvoicePaymentsTableRecord {
     pub id: i32,
     pub invoice: i32,

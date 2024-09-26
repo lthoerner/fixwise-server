@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
 
 use super::invoices::InvoicesTable;
 use super::items::ItemsTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, BulkInsert, GenerateTableData, Clone)]
@@ -17,7 +17,7 @@ pub struct InvoiceItemsTable {
     records: Vec<InvoiceItemsTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct InvoiceItemsTableRecord {
     pub invoice: i32,
     pub item: i32,

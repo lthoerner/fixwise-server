@@ -17,24 +17,24 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
     derives::api::derive_process_endpoint(input)
 }
 
-#[proc_macro_derive(FromRelation, attributes(endpoint))]
+#[proc_macro_derive(FromRelation, attributes(resource))]
 pub fn derive_from_relation(input: TokenStream) -> TokenStream {
     derives::api::derive_from_relation(input)
 }
 
-#[proc_macro_derive(FromRecord, attributes(endpoint_row))]
+#[proc_macro_derive(FromRecord, attributes(resource_record))]
 pub fn derive_from_record(input: TokenStream) -> TokenStream {
     derives::api::derive_from_record(input)
 }
 
-#[proc_macro_derive(ServeEntityJson)]
-pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
-    derives::api::derive_serve_entity_json(input)
+#[proc_macro_derive(ServeResourceJson)]
+pub fn derive_serve_resource_json(input: TokenStream) -> TokenStream {
+    derives::api::derive_serve_resource_json(input)
 }
 
-#[proc_macro_derive(ServeRowJson, attributes(endpoint_row))]
-pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
-    derives::api::derive_serve_row_json(input)
+#[proc_macro_derive(ServeRecordJson, attributes(resource_record))]
+pub fn derive_serve_record_json(input: TokenStream) -> TokenStream {
+    derives::api::derive_serve_record_json(input)
 }
 
 #[proc_macro_derive(IdParameter)]
@@ -62,7 +62,7 @@ pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
     derives::database::derive_bulk_insert(input)
 }
 
-#[proc_macro_derive(IdentifiableRow)]
-pub fn derive_identifiable_row(input: TokenStream) -> TokenStream {
-    derives::database::derive_identifiable_row(input)
+#[proc_macro_derive(IdentifiableRecord)]
+pub fn derive_identifiable_record(input: TokenStream) -> TokenStream {
+    derives::database::derive_identifiable_record(input)
 }

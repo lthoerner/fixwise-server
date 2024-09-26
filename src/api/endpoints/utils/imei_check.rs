@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use proc_macros::FromRecord;
 
-use crate::api::{IdParameter, ServeRowJson};
+use crate::api::{IdParameter, ServeRecordJson};
 use crate::database::tables::type_allocation_codes::TypeAllocationCodesTableRecord;
 use crate::database::{Record, SingleInsert};
 use crate::ServerState;
@@ -17,13 +17,13 @@ pub struct ImeiParameter {
 }
 
 #[derive(FromRecord, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, record = TypeAllocationCodesTableRecord, raw = true)]
+#[resource_record(id_param = GenericIdParameter, record = TypeAllocationCodesTableRecord, raw = true)]
 pub struct ImeiInfoApiUtil {
     manufacturer: String,
     model: String,
 }
 
-impl ServeRowJson<ImeiParameter> for ImeiInfoApiUtil {
+impl ServeRecordJson<ImeiParameter> for ImeiInfoApiUtil {
     async fn serve_one(
         state: State<Arc<ServerState>>,
         imei_param: Query<ImeiParameter>,

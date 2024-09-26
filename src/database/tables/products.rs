@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
 
 use super::generators::*;
 use crate::database::GenerateRecord;
@@ -15,7 +15,7 @@ pub struct ProductsTable {
     records: Vec<ProductsTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ProductsTableRecord {
     pub sku: i32,
     pub display_name: String,

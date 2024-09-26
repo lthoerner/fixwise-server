@@ -4,7 +4,7 @@ use proc_macros::{BulkInsert, GenerateTableData, Relation, SingleInsert};
 
 use super::device_models::DeviceModelsTable;
 use super::parts::PartsTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, BulkInsert, GenerateTableData, Clone)]

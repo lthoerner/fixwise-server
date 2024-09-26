@@ -19,14 +19,14 @@ struct ColumnFormatAttributes {
 }
 
 #[derive(ExtractAttributes)]
-#[deluxe(attributes(endpoint))]
+#[deluxe(attributes(resource))]
 struct EndpointAttributes {
     relation: Ident,
     raw: bool,
 }
 
 #[derive(ExtractAttributes)]
-#[deluxe(attributes(endpoint_row))]
+#[deluxe(attributes(resource_record))]
 struct EndpointRowAttributes {
     id_param: Ident,
     record: Ident,
@@ -255,7 +255,7 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
 pub fn derive_from_relation(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
     let type_name = input.ident.clone();
-    let row_type_name = Ident::new(&format!("{}Row", type_name), type_name.span());
+    let row_type_name = Ident::new(&format!("{}Record", type_name), type_name.span());
 
     let Data::Struct(_) = input.data else {
         synerror!(
@@ -271,7 +271,7 @@ pub fn derive_from_relation(input: TokenStream) -> TokenStream {
     else {
         synerror!(
             type_name,
-            "cannot derive `FromRelation` without `#[relation(...)]` attribute"
+            "cannot derive `FromRelation` without `#[resource(...)]` attribute"
         )
     };
 
@@ -286,7 +286,7 @@ pub fn derive_from_relation(input: TokenStream) -> TokenStream {
             fn from_relation(relation: Self::Relation) -> Self {
                 Self {
                     #optional_metadata_assignment
-                    rows: relation
+                    records: relation
                         .take_records()
                         .into_iter()
                         .map(<#row_type_name as crate::api::FromRecord>::from_record)
@@ -317,7 +317,7 @@ pub fn derive_from_record(input: TokenStream) -> TokenStream {
     else {
         synerror!(
             type_name,
-            "cannot derive `FromRecord` without `#[endpoint_row(...)]` attribute"
+            "cannot derive `FromRecord` without `#[resource_record(...)]` attribute"
         )
     };
 
@@ -376,7 +376,7 @@ pub fn derive_from_record(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
+pub fn derive_serve_resource_json(input: TokenStream) -> TokenStream {
     let DeriveInput {
         ident: type_name,
         data,
@@ -386,23 +386,23 @@ pub fn derive_serve_entity_json(input: TokenStream) -> TokenStream {
     let Data::Struct(_) = data else {
         synerror!(
             type_name,
-            "cannot derive `ServeEntityJson` for non-struct types"
+            "cannot derive `ServeResourceJson` for non-struct types"
         )
     };
 
     quote! {
-        impl crate::api::ServeEntityJson for #type_name {}
+        impl crate::api::ServeResourceJson for #type_name {}
     }
     .into()
 }
 
-pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
+pub fn derive_serve_record_json(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
     let type_name = input.ident.clone();
     let Data::Struct(_) = input.data else {
         synerror!(
             type_name,
-            "cannot derive `ServeRowJson` for non-struct types"
+            "cannot derive `ServeRecordJson` for non-struct types"
         )
     };
 
@@ -413,12 +413,12 @@ pub fn derive_serve_row_json(input: TokenStream) -> TokenStream {
     else {
         synerror!(
             type_name,
-            "cannot derive `ServeRowJson` without `#[endpoint_row(...)]` attribute"
+            "cannot derive `ServeRecordJson` without `#[resource_record(...)]` attribute"
         )
     };
 
     quote! {
-        impl crate::api::ServeRowJson<#id_param_type_name> for #type_name {}
+        impl crate::api::ServeRecordJson<#id_param_type_name> for #type_name {}
     }
     .into()
 }

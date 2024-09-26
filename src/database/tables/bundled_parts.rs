@@ -4,7 +4,7 @@ use proc_macros::{BulkInsert, Relation, GenerateTableData, SingleInsert};
 
 use super::parts::PartsTable;
 use super::ticket_devices::TicketDevicesJunctionTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, BulkInsert, GenerateTableData, Clone)]

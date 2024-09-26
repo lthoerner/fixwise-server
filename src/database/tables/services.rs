@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
 
 use super::device_models::DeviceModelsTable;
 use super::generators::*;
 use super::service_types::ServiceTypesTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, BulkInsert, GenerateTableData, Clone)]
@@ -18,7 +18,7 @@ pub struct ServicesTable {
     records: Vec<ServicesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ServicesTableRecord {
     pub id: i32,
     #[sqlx(rename = "type")]

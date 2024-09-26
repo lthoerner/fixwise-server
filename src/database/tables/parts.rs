@@ -3,13 +3,13 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRow, Relation, SingleInsert};
+use proc_macros::{BulkInsert, GenerateTableData, IdentifiableRecord, Relation, SingleInsert};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesTable;
 use super::part_manufacturers::PartManufacturersTable;
 use super::vendors::VendorsTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, BulkInsert, GenerateTableData, Clone)]
@@ -18,7 +18,7 @@ pub struct PartsTable {
     records: Vec<PartsTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct PartsTableRecord {
     pub id: i32,
     pub display_name: String,

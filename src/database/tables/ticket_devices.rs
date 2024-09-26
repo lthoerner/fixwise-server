@@ -6,7 +6,7 @@ use super::devices::DevicesTable;
 use super::generators::*;
 use super::services::ServicesTable;
 use super::tickets::TicketsTable;
-use super::IdentifiableRow;
+use super::IdentifiableRecord;
 use crate::database::{GenerateRecord, Relation};
 
 #[derive(Relation, BulkInsert, GenerateTableData, Clone)]

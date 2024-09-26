@@ -10,21 +10,21 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use api::endpoints::processed::customers::CustomersApiEndpoint;
-use api::endpoints::processed::device_models::DeviceModelsApiEndpoint;
-use api::endpoints::processed::devices::DevicesApiEndpoint;
-use api::endpoints::processed::invoices::InvoicesApiEndpoint;
-use api::endpoints::processed::parts::PartsApiEndpoint;
-use api::endpoints::processed::products::ProductsApiEndpoint;
-use api::endpoints::processed::services::ServicesApiEndpoint;
-use api::endpoints::processed::tickets::TicketsApiEndpoint;
-use api::endpoints::processed::vendors::VendorsApiEndpoint;
-use api::endpoints::raw::invoices::InvoicesApiEndpoint as InvoicesRawApiEndpoint;
-use api::endpoints::raw::items::ItemsApiEndpoint;
-use api::endpoints::raw::products::ProductsApiEndpoint as ProductsRawApiEndpoint;
-use api::endpoints::raw::services::ServicesApiEndpoint as ServicesRawApiEndpoint;
+use api::endpoints::processed::customers::CustomersResource;
+use api::endpoints::processed::device_models::DeviceModelsResource;
+use api::endpoints::processed::devices::DevicesResource;
+use api::endpoints::processed::invoices::InvoicesResource;
+use api::endpoints::processed::parts::PartsResource;
+use api::endpoints::processed::products::ProductsResource;
+use api::endpoints::processed::services::ServicesResource;
+use api::endpoints::processed::tickets::TicketsResource;
+use api::endpoints::processed::vendors::VendorsResource;
+use api::endpoints::raw::invoices::InvoicesResource as InvoicesRawResource;
+use api::endpoints::raw::items::ItemsResource;
+use api::endpoints::raw::products::ProductsResource as ProductsRawResource;
+use api::endpoints::raw::services::ServicesResource as ServicesRawResource;
 use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
-use api::{ServeEntityJson, ServeRowJson};
+use api::{ServeRecordJson, ServeResourceJson};
 use database::Database;
 
 #[derive(Clone)]
@@ -63,20 +63,20 @@ async fn main() {
         .allow_origin(Any);
 
     let routes = Router::new()
-        .route("/customers", get(CustomersApiEndpoint::serve_all))
-        .route("/device_models", get(DeviceModelsApiEndpoint::serve_all))
-        .route("/devices", get(DevicesApiEndpoint::serve_all))
-        .route("/parts", get(PartsApiEndpoint::serve_all))
-        .route("/tickets", get(TicketsApiEndpoint::serve_all))
-        .route("/invoices", get(InvoicesApiEndpoint::serve_all))
-        .route("/vendors", get(VendorsApiEndpoint::serve_all))
-        .route("/products", get(ProductsApiEndpoint::serve_all))
-        .route("/services", get(ServicesApiEndpoint::serve_all))
+        .route("/customers", get(CustomersResource::serve_all))
+        .route("/device_models", get(DeviceModelsResource::serve_all))
+        .route("/devices", get(DevicesResource::serve_all))
+        .route("/parts", get(PartsResource::serve_all))
+        .route("/tickets", get(TicketsResource::serve_all))
+        .route("/invoices", get(InvoicesResource::serve_all))
+        .route("/vendors", get(VendorsResource::serve_all))
+        .route("/products", get(ProductsResource::serve_all))
+        .route("/services", get(ServicesResource::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
-        .route("/raw/products", get(ProductsRawApiEndpoint::serve_all))
-        .route("/raw/services", get(ServicesRawApiEndpoint::serve_all))
-        .route("/raw/items", get(ItemsApiEndpoint::serve_all))
-        .route("/raw/invoices", get(InvoicesRawApiEndpoint::serve_all))
+        .route("/raw/products", get(ProductsRawResource::serve_all))
+        .route("/raw/services", get(ServicesRawResource::serve_all))
+        .route("/raw/items", get(ItemsResource::serve_all))
+        .route("/raw/invoices", get(InvoicesRawResource::serve_all))
         .layer(cors)
         .with_state(server_state);
 

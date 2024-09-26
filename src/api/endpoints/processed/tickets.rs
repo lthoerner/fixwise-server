@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeEntityJson, ServeRowJson};
+use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, ServeResourceJson};
 
 use crate::api::endpoints::{CssColor, TagOption, ViewCell};
 use crate::api::GenericIdParameter;
@@ -55,16 +55,16 @@ const STATUS_TAG_OPTIONS: &[TagOption] = &[
     },
 ];
 
-#[derive(FromRelation, ServeEntityJson, Serialize)]
-#[endpoint(relation = TicketsView, raw = false)]
-pub struct TicketsApiEndpoint {
+#[derive(FromRelation, ServeResourceJson, Serialize)]
+#[resource(relation = TicketsView, raw = false)]
+pub struct TicketsResource {
     metadata: EndpointMetadata,
-    rows: Vec<TicketsApiEndpointRow>,
+    records: Vec<TicketsResourceRecord>,
 }
 
-#[derive(ProcessEndpoint, FromRecord, ServeRowJson, Serialize)]
-#[endpoint_row(id_param = GenericIdParameter, record = TicketsViewRecord, raw = false)]
-pub struct TicketsApiEndpointRow {
+#[derive(ProcessEndpoint, FromRecord, ServeRecordJson, Serialize)]
+#[resource_record(id_param = GenericIdParameter, record = TicketsViewRecord, raw = false)]
+pub struct TicketsResourceRecord {
     #[col_format(preset = "id")]
     id: ViewCell<i32>,
     #[col_format(format = "tag", data_type = "tag", tag_options = STATUS_TAG_OPTIONS)]

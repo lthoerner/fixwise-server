@@ -1,4 +1,4 @@
-use proc_macros::{BulkInsert, Relation, IdentifiableRow, SingleInsert};
+use proc_macros::{BulkInsert, Relation, IdentifiableRecord, SingleInsert};
 
 use crate::database::{GenerateStaticRecord, GenerateStaticRelation};
 
@@ -12,7 +12,7 @@ pub struct DeviceCategoriesTable {
     records: Vec<DeviceCategoriesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRow, Clone)]
+#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct DeviceCategoriesTableRecord {
     pub id: i32,
     pub display_name: String,
