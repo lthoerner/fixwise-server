@@ -4,9 +4,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
-};
+use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use super::generators::*;
 use super::invoice_items::InvoiceItemsTable;

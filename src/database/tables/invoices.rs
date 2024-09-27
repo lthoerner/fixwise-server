@@ -2,9 +2,7 @@ use std::collections::HashSet;
 
 use chrono::NaiveDateTime;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
-};
+use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use super::generators::*;
 use crate::database::GenerateRecord;

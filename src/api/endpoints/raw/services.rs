@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromRecord, FromRelation, ServeResourceJson, ServeRecordJson};
+use proc_macros::{FromRecord, FromRelation, ServeRecordJson, ServeResourceJson};
 
 use crate::api::GenericIdParameter;
 use crate::database::views::services::{ServicesView, ServicesViewRecord};

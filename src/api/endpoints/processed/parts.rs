@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeResourceJson, ServeRecordJson};
+use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, ServeResourceJson};
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;

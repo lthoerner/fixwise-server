@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
-};
+use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use super::customers::CustomersTable;
 use super::device_models::DeviceModelsTable;
