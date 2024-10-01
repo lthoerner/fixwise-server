@@ -130,14 +130,14 @@ CREATE TABLE main.invoices (
 );
 
 CREATE TABLE main.invoice_items (
-    invoice integer references main.invoices (id) NOT NULL,
+    invoice integer references main.invoices (id)  ON DELETE CASCADE NOT NULL,
     item integer references main.items (id) NOT NULL,
     PRIMARY KEY (invoice, item)
 );
 
 CREATE TABLE main.invoice_payments (
     id serial PRIMARY KEY,
-    invoice integer references main.invoices (id) NOT NULL,
+    invoice integer references main.invoices (id) ON DELETE CASCADE NOT NULL,
     amount numeric(1000, 2) NOT NULL,
     type payment_type NOT NULL,
     timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -147,7 +147,7 @@ CREATE TABLE main.tickets (
     id serial PRIMARY KEY,
     status ticket_status NOT NULL DEFAULT 'new',
     customer integer references main.customers (id),
-    invoice integer references main.invoices (id),
+    invoice integer references main.invoices (id) ON DELETE SET NULL,
     description text,
     notes text [] NOT NULL DEFAULT '{}',
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -161,7 +161,7 @@ CREATE TABLE main.compatible_parts (
 );
 
 CREATE TABLE main.ticket_devices (
-    ticket integer references main.tickets (id),
+    ticket integer references main.tickets (id) ON DELETE CASCADE,
     device integer references main.devices (id),
     service integer references main.services (id),
     diagnostic text,
@@ -169,11 +169,11 @@ CREATE TABLE main.ticket_devices (
 );
 
 CREATE TABLE main.bundled_parts (
-    ticket integer references main.tickets (id),
+    ticket integer references main.tickets (id) ON DELETE CASCADE,
     device integer references main.devices (id),
     part integer references main.parts (id),
     PRIMARY KEY (ticket, device, part),
-    FOREIGN KEY (ticket, device) references main.ticket_devices (ticket, device)
+    FOREIGN KEY (ticket, device) references main.ticket_devices (ticket, device) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS persistent.type_allocation_codes (

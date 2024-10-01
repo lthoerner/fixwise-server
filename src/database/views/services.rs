@@ -1,14 +1,15 @@
 use rust_decimal::Decimal;
+use serde::Serialize;
 
 use proc_macros::Relation;
 
-#[derive(Relation)]
+#[derive(Relation, Serialize)]
 #[relation(relation_name = "services_view", primary_key = "id")]
 pub struct ServicesView {
     records: Vec<ServicesViewRecord>,
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Serialize, Clone)]
 pub struct ServicesViewRecord {
     pub id: i32,
     pub type_name: String,

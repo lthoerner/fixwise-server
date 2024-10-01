@@ -1,5 +1,4 @@
 pub mod processed;
-pub mod raw;
 pub mod utils;
 
 use std::fmt::Debug;

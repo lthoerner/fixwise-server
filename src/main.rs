@@ -3,8 +3,9 @@ mod database;
 
 use std::sync::Arc;
 
-use axum::routing::get;
+use axum::routing::{delete, get};
 use axum::Router;
+use database::views::invoices::InvoicesView;
 use http::Method;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -19,13 +20,15 @@ use api::endpoints::processed::products::ProductsResource;
 use api::endpoints::processed::services::ServicesResource;
 use api::endpoints::processed::tickets::TicketsResource;
 use api::endpoints::processed::vendors::VendorsResource;
-use api::endpoints::raw::invoices::InvoicesResource as InvoicesRawResource;
-use api::endpoints::raw::items::ItemsResource;
-use api::endpoints::raw::products::ProductsResource as ProductsRawResource;
-use api::endpoints::raw::services::ServicesResource as ServicesRawResource;
 use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
-use api::{ServeRecordJson, ServeResourceJson};
-use database::Database;
+use api::{GenericIdParameter, ServeRecordJson, ServeResourceJson};
+use database::tables::invoices::InvoicesTable;
+use database::tables::tickets::TicketsTable;
+use database::views::items::ItemsView;
+use database::views::products::ProductsView;
+use database::views::services::ServicesView;
+use database::views::tickets::TicketsView;
+use database::{Database, Relation, Table};
 
 #[derive(Clone)]
 struct ServerState {
@@ -73,10 +76,19 @@ async fn main() {
         .route("/products", get(ProductsResource::serve_all))
         .route("/services", get(ServicesResource::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
-        .route("/raw/products", get(ProductsRawResource::serve_all))
-        .route("/raw/services", get(ServicesRawResource::serve_all))
-        .route("/raw/items", get(ItemsResource::serve_all))
-        .route("/raw/invoices", get(InvoicesRawResource::serve_all))
+        .route("/raw/products", get(ProductsView::query_all_handler))
+        .route("/raw/services", get(ServicesView::query_all_handler))
+        .route("/raw/items", get(ItemsView::query_all_handler))
+        .route("/raw/tickets", get(TicketsView::query_all_handler))
+        .route("/raw/invoices", get(InvoicesView::query_all_handler))
+        .route(
+            "/raw/invoices/delete",
+            delete(InvoicesTable::delete_one_handler::<GenericIdParameter>),
+        )
+        .route(
+            "/raw/tickets/delete",
+            delete(TicketsTable::delete_one_handler::<GenericIdParameter>),
+        )
         .layer(cors)
         .with_state(server_state);
 

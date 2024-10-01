@@ -30,7 +30,7 @@ impl ServeRecordJson<ImeiParameter> for ImeiInfoApiUtil {
     ) -> Json<Option<Self>> {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
-        if let Some(existing_row) = Self::Record::query_one_handler(
+        if let Json(Some(existing_row)) = Self::Record::query_one_handler(
             state.clone(),
             Query(ImeiParameter::new(tac.clone().into())),
         )

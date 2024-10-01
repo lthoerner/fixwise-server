@@ -23,7 +23,7 @@ pub struct TicketsTableRecord {
     #[defaultable]
     pub status: Option<TicketStatus>,
     pub customer: Option<i32>,
-    pub invoice: i32,
+    pub invoice: Option<i32>,
     pub description: String,
     #[defaultable]
     pub notes: Option<Vec<String>>,
@@ -48,7 +48,7 @@ impl GenerateRecord for TicketsTableRecord {
             id: generate_unique_i32(0, existing_ids),
             status: Some(generate_ticket_status()),
             customer: generate_option(dependencies.0.pick_random().id(), 0.95),
-            invoice: dependencies.1.pick_random().id(),
+            invoice: generate_option(dependencies.1.pick_random().id(), 0.8),
             description: generate_diagnostic(),
             notes: None,
             created_at: Some(created_at),

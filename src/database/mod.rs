@@ -7,9 +7,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::extract::{Query, State};
-
-use axum::extract::Json;
+use axum::extract::{Json, Query, State};
 use rand::{thread_rng, Rng};
 use sqlx::postgres::PgRow;
 use sqlx::query_builder::{QueryBuilder, Separated};
@@ -143,8 +141,8 @@ pub trait Relation: Sized {
     async fn query_one_handler<I: IdParameter>(
         State(state): State<Arc<ServerState>>,
         Query(id_param): Query<I>,
-    ) -> Option<Self::Record> {
-        Self::query_one(&state.database, id_param).await
+    ) -> Json<Option<Self::Record>> {
+        Json(Self::query_one(&state.database, id_param).await)
     }
 
     /// Query (select) all records for this relation from the database.
@@ -169,8 +167,8 @@ pub trait Relation: Sized {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Relation::query_all()`].
-    async fn query_all_handler(State(state): State<Arc<ServerState>>) -> Self {
-        Self::query_all(&state.database).await
+    async fn query_all_handler(State(state): State<Arc<ServerState>>) -> Json<Self> {
+        Json(Self::query_all(&state.database).await)
     }
 
     /// Pick a random record from the relation.
@@ -291,7 +289,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     async fn query_one_handler<I: IdParameter>(
         state: State<Arc<ServerState>>,
         id_param: Query<I>,
-    ) -> Option<Self> {
+    ) -> Json<Option<Self>> {
         Self::Relation::query_one_handler(state, id_param).await
     }
 
@@ -309,7 +307,7 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Record::query_all()`].
-    async fn query_all_handler(state: State<Arc<ServerState>>) -> Self::Relation {
+    async fn query_all_handler(state: State<Arc<ServerState>>) -> Json<Self::Relation> {
         Self::Relation::query_all_handler(state).await
     }
 }

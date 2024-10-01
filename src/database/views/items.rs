@@ -1,16 +1,17 @@
 use rust_decimal::Decimal;
+use serde::Serialize;
 
 use proc_macros::Relation;
 
 use crate::database::shared_models::ItemType;
 
-#[derive(Relation)]
+#[derive(Relation, Serialize)]
 #[relation(relation_name = "items_view", primary_key = "item_id")]
 pub struct ItemsView {
     records: Vec<ItemsViewRecord>,
 }
 
-#[derive(sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Serialize, Clone)]
 pub struct ItemsViewRecord {
     pub item_id: i32,
     pub item_type: ItemType,

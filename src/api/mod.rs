@@ -21,7 +21,7 @@ pub trait ServeResourceJson: FromRelation + Serialize + Sized {
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
     async fn serve_all(state: State<Arc<ServerState>>) -> Json<Self> {
         Json(Self::from_relation(
-            Self::Relation::query_all_handler(state).await,
+            Self::Relation::query_all_handler(state).await.0,
         ))
     }
 }
@@ -46,6 +46,7 @@ pub trait ServeRecordJson<I: IdParameter>: FromRecord + Serialize + Sized {
         Json(Some(Self::from_record(
             Self::Record::query_one_handler(state, id_param)
                 .await
+                .0
                 .unwrap(),
         )))
     }
