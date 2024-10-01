@@ -5,7 +5,6 @@ use std::sync::Arc;
 
 use axum::routing::{delete, get};
 use axum::Router;
-use database::views::invoices::InvoicesView;
 use http::Method;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -24,10 +23,12 @@ use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
 use api::{GenericIdParameter, ServeRecordJson, ServeResourceJson};
 use database::tables::invoices::InvoicesTable;
 use database::tables::tickets::TicketsTable;
+use database::views::invoices::InvoicesView;
 use database::views::items::ItemsView;
 use database::views::products::ProductsView;
 use database::views::services::ServicesView;
 use database::views::tickets::TicketsView;
+use database::views::vendors::VendorsView;
 use database::{Database, Relation, Table};
 
 #[derive(Clone)]
@@ -76,11 +77,12 @@ async fn main() {
         .route("/products", get(ProductsResource::serve_all))
         .route("/services", get(ServicesResource::serve_all))
         .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
-        .route("/raw/products", get(ProductsView::query_all_handler))
-        .route("/raw/services", get(ServicesView::query_all_handler))
         .route("/raw/items", get(ItemsView::query_all_handler))
         .route("/raw/tickets", get(TicketsView::query_all_handler))
         .route("/raw/invoices", get(InvoicesView::query_all_handler))
+        .route("/raw/vendors", get(VendorsView::query_all_handler))
+        .route("/raw/products", get(ProductsView::query_all_handler))
+        .route("/raw/services", get(ServicesView::query_all_handler))
         .route(
             "/raw/invoices/delete",
             delete(InvoicesTable::delete_one_handler::<GenericIdParameter>),
