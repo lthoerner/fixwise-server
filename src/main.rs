@@ -76,13 +76,13 @@ async fn main() {
         .route("/vendors", get(VendorsResource::serve_all))
         .route("/products", get(ProductsResource::serve_all))
         .route("/services", get(ServicesResource::serve_all))
-        .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
         .route("/raw/items", get(ItemsView::query_all_handler))
         .route("/raw/tickets", get(TicketsView::query_all_handler))
         .route("/raw/invoices", get(InvoicesView::query_all_handler))
         .route("/raw/vendors", get(VendorsView::query_all_handler))
         .route("/raw/products", get(ProductsView::query_all_handler))
         .route("/raw/services", get(ServicesView::query_all_handler))
+        .route("/imei_check", get(ImeiInfoApiUtil::serve_one))
         .route(
             "/raw/invoices/delete",
             delete(InvoicesTable::delete_one_handler::<GenericIdParameter>),
