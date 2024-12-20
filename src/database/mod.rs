@@ -466,9 +466,8 @@ trait GenerateStaticRecord {
 
 /// A trait that allows a single record to be inserted to the database.
 ///
-/// Though generic over [`Record`], this trait is only meant to be implemented on database table
-/// record types, as items cannot be inserted into a database view. In the future there may be a
-/// trait bound to prevent this from happening accidentally.
+/// Though it would be possible to make this trait generic over [`Record`], it is only meant to be
+/// implemented on [`TableRecord`] types, as items cannot be inserted into a database view.
 ///
 /// For bulk-insertion of records, see the related [`BulkInsert`] trait.
 pub trait SingleInsert: TableRecord {
