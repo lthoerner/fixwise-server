@@ -1,5 +1,5 @@
 use deluxe::ExtractAttributes;
-use proc_macro::{self, TokenStream};
+use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident};
 
