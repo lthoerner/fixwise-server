@@ -318,7 +318,6 @@ pub fn derive_from_record(input: TokenStream) -> TokenStream {
         )
     };
 
-    // let fields: Vec<(String, Ident)> = {
     let columns: Vec<Ident> = {
         let Fields::Named(_) = &data_struct.fields else {
             synerror!(
