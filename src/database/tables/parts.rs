@@ -3,7 +3,9 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use super::part_categories::PartCategoriesTable;
@@ -18,8 +20,9 @@ pub struct PartsTable {
     records: Vec<PartsTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct PartsTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     pub display_name: String,
     pub vendor: i32,

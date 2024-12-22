@@ -1,5 +1,6 @@
 use deluxe::ExtractAttributes;
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident};
 
@@ -16,6 +17,21 @@ struct RelationAttributes {
 #[derive(ExtractAttributes)]
 #[deluxe(attributes(defaultable))]
 struct DefaultableRecordAttribute;
+
+#[derive(ExtractAttributes)]
+#[deluxe(attributes(auto_primary_key))]
+struct AutoPrimaryKeyAttribute;
+
+#[derive(ExtractAttributes)]
+#[deluxe(attributes(manual_primary_key))]
+struct ManualPrimaryKeyAttribute;
+
+#[derive(Clone)]
+enum PrimaryKeyAttribute {
+    Auto,
+    Manual,
+    None,
+}
 
 pub fn derive_relation(input: TokenStream) -> TokenStream {
     let mut input: DeriveInput = parse_macro_input!(input);
@@ -198,6 +214,115 @@ pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
 
     quote! {
         impl crate::database::BulkInsert for #type_name {}
+    }
+    .into()
+}
+
+pub fn derive_create_and_update(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+
+    let create_params_type_name = Ident::new(
+        &format!("{}CreateQueryParameters", type_name),
+        type_name.span(),
+    );
+
+    let update_params_type_name = Ident::new(
+        &format!("{}UpdateQueryParameters", type_name),
+        type_name.span(),
+    );
+
+    let fields = match data {
+        Data::Struct(data_struct) => match data_struct.fields {
+            Fields::Named(fields) => fields,
+            _ => {
+                synerror!(
+                    type_name,
+                    "cannot derive `CreateAndUpdate` for unit or tuple structs"
+                )
+            }
+        },
+        _ => {
+            synerror!(
+                type_name,
+                "cannot derive `CreateAndUpdate` for non-struct types"
+            )
+        }
+    };
+
+    let mut fields_with_primary_key_flags = Vec::new();
+    for mut field in fields.named {
+        let auto_primary_key =
+            deluxe::extract_attributes::<_, AutoPrimaryKeyAttribute>(&mut field).is_ok();
+        let manual_primary_key =
+            deluxe::extract_attributes::<_, ManualPrimaryKeyAttribute>(&mut field).is_ok();
+
+        let primary_key_flag = match (auto_primary_key, manual_primary_key) {
+                (true, true) => synerror!(type_name, "cannot use both `#[auto_primary_key]` and `#[manual_primary_key]` on a single column"),
+                (true, false) => PrimaryKeyAttribute::Auto,
+                (false, true) => PrimaryKeyAttribute::Manual,
+                (false, false) => PrimaryKeyAttribute::None,
+            };
+
+        fields_with_primary_key_flags.push((field, primary_key_flag))
+    }
+
+    let create_query_parameter_fields: Vec<TokenStream2> = fields_with_primary_key_flags
+        .clone()
+        .into_iter()
+        .filter_map(|(f, pk)| match pk {
+            PrimaryKeyAttribute::Auto => None,
+            _ => {
+                // * This needs to be done instead of just using `quote!(#f)` because otherwise, any
+                // * additional attributes on the field would be included in the output
+                let field_name = f.ident.unwrap();
+                let field_type = f.ty;
+                Some(quote!(pub #field_name: #field_type))
+            }
+        })
+        .collect();
+
+    let update_query_parameter_fields: Vec<TokenStream2> = fields_with_primary_key_flags
+        .into_iter()
+        .map(|(f, pk)| {
+            let field_type = f.ty.clone();
+            let (new_field_name, new_field_type) = match pk {
+                PrimaryKeyAttribute::None => {
+                    let field_name_string = f
+                        .ident
+                        .clone()
+                        .unwrap()
+                        .to_string()
+                        .trim_start_matches("r#")
+                        .to_owned();
+
+                    (
+                        Ident::new(&format!("new_{}", field_name_string), type_name.span()),
+                        quote!(Option<#field_type>),
+                    )
+                }
+                _ => (f.ident.unwrap(), quote!(#field_type)),
+            };
+
+            quote!(pub #new_field_name: #new_field_type)
+        })
+        .collect();
+
+    quote! {
+        pub struct #create_params_type_name {
+            #(
+                #create_query_parameter_fields
+            ),*
+        }
+
+        pub struct #update_params_type_name {
+            #(
+                #update_query_parameter_fields
+            ),*
+        }
     }
     .into()
 }

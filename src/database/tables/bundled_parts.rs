@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, Relation, SingleInsert, Table};
+use proc_macros::{BulkInsert, CreateAndUpdate, GenerateTable, Relation, SingleInsert, Table};
 
 use super::parts::PartsTable;
 use super::ticket_devices::TicketDevicesJunctionTable;
@@ -16,10 +16,13 @@ pub struct BundledPartsJunctionTable {
     records: Vec<BundledPartsJunctionTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone)]
 pub struct BundledPartsJunctionTableRecord {
+    #[manual_primary_key]
     pub ticket: i32,
+    #[manual_primary_key]
     pub device: i32,
+    #[manual_primary_key]
     pub part: i32,
 }
 

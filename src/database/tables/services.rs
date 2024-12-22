@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::device_models::DeviceModelsTable;
 use super::generators::*;
@@ -14,8 +16,9 @@ pub struct ServicesTable {
     records: Vec<ServicesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ServicesTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     #[sqlx(rename = "type")]
     pub r#type: i32,

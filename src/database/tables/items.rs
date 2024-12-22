@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{BulkInsert, CreateAndUpdate, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use super::product_prices::ProductPricesTable;
 use super::service_prices::ServicePricesTable;
@@ -31,8 +31,9 @@ impl ItemsTable {
     }
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ItemsTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     pub product_or_service: i32,
     #[sqlx(rename = "type")]

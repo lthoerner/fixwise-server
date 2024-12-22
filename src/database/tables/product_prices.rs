@@ -4,7 +4,9 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use super::products::ProductsTable;
@@ -17,8 +19,9 @@ pub struct ProductPricesTable {
     records: Vec<ProductPricesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ProductPricesTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     pub product: i32,
     #[defaultable]

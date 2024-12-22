@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::invoices::InvoicesTable;
 use super::items::ItemsTable;
@@ -13,9 +15,11 @@ pub struct InvoiceItemsTable {
     records: Vec<InvoiceItemsTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct InvoiceItemsTableRecord {
+    #[manual_primary_key]
     pub invoice: i32,
+    #[manual_primary_key]
     pub item: i32,
 }
 

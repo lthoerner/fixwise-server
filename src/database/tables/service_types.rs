@@ -1,4 +1,4 @@
-use proc_macros::{BulkInsert, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{BulkInsert, CreateAndUpdate, IdentifiableRecord, Relation, SingleInsert, Table};
 
 use crate::database::{GenerateStaticRecord, GenerateStaticTable};
 
@@ -8,8 +8,9 @@ pub struct ServiceTypesTable {
     records: Vec<ServiceTypesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ServiceTypesTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     pub display_name: String,
 }

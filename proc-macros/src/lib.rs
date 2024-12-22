@@ -67,6 +67,11 @@ pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
     derives::database::derive_bulk_insert(input)
 }
 
+#[proc_macro_derive(CreateAndUpdate, attributes(auto_primary_key, manual_primary_key))]
+pub fn derive_create_and_update(input: TokenStream) -> TokenStream {
+    derives::database::derive_create_and_update(input)
+}
+
 #[proc_macro_derive(IdentifiableRecord)]
 pub fn derive_identifiable_record(input: TokenStream) -> TokenStream {
     derives::database::derive_identifiable_record(input)

@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use crate::database::GenerateRecord;
@@ -11,8 +13,9 @@ pub struct CustomersTable {
     records: Vec<CustomersTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone, IdentifiableRecord)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone, IdentifiableRecord)]
 pub struct CustomersTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     pub name: String,
     pub email_address: Option<String>,

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, Relation, SingleInsert, Table};
+use proc_macros::{BulkInsert, CreateAndUpdate, GenerateTable, Relation, SingleInsert, Table};
 
 use super::device_models::DeviceModelsTable;
 use super::parts::PartsTable;
@@ -13,9 +13,11 @@ pub struct CompatiblePartsJunctionTable {
     records: Vec<CompatiblePartsJunctionTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone)]
 pub struct CompatiblePartsJunctionTableRecord {
+    #[manual_primary_key]
     pub device: i32,
+    #[manual_primary_key]
     pub part: i32,
 }
 

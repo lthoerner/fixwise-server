@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, Relation, SingleInsert, Table};
+use proc_macros::{BulkInsert, CreateAndUpdate, GenerateTable, Relation, SingleInsert, Table};
 
 use super::devices::DevicesTable;
 use super::generators::*;
@@ -15,9 +15,11 @@ pub struct TicketDevicesJunctionTable {
     records: Vec<TicketDevicesJunctionTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone)]
 pub struct TicketDevicesJunctionTableRecord {
+    #[manual_primary_key]
     pub ticket: i32,
+    #[manual_primary_key]
     pub device: i32,
     pub service: i32,
     pub diagnostic: Option<String>,

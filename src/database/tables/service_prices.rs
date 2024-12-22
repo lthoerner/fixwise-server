@@ -3,7 +3,9 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+};
 
 use super::generators::*;
 use super::services::ServicesTable;
@@ -16,8 +18,9 @@ pub struct ServicePricesTable {
     records: Vec<ServicePricesTableRecord>,
 }
 
-#[derive(SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
 pub struct ServicePricesTableRecord {
+    #[auto_primary_key]
     pub id: i32,
     pub service: i32,
     #[defaultable]
