@@ -188,7 +188,7 @@ pub fn derive_process_endpoint(input: TokenStream) -> TokenStream {
                 Some(name) => name,
                 None => column_name.to_case(Case::Title),
             };
-            
+
             let (display_type, trimmable_or_tag_options) = match (column_format.trimmable, column_format.tag_options) {
                 (Some(trimmable), None) => (quote!(crate::api::endpoints::FrontendColumnDisplay::Text), quote!(trimmable: #trimmable)),
                 (None, Some(tag_options)) => (quote!(crate::api::endpoints::FrontendColumnDisplay::Tag), quote!(options: #tag_options)),
@@ -303,10 +303,7 @@ pub fn derive_from_record(input: TokenStream) -> TokenStream {
     let type_name = input.ident.clone();
 
     let Data::Struct(data_struct) = input.data.clone() else {
-        synerror!(
-            type_name,
-            "cannot derive `FromRecord` for non-struct types"
-        )
+        synerror!(type_name, "cannot derive `FromRecord` for non-struct types")
     };
 
     let Ok(EndpointRowAttributes {
