@@ -7,8 +7,8 @@ use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, Se
 use crate::api::endpoints::{CssColor, TagOption, ViewCell};
 use crate::api::GenericIdParameter;
 use crate::database::shared_models::TicketStatus;
+use crate::database::traits::relation::Relation;
 use crate::database::views::tickets::{TicketsView, TicketsViewRecord};
-use crate::database::Relation;
 
 const STATUS_TAG_OPTIONS: &[TagOption] = &[
     TagOption {

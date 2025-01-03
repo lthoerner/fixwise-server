@@ -61,7 +61,7 @@ pub fn derive_relation(input: TokenStream) -> TokenStream {
     });
 
     quote! {
-        impl crate::database::Relation for #type_name {
+        impl crate::database::traits::relation::Relation for #type_name {
             type Record = #record_type_name;
             #optional_schema_definition
             const RELATION_NAME: &str = #relation_name;
@@ -80,7 +80,7 @@ pub fn derive_relation(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl crate::database::Record for #record_type_name {
+        impl crate::database::traits::record::Record for #record_type_name {
             type Relation = #type_name;
         }
     }
@@ -101,8 +101,8 @@ pub fn derive_table(input: TokenStream) -> TokenStream {
     };
 
     quote! {
-        impl crate::database::Table for #type_name {}
-        impl crate::database::TableRecord for #record_type_name {}
+        impl crate::database::traits::relation::Table for #type_name {}
+        impl crate::database::traits::record::TableRecord for #record_type_name {}
     }
     .into()
 }
@@ -121,7 +121,7 @@ pub fn derive_generate_table(input: TokenStream) -> TokenStream {
     };
 
     quote! {
-        impl crate::database::GenerateTable for #type_name {}
+        impl crate::database::traits::generate::GenerateTable for #type_name {}
     }
     .into()
 }
@@ -186,11 +186,11 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
     }
 
     quote! {
-        impl crate::database::SingleInsert for #type_name {
+        impl crate::database::traits::record::SingleInsert for #type_name {
             const COLUMN_NAMES: &[&str] = &[#(#column_names),*];
 
             fn push_column_bindings(
-                mut builder: crate::database::Separated<crate::database::Postgres, &str>,
+                mut builder: sqlx::query_builder::Separated<crate::database::Postgres, &str>,
                 record: Self,
             ) {
                 #(
@@ -213,7 +213,7 @@ pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
     };
 
     quote! {
-        impl crate::database::BulkInsert for #type_name {}
+        impl crate::database::traits::relation::BulkInsert for #type_name {}
     }
     .into()
 }

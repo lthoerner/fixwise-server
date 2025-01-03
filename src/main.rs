@@ -23,13 +23,14 @@ use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
 use api::{GenericIdParameter, ServeRecordJson, ServeResourceJson};
 use database::tables::invoices::InvoicesTable;
 use database::tables::tickets::TicketsTable;
+use database::traits::relation::{Relation, Table};
 use database::views::invoices::InvoicesView;
 use database::views::items::ItemsView;
 use database::views::products::ProductsView;
 use database::views::services::ServicesView;
 use database::views::tickets::TicketsView;
 use database::views::vendors::VendorsView;
-use database::{Database, Relation, Table};
+use database::Database;
 
 #[derive(Clone)]
 struct ServerState {

@@ -6,8 +6,8 @@ use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, Se
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;
+use crate::database::traits::relation::Relation;
 use crate::database::views::invoices::{InvoicesView, InvoicesViewRecord};
-use crate::database::Relation;
 
 #[derive(FromRelation, ServeResourceJson, Serialize)]
 #[resource(relation = InvoicesView, raw = false)]
