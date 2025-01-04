@@ -1,11 +1,11 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::Relation;
+use proc_macros::{ReadRelation, Relation};
 
 use crate::database::shared_models::ItemType;
 
-#[derive(Relation, Serialize)]
+#[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "items_view", primary_key = "item_id")]
 pub struct ItemsView {
     records: Vec<ItemsViewRecord>,

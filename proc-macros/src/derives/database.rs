@@ -61,7 +61,7 @@ pub fn derive_relation(input: TokenStream) -> TokenStream {
     });
 
     quote! {
-        impl crate::database::traits::read::Relation for #type_name {
+        impl crate::database::traits::shared::Relation for #type_name {
             type Record = #record_type_name;
             #optional_schema_definition
             const RELATION_NAME: &str = #relation_name;
@@ -80,8 +80,35 @@ pub fn derive_relation(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl crate::database::traits::read::Record for #record_type_name {
+        impl crate::database::traits::shared::Record for #record_type_name {
             type Relation = #type_name;
+        }
+    }
+    .into()
+}
+
+pub fn derive_read_relation(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        ident: type_name,
+        data,
+        ..
+    } = parse_macro_input!(input);
+    let record_type_name = Ident::new(&format!("{}Record", type_name), type_name.span());
+
+    let Data::Struct(_) = data else {
+        synerror!(
+            type_name,
+            "cannot derive `ReadRelation` for non-struct types"
+        )
+    };
+
+    quote! {
+        impl crate::database::traits::read::ReadRelation for #type_name {
+            type ReadRecord = #record_type_name;
+        }
+
+        impl crate::database::traits::read::ReadRecord for #record_type_name {
+            type ReadRelation = #type_name;
         }
     }
     .into()

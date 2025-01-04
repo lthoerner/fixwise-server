@@ -1,15 +1,18 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, CreateAndUpdate, GenerateTable, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, GenerateTable, ReadRelation, Relation, SingleInsert, Table,
+};
 
 use super::devices::DevicesTable;
 use super::generators::*;
 use super::services::ServicesTable;
 use super::tickets::TicketsTable;
 use super::IdentifiableRecord;
-use crate::database::{GenerateRecord, Relation};
+use crate::database::traits::generate::GenerateRecord;
+use crate::database::traits::shared::Relation;
 
-#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "ticket_devices", primary_key = "(ticket, device)")]
 pub struct TicketDevicesJunctionTable {
     records: Vec<TicketDevicesJunctionTableRecord>,

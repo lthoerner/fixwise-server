@@ -1,6 +1,8 @@
-use proc_macros::{BulkInsert, CreateAndUpdate, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, CreateAndUpdate, IdentifiableRecord, ReadRelation, Relation, SingleInsert, Table,
+};
 
-#[derive(Relation, Table, BulkInsert, Clone)]
+#[derive(Relation, ReadRelation, Table, BulkInsert, Clone)]
 #[relation(
     schema_name = "persistent",
     relation_name = "type_allocation_codes",

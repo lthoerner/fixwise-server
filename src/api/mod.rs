@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use proc_macros::IdParameter;
 
-use crate::database::traits::read::{Record, Relation};
+use crate::database::traits::read::{ReadRecord, ReadRelation};
 use crate::ServerState;
 
 /// A trait that allows a JSON collection endpoint to be served to the API.
@@ -63,7 +63,7 @@ pub trait ServeRecordJson<I: IdParameter>: FromRecord + Serialize + Sized {
 pub trait FromRelation {
     /// The table or view type in the database to be converted by
     /// [`FromRelation::from_relation`].
-    type Relation: Relation;
+    type Relation: ReadRelation;
 
     /// Convert the database relation into the data required for the endpoint.
     fn from_relation(relation: Self::Relation) -> Self;
@@ -76,7 +76,7 @@ pub trait FromRelation {
 /// additional structure and formatting instructions for the frontend to work with.
 pub trait FromRecord {
     /// The record type in the database to be converted by [`FromRecord::from_record`].
-    type Record: Record;
+    type Record: ReadRecord;
 
     /// Convert the database record into the data required for the endpoint.
     fn from_record(record: Self::Record) -> Self;

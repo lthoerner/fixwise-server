@@ -3,7 +3,8 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 
 use proc_macros::{
-    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, ReadRelation, Relation,
+    SingleInsert, Table,
 };
 
 use super::customers::CustomersTable;
@@ -11,9 +12,10 @@ use super::generators::*;
 use super::invoices::InvoicesTable;
 use super::IdentifiableRecord;
 use crate::database::shared_models::TicketStatus;
-use crate::database::{GenerateRecord, Relation};
+use crate::database::traits::generate::GenerateRecord;
+use crate::database::traits::shared::Relation;
 
-#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "tickets", primary_key = "id")]
 pub struct TicketsTable {
     records: Vec<TicketsTableRecord>,

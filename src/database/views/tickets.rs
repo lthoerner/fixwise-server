@@ -2,11 +2,11 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::Relation;
+use proc_macros::{ReadRelation, Relation};
 
 use crate::database::shared_models::TicketStatus;
 
-#[derive(Relation, Serialize)]
+#[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "tickets_view", primary_key = "id")]
 pub struct TicketsView {
     records: Vec<TicketsViewRecord>,

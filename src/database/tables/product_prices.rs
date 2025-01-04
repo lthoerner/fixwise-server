@@ -5,15 +5,17 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 use proc_macros::{
-    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table,
+    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, ReadRelation, Relation,
+    SingleInsert, Table,
 };
 
 use super::generators::*;
 use super::products::ProductsTable;
 use super::IdentifiableRecord;
-use crate::database::{GenerateRecord, Relation};
+use crate::database::traits::generate::GenerateRecord;
+use crate::database::traits::shared::Relation;
 
-#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "product_prices", primary_key = "id")]
 pub struct ProductPricesTable {
     records: Vec<ProductPricesTableRecord>,

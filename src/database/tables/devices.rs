@@ -1,15 +1,16 @@
 use std::collections::HashSet;
 
-use proc_macros::CreateAndUpdate;
 use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{CreateAndUpdate, ReadRelation};
 
 use super::customers::CustomersTable;
 use super::device_models::DeviceModelsTable;
 use super::generators::*;
 use super::IdentifiableRecord;
-use crate::database::{GenerateRecord, Relation};
+use crate::database::traits::generate::GenerateRecord;
+use crate::database::traits::shared::Relation;
 
-#[derive(Relation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "devices", primary_key = "id")]
 pub struct DevicesTable {
     records: Vec<DevicesTableRecord>,

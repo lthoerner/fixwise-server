@@ -4,7 +4,7 @@ use axum::extract::{Json, Query, State};
 use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::Postgres;
 
-use super::read::{Record, Relation};
+use super::shared::{Record, Relation};
 use crate::api::IdParameter;
 use crate::database::{Database, SQL_PARAMETER_BIND_LIMIT};
 use crate::ServerState;

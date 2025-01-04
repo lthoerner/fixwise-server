@@ -1,8 +1,8 @@
 use serde::Serialize;
 
-use proc_macros::Relation;
+use proc_macros::{ReadRelation, Relation};
 
-#[derive(Relation, Serialize)]
+#[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "device_models_view", primary_key = "id")]
 pub struct DeviceModelsView {
     records: Vec<DeviceModelsViewRecord>,
