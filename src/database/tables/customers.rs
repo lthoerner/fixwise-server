@@ -7,7 +7,6 @@ use proc_macros::{
 
 use super::generators::*;
 use crate::database::traits::generate::GenerateRecord;
-use crate::database::traits::write::WriteRecord;
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "customers", primary_key = "id")]

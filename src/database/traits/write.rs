@@ -98,14 +98,24 @@ pub trait WriteRelation: Relation {
     }
 }
 
-pub trait WriteRecord: Record<Relation: WriteRelation> {
+pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     type WriteRelation: WriteRelation<WriteRecord = Self>;
-    type CreateQueryParameters;
+    type CreateQueryParameters: Into<Self>;
     type UpdateQueryParameters;
 
-    async fn create_one(database: &Database, create_params: Query<Self::CreateQueryParameters>);
+    async fn create_one(
+        database: &Database,
+        Query(create_params): Query<Self::CreateQueryParameters>,
+    ) {
+        create_params.into().insert(database).await
+    }
 
-    async fn update_one(database: &Database, update_params: Query<Self::UpdateQueryParameters>);
+    async fn update_one(
+        database: &Database,
+        Query(update_params): Query<Self::UpdateQueryParameters>,
+    ) {
+        todo!()
+    }
 
     #[allow(dead_code)]
     /// Delete a single record from the database using an identifying key.
@@ -165,7 +175,7 @@ pub trait WriteRecord: Record<Relation: WriteRelation> {
 /// implemented on [`TableRecord`] types, as items cannot be inserted into a database view.
 ///
 /// For bulk-insertion of records, see the related [`BulkInsert`] trait.
-pub trait SingleInsert: WriteRecord {
+pub trait SingleInsert: Record {
     /// The names of all columns in the database table.
     ///
     /// This was going to be a member of [`Table`] but was placed here because it is needed for

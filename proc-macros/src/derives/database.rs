@@ -245,7 +245,19 @@ pub fn derive_write_record(input: TokenStream) -> TokenStream {
                 // * additional attributes on the field would be included in the output
                 let field_name = f.ident.unwrap();
                 let field_type = f.ty;
-                Some(quote!(pub #field_name: #field_type))
+                Some(quote!(#field_name: #field_type))
+            }
+        })
+        .collect();
+
+    let create_query_mapped_fields: Vec<TokenStream2> = fields_with_primary_key_flags
+        .clone()
+        .into_iter()
+        .map(|(f, pk)| {
+            let field_name = f.ident.unwrap();
+            match pk {
+                PrimaryKeyAttribute::Auto => quote!(#field_name: None),
+                _ => quote!(#field_name: params.#field_name),
             }
         })
         .collect();
@@ -272,7 +284,7 @@ pub fn derive_write_record(input: TokenStream) -> TokenStream {
                 _ => (f.ident.unwrap(), quote!(#field_type)),
             };
 
-            quote!(pub #new_field_name: #new_field_type)
+            quote!(#new_field_name: #new_field_type)
         })
         .collect();
 
@@ -287,6 +299,16 @@ pub fn derive_write_record(input: TokenStream) -> TokenStream {
             #(
                 #update_query_parameter_fields
             ),*
+        }
+
+        impl From<#create_params_type_name> for #type_name {
+            fn from(params: #create_params_type_name) -> Self {
+                Self {
+                    #(
+                        #create_query_mapped_fields
+                    ),*
+                }
+            }
         }
 
         impl crate::database::traits::write::WriteRecord for #type_name {
