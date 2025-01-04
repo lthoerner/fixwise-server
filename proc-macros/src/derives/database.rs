@@ -114,7 +114,7 @@ pub fn derive_read_relation(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn derive_table(input: TokenStream) -> TokenStream {
+pub fn derive_write_relation(input: TokenStream) -> TokenStream {
     let DeriveInput {
         ident: type_name,
         data,
@@ -124,12 +124,20 @@ pub fn derive_table(input: TokenStream) -> TokenStream {
     let record_type_name = Ident::new(&format!("{}Record", type_name), type_name.span());
 
     let Data::Struct(_) = data else {
-        synerror!(type_name, "cannot derive `Table` for non-struct types")
+        synerror!(
+            type_name,
+            "cannot derive `WriteRelation` for non-struct types"
+        )
     };
 
     quote! {
-        impl crate::database::traits::write::Table for #type_name {}
-        impl crate::database::traits::write::TableRecord for #record_type_name {}
+        impl crate::database::traits::write::WriteRelation for #type_name {
+            type WriteRecord = #record_type_name;
+        }
+
+        impl crate::database::traits::write::WriteRecord for #record_type_name {
+            type WriteRelation = #type_name;
+        }
     }
     .into()
 }

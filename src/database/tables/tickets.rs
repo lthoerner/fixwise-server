@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 
 use proc_macros::{
     BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, ReadRelation, Relation,
-    SingleInsert, Table,
+    SingleInsert, WriteRelation,
 };
 
 use super::customers::CustomersTable;
@@ -15,7 +15,7 @@ use crate::database::shared_models::TicketStatus;
 use crate::database::traits::generate::GenerateRecord;
 use crate::database::traits::shared::Relation;
 
-#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "tickets", primary_key = "id")]
 pub struct TicketsTable {
     records: Vec<TicketsTableRecord>,

@@ -1,10 +1,11 @@
 use proc_macros::{
-    BulkInsert, CreateAndUpdate, IdentifiableRecord, ReadRelation, Relation, SingleInsert, Table,
+    BulkInsert, CreateAndUpdate, IdentifiableRecord, ReadRelation, Relation, SingleInsert,
+    WriteRelation,
 };
 
 use crate::database::{GenerateStaticRecord, GenerateStaticTable};
 
-#[derive(Relation, ReadRelation, Table, BulkInsert, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, Clone)]
 #[relation(relation_name = "service_types", primary_key = "id")]
 pub struct ServiceTypesTable {
     records: Vec<ServiceTypesTableRecord>,

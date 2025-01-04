@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 
 use proc_macros::{
     BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, ReadRelation, Relation,
-    SingleInsert, Table,
+    SingleInsert, WriteRelation,
 };
 
 use super::generators::*;
@@ -16,7 +16,7 @@ use super::IdentifiableRecord;
 use crate::database::traits::generate::GenerateRecord;
 use crate::database::traits::shared::Relation;
 
-#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "parts", primary_key = "id")]
 pub struct PartsTable {
     records: Vec<PartsTableRecord>,

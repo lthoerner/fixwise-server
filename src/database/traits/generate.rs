@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use super::write::{Table, TableRecord};
+use super::write::{WriteRecord, WriteRelation};
 use crate::database::loading_bar::LoadingBar;
 use crate::database::tables::generators::*;
 
 /// A trait that allows a database table to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-pub trait GenerateTable: Table<Record: GenerateRecord> {
+pub trait GenerateTable: WriteRelation<Record: GenerateRecord> {
     /// Randomly generate the database table with a given number of records.
     ///
     /// Some record types (those with foreign key columns) can only be generated if a set of
@@ -23,7 +23,7 @@ pub trait GenerateTable: Table<Record: GenerateRecord> {
         let mut loading_bar = LoadingBar::new(count);
         for _ in 0..count {
             loading_bar.update();
-            records.push(Self::Record::generate(
+            records.push(<Self::Record as GenerateRecord>::generate(
                 &records,
                 &mut existing_ids,
                 dependencies,
@@ -37,7 +37,7 @@ pub trait GenerateTable: Table<Record: GenerateRecord> {
 /// A trait that allows a database record to be randomly generated.
 ///
 /// This is used for generating arbitrary quantities of synthetic data to test the application.
-pub trait GenerateRecord: TableRecord + Sized {
+pub trait GenerateRecord: WriteRecord + Sized {
     /// The primary identifier type for this record.
     ///
     /// Usually this will be an [`i32`] (signed integers are used for database compatibility, even
@@ -70,7 +70,7 @@ pub trait GenerateRecord: TableRecord + Sized {
 ///
 /// This is mostly useful for small tables that have a fixed set of data for whom randomly-generated
 /// data would not make sense, such as [`tables::device_categories::DeviceCategoriesTable`].
-pub trait GenerateStaticTable: Table<Record: GenerateStaticRecord> {
+pub trait GenerateStaticTable: WriteRelation<Record: GenerateStaticRecord> {
     /// The items that are to be inserted into the database table.
     ///
     /// This is a string array because [`GenerateStaticTable`] is only implemented for simple tables

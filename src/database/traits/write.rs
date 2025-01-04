@@ -16,7 +16,9 @@ use crate::ServerState;
 ///
 /// For querying items from tables, see the [`Relation`] trait. For inserting items to tables, see
 /// the [`SingleInsert`] and [`BulkInsert`] traits.
-pub trait Table: Relation {
+pub trait WriteRelation: Relation {
+    type WriteRecord: WriteRecord<WriteRelation = Self>;
+
     /// Delete a single record from the database using an identifying key.
     ///
     /// If the record is successfully deleted from the database, this method returns `true`. If an
@@ -82,7 +84,9 @@ pub trait Table: Relation {
     }
 }
 
-pub trait TableRecord: Record<Relation: Table> {
+pub trait WriteRecord: Record<Relation: WriteRelation> {
+    type WriteRelation: WriteRelation<WriteRecord = Self>;
+
     #[allow(dead_code)]
     /// Delete a single record from the database using an identifying key.
     ///
@@ -141,7 +145,7 @@ pub trait TableRecord: Record<Relation: Table> {
 /// implemented on [`TableRecord`] types, as items cannot be inserted into a database view.
 ///
 /// For bulk-insertion of records, see the related [`BulkInsert`] trait.
-pub trait SingleInsert: TableRecord {
+pub trait SingleInsert: WriteRecord {
     /// The names of all columns in the database table.
     ///
     /// This was going to be a member of [`Table`] but was placed here because it is needed for
@@ -190,7 +194,7 @@ pub trait SingleInsert: TableRecord {
 /// during normal operation.
 ///
 /// For single-insertion of records, see the related [`SingleInsert`] trait.
-pub trait BulkInsert: Table<Record: SingleInsert> {
+pub trait BulkInsert: WriteRelation<Record: SingleInsert> {
     /// The amount of records that can be inserted per batch/chunk.
     ///
     /// The batch limit is determined by the number of columns in a table. This is because a single

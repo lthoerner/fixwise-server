@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use proc_macros::{BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, Table};
+use proc_macros::{
+    BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, WriteRelation,
+};
 use proc_macros::{CreateAndUpdate, ReadRelation};
 
 use super::customers::CustomersTable;
@@ -10,7 +12,7 @@ use super::IdentifiableRecord;
 use crate::database::traits::generate::GenerateRecord;
 use crate::database::traits::shared::Relation;
 
-#[derive(Relation, ReadRelation, Table, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "devices", primary_key = "id")]
 pub struct DevicesTable {
     records: Vec<DevicesTableRecord>,

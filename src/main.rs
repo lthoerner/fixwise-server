@@ -24,7 +24,7 @@ use api::{GenericIdParameter, ServeRecordJson, ServeResourceJson};
 use database::tables::invoices::InvoicesTable;
 use database::tables::tickets::TicketsTable;
 use database::traits::read::ReadRelation;
-use database::traits::write::Table;
+use database::traits::write::WriteRelation;
 use database::views::invoices::InvoicesView;
 use database::views::items::ItemsView;
 use database::views::products::ProductsView;

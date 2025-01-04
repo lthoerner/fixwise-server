@@ -52,9 +52,9 @@ pub fn derive_read_relation(input: TokenStream) -> TokenStream {
     derives::database::derive_read_relation(input)
 }
 
-#[proc_macro_derive(Table)]
-pub fn derive_table(input: TokenStream) -> TokenStream {
-    derives::database::derive_table(input)
+#[proc_macro_derive(WriteRelation)]
+pub fn derive_write_relation(input: TokenStream) -> TokenStream {
+    derives::database::derive_write_relation(input)
 }
 
 #[proc_macro_derive(GenerateTable)]
