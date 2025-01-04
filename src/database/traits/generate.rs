@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
-use super::record::TableRecord;
-use super::relation::Table;
+use super::write::{Table, TableRecord};
 use crate::database::loading_bar::LoadingBar;
 use crate::database::tables::generators::*;
 

@@ -7,8 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use proc_macros::IdParameter;
 
-use crate::database::traits::record::Record;
-use crate::database::traits::relation::Relation;
+use crate::database::traits::read::{Record, Relation};
 use crate::ServerState;
 
 /// A trait that allows a JSON collection endpoint to be served to the API.

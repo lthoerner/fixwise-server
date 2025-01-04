@@ -32,7 +32,8 @@ use tables::ticket_devices::TicketDevicesJunctionTable;
 use tables::tickets::TicketsTable;
 use tables::vendors::VendorsTable;
 use traits::generate::{GenerateRecord, GenerateStaticRecord, GenerateStaticTable, GenerateTable};
-use traits::relation::{BulkInsert, Relation};
+use traits::read::Relation;
+use traits::write::BulkInsert;
 
 const TABLE_GENERATION_LOADING_BAR_LENGTH: usize = 33;
 const SQL_PARAMETER_BIND_LIMIT: usize = u16::MAX as usize;

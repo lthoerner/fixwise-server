@@ -8,7 +8,8 @@ use proc_macros::FromRecord;
 
 use crate::api::{IdParameter, ServeRecordJson};
 use crate::database::tables::type_allocation_codes::TypeAllocationCodesTableRecord;
-use crate::database::traits::record::{Record, SingleInsert};
+use crate::database::traits::read::Record;
+use crate::database::traits::write::SingleInsert;
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]
