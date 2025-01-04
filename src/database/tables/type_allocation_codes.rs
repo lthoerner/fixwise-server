@@ -1,6 +1,6 @@
 use proc_macros::{
-    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
-    WriteRecord, WriteRelation,
+    BulkInsert, ReadRecord, ReadRelation, Record, Relation, SingleInsert, WriteRecord,
+    WriteRelation,
 };
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, Clone)]
@@ -13,9 +13,7 @@ pub struct TypeAllocationCodesTable {
     records: Vec<TypeAllocationCodesTableRecord>,
 }
 
-#[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone, Debug,
-)]
+#[derive(Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, Clone, Debug)]
 pub struct TypeAllocationCodesTableRecord {
     #[manual_primary_key]
     pub tac: i32,
