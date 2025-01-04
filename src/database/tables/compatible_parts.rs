@@ -17,7 +17,7 @@ pub struct CompatiblePartsJunctionTable {
     records: Vec<CompatiblePartsJunctionTableRecord>,
 }
 
-#[derive(Record, ReadRecord, WriteRecord, SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone)]
+#[derive(Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, Clone)]
 pub struct CompatiblePartsJunctionTableRecord {
     #[manual_primary_key]
     pub device: i32,

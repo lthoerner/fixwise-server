@@ -20,7 +20,7 @@ pub struct BundledPartsJunctionTable {
     records: Vec<BundledPartsJunctionTableRecord>,
 }
 
-#[derive(Record, ReadRecord, WriteRecord, SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone)]
+#[derive(Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, Clone)]
 pub struct BundledPartsJunctionTableRecord {
     #[manual_primary_key]
     pub ticket: i32,
