@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{ReadRelation, Relation};
+use proc_macros::{ReadRecord, ReadRelation, Record, Relation};
 
 use crate::database::shared_models::TicketStatus;
 
@@ -12,7 +12,7 @@ pub struct TicketsView {
     records: Vec<TicketsViewRecord>,
 }
 
-#[derive(sqlx::FromRow, Serialize, Clone)]
+#[derive(Record, ReadRecord, sqlx::FromRow, Serialize, Clone)]
 pub struct TicketsViewRecord {
     pub id: i32,
     pub status: TicketStatus,

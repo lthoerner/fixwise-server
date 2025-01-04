@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use proc_macros::{ReadRelation, Relation};
+use proc_macros::{ReadRecord, ReadRelation, Record, Relation};
 
 #[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "services_view", primary_key = "id")]
@@ -9,7 +9,7 @@ pub struct ServicesView {
     records: Vec<ServicesViewRecord>,
 }
 
-#[derive(sqlx::FromRow, Serialize, Clone)]
+#[derive(Record, ReadRecord, sqlx::FromRow, Serialize, Clone)]
 pub struct ServicesViewRecord {
     pub id: i32,
     pub type_name: String,

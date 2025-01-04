@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use proc_macros::{ReadRelation, Relation};
+use proc_macros::{ReadRecord, ReadRelation, Record, Relation};
 
 #[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "customers", primary_key = "id")]
@@ -8,7 +8,7 @@ pub struct CustomersView {
     records: Vec<CustomersViewRecord>,
 }
 
-#[derive(sqlx::FromRow, Serialize, Clone)]
+#[derive(Record, ReadRecord, sqlx::FromRow, Serialize, Clone)]
 pub struct CustomersViewRecord {
     pub id: i32,
     pub name: String,
