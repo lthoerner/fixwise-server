@@ -439,7 +439,7 @@ pub fn derive_identifiable_record(input: TokenStream) -> TokenStream {
         let first_field_name = first_field.ident.unwrap();
         quote! {
             impl crate::database::tables::IdentifiableRecord for #type_name {
-                fn id(&self) -> i32 {
+                fn id(&self) -> Option<i32> {
                     self.#first_field_name
                 }
             }

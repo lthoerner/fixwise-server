@@ -42,8 +42,8 @@ impl GenerateRecord for TicketDevicesJunctionTableRecord {
         let mut device = 0;
         let mut first_roll = true;
         while first_roll || existing_pairs.get(&(ticket, device)).is_some() {
-            ticket = dependencies.0.pick_random().id();
-            device = dependencies.1.pick_random().id();
+            ticket = dependencies.0.pick_random().id().unwrap();
+            device = dependencies.1.pick_random().id().unwrap();
             first_roll = false;
         }
 
@@ -52,7 +52,7 @@ impl GenerateRecord for TicketDevicesJunctionTableRecord {
         Self {
             ticket,
             device,
-            service: dependencies.2.pick_random().id(),
+            service: dependencies.2.pick_random().id().unwrap(),
             diagnostic: generate_option(generate_diagnostic(), 0.6),
         }
     }

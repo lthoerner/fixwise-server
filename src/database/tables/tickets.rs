@@ -26,7 +26,8 @@ pub struct TicketsTable {
 )]
 pub struct TicketsTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     #[defaultable]
     pub status: Option<TicketStatus>,
     pub customer: Option<i32>,
@@ -52,10 +53,10 @@ impl GenerateRecord for TicketsTableRecord {
         let updated_at = generate_date(Some(created_at));
 
         Self {
-            id: generate_unique_i32(0, existing_ids),
+            id: Some(generate_unique_i32(0, existing_ids)),
             status: Some(generate_ticket_status()),
-            customer: generate_option(dependencies.0.pick_random().id(), 0.95),
-            invoice: generate_option(dependencies.1.pick_random().id(), 0.8),
+            customer: generate_option(dependencies.0.pick_random().id().unwrap(), 0.95),
+            invoice: generate_option(dependencies.1.pick_random().id().unwrap(), 0.8),
             description: generate_diagnostic(),
             notes: None,
             created_at: Some(created_at),

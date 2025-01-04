@@ -7,6 +7,7 @@ use proc_macros::{
 
 use super::generators::*;
 use crate::database::traits::generate::GenerateRecord;
+use crate::database::traits::write::WriteRecord;
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "customers", primary_key = "id")]
@@ -19,7 +20,8 @@ pub struct CustomersTable {
 )]
 pub struct CustomersTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub name: String,
     pub email_address: Option<String>,
     pub phone_number: Option<String>,
@@ -35,7 +37,7 @@ impl GenerateRecord for CustomersTableRecord {
         _dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
-            id: generate_unique_i32(0, existing_ids),
+            id: Some(generate_unique_i32(0, existing_ids)),
             name: generate_name(),
             email_address: generate_option(generate_email_address(), 0.9),
             phone_number: generate_option(generate_phone_number(), 0.9),

@@ -16,7 +16,8 @@ pub struct ServiceTypesTable {
 )]
 pub struct ServiceTypesTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub display_name: String,
 }
 
@@ -34,7 +35,7 @@ impl GenerateStaticTable for ServiceTypesTable {
 impl GenerateStaticRecord for ServiceTypesTableRecord {
     fn new(id: i32, display_name: impl Into<String>) -> Self {
         Self {
-            id,
+            id: Some(id),
             display_name: display_name.into(),
         }
     }

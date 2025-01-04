@@ -46,7 +46,7 @@ impl GenerateRecord for BundledPartsJunctionTableRecord {
         while first_roll || existing_pairs.get(&(ticket, device, part)).is_some() {
             let ticket_device = dependencies.0.pick_random();
             (ticket, device) = (ticket_device.ticket, ticket_device.device);
-            part = dependencies.1.pick_random().id();
+            part = dependencies.1.pick_random().id().unwrap();
             first_roll = false;
         }
 

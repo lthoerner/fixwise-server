@@ -21,7 +21,7 @@ pub struct InvoicesTable {
 )]
 pub struct InvoicesTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    pub id: Option<i32>,
     #[defaultable]
     pub created_at: Option<NaiveDateTime>,
     #[defaultable]
@@ -40,7 +40,7 @@ impl GenerateRecord for InvoicesTableRecord {
         let updated_at = generate_date(Some(created_at));
 
         Self {
-            id: generate_unique_i32(0, existing_ids),
+            id: Some(generate_unique_i32(0, existing_ids)),
             created_at: Some(created_at),
             updated_at: Some(updated_at),
         }

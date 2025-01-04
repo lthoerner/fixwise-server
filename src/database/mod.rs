@@ -31,7 +31,7 @@ use tables::services::ServicesTable;
 use tables::ticket_devices::TicketDevicesJunctionTable;
 use tables::tickets::TicketsTable;
 use tables::vendors::VendorsTable;
-use traits::generate::{GenerateRecord, GenerateStaticRecord, GenerateStaticTable, GenerateTable};
+use traits::generate::{GenerateStaticRecord, GenerateStaticTable, GenerateTable};
 use traits::read::ReadRelation;
 use traits::write::BulkInsert;
 

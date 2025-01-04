@@ -27,7 +27,8 @@ pub struct PartsTable {
 )]
 pub struct PartsTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub display_name: String,
     pub vendor: i32,
     pub manufacturer: Option<i32>,
@@ -55,12 +56,12 @@ impl GenerateRecord for PartsTableRecord {
         let price = generate_dollar_value(Some(cost.to_f32().unwrap()), Some(1000.00));
 
         Self {
-            id: generate_unique_i32(0, existing_ids),
+            id: Some(generate_unique_i32(0, existing_ids)),
             // TODO: Generate via vendor/manufacturer/category data along with compatibilities
             display_name: "PLACEHOLDER".to_owned(),
-            vendor: dependencies.0.pick_random().id(),
-            manufacturer: generate_option(dependencies.1.pick_random().id(), 0.2),
-            category: dependencies.2.pick_random().id(),
+            vendor: dependencies.0.pick_random().id().unwrap(),
+            manufacturer: generate_option(dependencies.1.pick_random().id().unwrap(), 0.2),
+            category: dependencies.2.pick_random().id().unwrap(),
             cost: Some(cost),
             price: Some(price),
         }

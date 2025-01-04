@@ -23,7 +23,8 @@ pub struct ServicesTable {
 )]
 pub struct ServicesTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     #[sqlx(rename = "type")]
     pub r#type: i32,
     pub device: i32,
@@ -38,9 +39,9 @@ impl GenerateRecord for ServicesTableRecord {
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
-            id: generate_unique_i32(0, existing_ids),
-            r#type: dependencies.0.pick_random().id(),
-            device: dependencies.1.pick_random().id(),
+            id: Some(generate_unique_i32(0, existing_ids)),
+            r#type: dependencies.0.pick_random().id().unwrap(),
+            device: dependencies.1.pick_random().id().unwrap(),
         }
     }
 }

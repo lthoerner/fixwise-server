@@ -31,7 +31,8 @@ pub struct InvoicePaymentsTable {
 )]
 pub struct InvoicePaymentsTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub invoice: i32,
     pub amount: Decimal,
     #[sqlx(rename = "type")]
@@ -61,7 +62,7 @@ impl GenerateRecord for InvoicePaymentsTableRecord {
                 .1
                 .records()
                 .iter()
-                .filter(|i| i.invoice == random_invoice.id())
+                .filter(|i| i.invoice == random_invoice.id().unwrap())
                 .map(|i| {
                     dependencies.2.get_item_price_by_id(
                         i.item,
@@ -73,7 +74,7 @@ impl GenerateRecord for InvoicePaymentsTableRecord {
                 .sum();
             let current_payment_total: Decimal = existing_records
                 .iter()
-                .filter(|r| r.invoice == random_invoice.id())
+                .filter(|r| r.invoice == random_invoice.id().unwrap())
                 .map(|r| r.amount)
                 .sum();
 
@@ -89,8 +90,8 @@ impl GenerateRecord for InvoicePaymentsTableRecord {
         };
 
         Self {
-            id: generate_unique_i32(0, existing_ids),
-            invoice: invoice.id(),
+            id: Some(generate_unique_i32(0, existing_ids)),
+            invoice: invoice.id().unwrap(),
             amount,
             r#type: generate_payment_type(),
             timestamp: Some(generate_date(invoice.created_at)),

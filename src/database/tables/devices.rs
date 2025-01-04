@@ -23,7 +23,8 @@ pub struct DevicesTable {
 )]
 pub struct DevicesTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub model: i32,
     pub owner: Option<i32>,
 }
@@ -37,9 +38,9 @@ impl GenerateRecord for DevicesTableRecord {
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
-            id: generate_unique_i32(0, existing_ids),
-            model: dependencies.0.pick_random().id(),
-            owner: generate_option(dependencies.1.pick_random().id(), 0.9),
+            id: Some(generate_unique_i32(0, existing_ids)),
+            model: dependencies.0.pick_random().id().unwrap(),
+            owner: generate_option(dependencies.1.pick_random().id().unwrap(), 0.9),
         }
     }
 }

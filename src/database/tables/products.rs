@@ -19,7 +19,8 @@ pub struct ProductsTable {
 )]
 pub struct ProductsTableRecord {
     #[auto_primary_key]
-    pub sku: i32,
+    #[defaultable]
+    pub sku: Option<i32>,
     pub display_name: String,
 }
 
@@ -32,7 +33,7 @@ impl GenerateRecord for ProductsTableRecord {
         _dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
-            sku: generate_unique_i32(0, existing_ids),
+            sku: Some(generate_unique_i32(0, existing_ids)),
             display_name: "PLACEHOLDER".to_owned(),
         }
     }

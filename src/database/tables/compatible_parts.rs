@@ -37,8 +37,8 @@ impl GenerateRecord for CompatiblePartsJunctionTableRecord {
         let mut part = 0;
         let mut first_roll = true;
         while first_roll || existing_pairs.get(&(device, part)).is_some() {
-            device = dependencies.0.pick_random().id();
-            part = dependencies.1.pick_random().id();
+            device = dependencies.0.pick_random().id().unwrap();
+            part = dependencies.1.pick_random().id().unwrap();
             first_roll = false;
         }
 

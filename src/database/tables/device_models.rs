@@ -23,7 +23,8 @@ pub struct DeviceModelsTable {
 )]
 pub struct DeviceModelsTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub display_name: String,
     pub primary_model_identifiers: Vec<String>,
     pub secondary_model_identifiers: Vec<String>,
@@ -41,13 +42,13 @@ impl GenerateRecord for DeviceModelsTableRecord {
         dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
-            id: generate_unique_i32(0, existing_ids),
+            id: Some(generate_unique_i32(0, existing_ids)),
             display_name: generate_device_name(),
             // TODO: Add model identifiers generator
             primary_model_identifiers: Vec::new(),
             secondary_model_identifiers: Vec::new(),
-            manufacturer: dependencies.0.pick_random().id(),
-            category: dependencies.1.pick_random().id(),
+            manufacturer: dependencies.0.pick_random().id().unwrap(),
+            category: dependencies.1.pick_random().id().unwrap(),
         }
     }
 }

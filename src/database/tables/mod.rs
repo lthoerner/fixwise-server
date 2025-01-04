@@ -23,7 +23,7 @@ pub mod type_allocation_codes;
 pub mod vendors;
 
 pub trait IdentifiableRecord {
-    fn id(&self) -> i32;
+    fn id(&self) -> Option<i32>;
 }
 
 pub mod generators {

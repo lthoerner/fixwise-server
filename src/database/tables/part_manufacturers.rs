@@ -19,7 +19,8 @@ pub struct PartManufacturersTable {
 )]
 pub struct PartManufacturersTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub display_name: String,
 }
 
@@ -32,7 +33,7 @@ impl GenerateRecord for PartManufacturersTableRecord {
         _dependencies: Self::Dependencies<'_>,
     ) -> Self {
         Self {
-            id: generate_unique_i32(0, existing_ids),
+            id: Some(generate_unique_i32(0, existing_ids)),
             display_name: generate_company_name(),
         }
     }

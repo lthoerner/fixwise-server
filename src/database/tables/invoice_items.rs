@@ -39,8 +39,8 @@ impl GenerateRecord for InvoiceItemsTableRecord {
         let mut item = 0;
         let mut first_roll = true;
         while first_roll || existing_pairs.get(&(invoice, item)).is_some() {
-            invoice = dependencies.0.pick_random().id();
-            item = dependencies.1.pick_random().id();
+            invoice = dependencies.0.pick_random().id().unwrap();
+            item = dependencies.1.pick_random().id().unwrap();
             first_roll = false;
         }
 

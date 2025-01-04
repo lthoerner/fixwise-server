@@ -26,7 +26,7 @@ pub struct ProductPricesTable {
 )]
 pub struct ProductPricesTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    pub id: Option<i32>,
     pub product: i32,
     #[defaultable]
     pub cost: Option<Decimal>,
@@ -48,8 +48,8 @@ impl GenerateRecord for ProductPricesTableRecord {
         let price = generate_dollar_value(Some(cost.to_f32().unwrap()), Some(1000.00));
 
         Self {
-            id: generate_unique_i32(0, existing_ids),
-            product: dependencies.pick_random().id(),
+            id: Some(generate_unique_i32(0, existing_ids)),
+            product: dependencies.pick_random().id().unwrap(),
             cost: Some(cost),
             price: Some(price),
             time_set: Some(generate_date(None)),

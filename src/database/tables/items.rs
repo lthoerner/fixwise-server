@@ -27,7 +27,7 @@ impl ItemsTable {
     ) -> Decimal {
         self.records
             .iter()
-            .find(|r| r.id == item_id)
+            .find(|r| r.id == Some(item_id))
             // TODO: Remove this unwrap (probably)
             .unwrap()
             .get_item_price_at_time(product_prices, service_prices, timestamp)
@@ -39,7 +39,8 @@ impl ItemsTable {
 )]
 pub struct ItemsTableRecord {
     #[auto_primary_key]
-    pub id: i32,
+    #[defaultable]
+    pub id: Option<i32>,
     pub product_or_service: i32,
     #[sqlx(rename = "type")]
     pub r#type: ItemType,
