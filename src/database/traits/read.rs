@@ -37,7 +37,7 @@ pub trait ReadRelation: Relation {
     /// called outside of an Axum context, see [`Relation::query_one()`].
     // TODO: Check how this interacts with junction tables
     async fn query_one_handler<I: IdParameter>(
-        State(state): State<Arc<ServerState>>,
+        state: State<Arc<ServerState>>,
         Query(id_param): Query<I>,
     ) -> Json<Option<Self::ReadRecord>> {
         Json(Self::query_one(&state.database, id_param).await)
@@ -65,7 +65,7 @@ pub trait ReadRelation: Relation {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Relation::query_all()`].
-    async fn query_all_handler(State(state): State<Arc<ServerState>>) -> Json<Self> {
+    async fn query_all_handler(state: State<Arc<ServerState>>) -> Json<Self> {
         Json(Self::query_all(&state.database).await)
     }
 }

@@ -289,12 +289,14 @@ pub fn derive_write_record(input: TokenStream) -> TokenStream {
         .collect();
 
     quote! {
+        #[derive(Clone, serde::Deserialize)]
         pub struct #create_params_type_name {
             #(
                 #create_query_parameter_fields
             ),*
         }
 
+        #[derive(Clone, serde::Deserialize)]
         pub struct #update_params_type_name {
             #(
                 #update_query_parameter_fields

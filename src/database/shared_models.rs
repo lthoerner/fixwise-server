@@ -1,6 +1,6 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, Deserialize, Serialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "ticket_status", rename_all = "snake_case")]
 pub enum TicketStatus {
@@ -12,7 +12,7 @@ pub enum TicketStatus {
     Closed,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "payment_type", rename_all = "snake_case")]
 pub enum PaymentType {
@@ -20,7 +20,7 @@ pub enum PaymentType {
     Cash,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "item_type", rename_all = "snake_case")]
 pub enum ItemType {

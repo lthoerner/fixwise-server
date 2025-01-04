@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use axum::routing::{delete, get};
 use axum::Router;
+use database::tables::customers::CustomersTable;
 use http::Method;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -92,6 +93,10 @@ async fn main() {
         .route(
             "/raw/tickets/delete",
             delete(TicketsTable::delete_one_handler::<GenericIdParameter>),
+        )
+        .route(
+            "/raw/customers/create",
+            get(CustomersTable::create_one_handler),
         )
         .layer(cors)
         .with_state(server_state);

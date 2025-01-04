@@ -21,16 +21,30 @@ pub trait WriteRelation: Relation {
 
     async fn create_one(
         database: &Database,
-        create_params: Query<<Self::WriteRecord as WriteRecord>::CreateQueryParameters>,
+        create_params: <Self::WriteRecord as WriteRecord>::CreateQueryParameters,
     ) {
-        Self::WriteRecord::create_one(database, create_params).await
+        <Self::WriteRecord as WriteRecord>::create_one(database, create_params).await
+    }
+
+    async fn create_one_handler(
+        state: State<Arc<ServerState>>,
+        Query(create_params): Query<<Self::WriteRecord as WriteRecord>::CreateQueryParameters>,
+    ) -> Json<()> {
+        Json(Self::WriteRecord::create_one(&state.database, create_params).await)
     }
 
     async fn update_one(
         database: &Database,
-        update_params: Query<<Self::WriteRecord as WriteRecord>::UpdateQueryParameters>,
+        update_params: <Self::WriteRecord as WriteRecord>::UpdateQueryParameters,
     ) {
-        Self::WriteRecord::update_one(database, update_params).await
+        <Self::WriteRecord as WriteRecord>::update_one(database, update_params).await
+    }
+
+    async fn update_one_handler(
+        state: State<Arc<ServerState>>,
+        Query(update_params): Query<<Self::WriteRecord as WriteRecord>::UpdateQueryParameters>,
+    ) -> Json<()> {
+        Json(Self::WriteRecord::update_one(&state.database, update_params).await)
     }
 
     /// Delete a single record from the database using an identifying key.
@@ -62,7 +76,7 @@ pub trait WriteRelation: Relation {
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Table::delete_one()`].
     async fn delete_one_handler<I: IdParameter>(
-        State(state): State<Arc<ServerState>>,
+        state: State<Arc<ServerState>>,
         Query(id_param): Query<I>,
     ) -> Json<bool> {
         Json(Self::delete_one(&state.database, id_param).await)
@@ -93,28 +107,39 @@ pub trait WriteRelation: Relation {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`Table::delete_all()`].
-    async fn delete_all_handler(State(state): State<Arc<ServerState>>) -> bool {
-        Self::delete_all(&state.database).await
+    async fn delete_all_handler(state: State<Arc<ServerState>>) -> Json<bool> {
+        Json(Self::delete_all(&state.database).await)
     }
 }
 
 pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     type WriteRelation: WriteRelation<WriteRecord = Self>;
+    // * Both of these types require a `Clone` and `Deserialize` implementation to work, but since
+    // * `Deserialize` requires lifetime annotations to be added everywhere, they are left out of
+    // * the trait bounds and instead simply added to the `WriteRecord` derive macro.
     type CreateQueryParameters: Into<Self>;
     type UpdateQueryParameters;
 
-    async fn create_one(
-        database: &Database,
-        Query(create_params): Query<Self::CreateQueryParameters>,
-    ) {
+    async fn create_one(database: &Database, create_params: Self::CreateQueryParameters) {
         create_params.into().insert(database).await
     }
 
-    async fn update_one(
-        database: &Database,
-        Query(update_params): Query<Self::UpdateQueryParameters>,
-    ) {
+    async fn create_one_handler(
+        state: State<Arc<ServerState>>,
+        Query(create_params): Query<Self::CreateQueryParameters>,
+    ) -> Json<()> {
+        Json(Self::create_one(&state.database, create_params).await)
+    }
+
+    async fn update_one(database: &Database, update_params: Self::UpdateQueryParameters) {
         todo!()
+    }
+
+    async fn update_one_handler(
+        state: State<Arc<ServerState>>,
+        Query(update_params): Query<Self::UpdateQueryParameters>,
+    ) -> Json<()> {
+        Json(Self::update_one(&state.database, update_params).await)
     }
 
     #[allow(dead_code)]
@@ -164,7 +189,7 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
     /// called outside of an Axum context, see [`TableRecord::delete_all()`].
-    async fn delete_all_handler(state: State<Arc<ServerState>>) -> bool {
+    async fn delete_all_handler(state: State<Arc<ServerState>>) -> Json<bool> {
         Self::Relation::delete_all_handler(state).await
     }
 }
