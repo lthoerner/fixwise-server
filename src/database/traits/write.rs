@@ -19,6 +19,20 @@ use crate::ServerState;
 pub trait WriteRelation: Relation {
     type WriteRecord: WriteRecord<WriteRelation = Self>;
 
+    async fn create_one(
+        database: &Database,
+        create_params: Query<<Self::WriteRecord as WriteRecord>::CreateQueryParameters>,
+    ) {
+        Self::WriteRecord::create_one(database, create_params).await
+    }
+
+    async fn update_one(
+        database: &Database,
+        update_params: Query<<Self::WriteRecord as WriteRecord>::UpdateQueryParameters>,
+    ) {
+        Self::WriteRecord::update_one(database, update_params).await
+    }
+
     /// Delete a single record from the database using an identifying key.
     ///
     /// If the record is successfully deleted from the database, this method returns `true`. If an
@@ -86,6 +100,12 @@ pub trait WriteRelation: Relation {
 
 pub trait WriteRecord: Record<Relation: WriteRelation> {
     type WriteRelation: WriteRelation<WriteRecord = Self>;
+    type CreateQueryParameters;
+    type UpdateQueryParameters;
+
+    async fn create_one(database: &Database, create_params: Query<Self::CreateQueryParameters>);
+
+    async fn update_one(database: &Database, update_params: Query<Self::UpdateQueryParameters>);
 
     #[allow(dead_code)]
     /// Delete a single record from the database using an identifying key.

@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
 use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, Relation, SingleInsert, WriteRelation,
+    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
+    SingleInsert, WriteRecord, WriteRelation,
 };
-use proc_macros::{CreateAndUpdate, ReadRelation};
 
 use super::device_categories::DeviceCategoriesTable;
 use super::device_manufacturers::DeviceManufacturersTable;
@@ -18,7 +18,9 @@ pub struct DeviceModelsTable {
     records: Vec<DeviceModelsTableRecord>,
 }
 
-#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(
+    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+)]
 pub struct DeviceModelsTableRecord {
     #[auto_primary_key]
     pub id: i32,

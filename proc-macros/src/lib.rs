@@ -57,6 +57,21 @@ pub fn derive_write_relation(input: TokenStream) -> TokenStream {
     derives::database::derive_write_relation(input)
 }
 
+#[proc_macro_derive(Record)]
+pub fn derive_record(input: TokenStream) -> TokenStream {
+    derives::database::derive_record(input)
+}
+
+#[proc_macro_derive(ReadRecord)]
+pub fn derive_read_record(input: TokenStream) -> TokenStream {
+    derives::database::derive_read_record(input)
+}
+
+#[proc_macro_derive(WriteRecord, attributes(auto_primary_key, manual_primary_key))]
+pub fn derive_write_record(input: TokenStream) -> TokenStream {
+    derives::database::derive_write_record(input)
+}
+
 #[proc_macro_derive(GenerateTable)]
 pub fn derive_generate_table(input: TokenStream) -> TokenStream {
     derives::database::derive_generate_table(input)
@@ -70,11 +85,6 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(BulkInsert)]
 pub fn derive_bulk_insert(input: TokenStream) -> TokenStream {
     derives::database::derive_bulk_insert(input)
-}
-
-#[proc_macro_derive(CreateAndUpdate, attributes(auto_primary_key, manual_primary_key))]
-pub fn derive_create_and_update(input: TokenStream) -> TokenStream {
-    derives::database::derive_create_and_update(input)
 }
 
 #[proc_macro_derive(IdentifiableRecord)]

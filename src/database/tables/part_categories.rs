@@ -1,6 +1,6 @@
 use proc_macros::{
-    BulkInsert, CreateAndUpdate, IdentifiableRecord, ReadRelation, Relation, SingleInsert,
-    WriteRelation,
+    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+    WriteRecord, WriteRelation,
 };
 
 use crate::database::{GenerateStaticRecord, GenerateStaticTable};
@@ -11,7 +11,9 @@ pub struct PartCategoriesTable {
     records: Vec<PartCategoriesTableRecord>,
 }
 
-#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(
+    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+)]
 pub struct PartCategoriesTableRecord {
     #[auto_primary_key]
     pub id: i32,

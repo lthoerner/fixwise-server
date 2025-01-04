@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 
 use proc_macros::{
-    BulkInsert, CreateAndUpdate, GenerateTable, IdentifiableRecord, ReadRelation, Relation,
-    SingleInsert, WriteRelation,
+    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
+    SingleInsert, WriteRecord, WriteRelation,
 };
 
 use super::customers::CustomersTable;
@@ -21,7 +21,9 @@ pub struct TicketsTable {
     records: Vec<TicketsTableRecord>,
 }
 
-#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, IdentifiableRecord, Clone)]
+#[derive(
+    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+)]
 pub struct TicketsTableRecord {
     #[auto_primary_key]
     pub id: i32,

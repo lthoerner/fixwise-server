@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use proc_macros::{
-    BulkInsert, CreateAndUpdate, GenerateTable, ReadRelation, Relation, SingleInsert, WriteRelation,
+    BulkInsert, GenerateTable, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+    WriteRecord, WriteRelation,
 };
 
 use super::devices::DevicesTable;
@@ -18,7 +19,7 @@ pub struct TicketDevicesJunctionTable {
     records: Vec<TicketDevicesJunctionTableRecord>,
 }
 
-#[derive(SingleInsert, CreateAndUpdate, sqlx::FromRow, Clone)]
+#[derive(Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, Clone)]
 pub struct TicketDevicesJunctionTableRecord {
     #[manual_primary_key]
     pub ticket: i32,
