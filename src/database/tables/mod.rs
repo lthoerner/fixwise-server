@@ -22,6 +22,33 @@ pub mod tickets;
 pub mod type_allocation_codes;
 pub mod vendors;
 
+#[allow(unused_imports)]
+pub use {
+    bundled_parts::{BundledPartsJunctionTable, BundledPartsJunctionTableRecord},
+    compatible_parts::{CompatiblePartsJunctionTable, CompatiblePartsJunctionTableRecord},
+    customers::{CustomersTable, CustomersTableRecord},
+    device_categories::{DeviceCategoriesTable, DeviceCategoriesTableRecord},
+    device_manufacturers::{DeviceManufacturersTable, DeviceManufacturersTableRecord},
+    device_models::{DeviceModelsTable, DeviceModelsTableRecord},
+    devices::{DevicesTable, DevicesTableRecord},
+    invoice_items::{InvoiceItemsTable, InvoiceItemsTableRecord},
+    invoice_payments::{InvoicePaymentsTable, InvoicePaymentsTableRecord},
+    invoices::{InvoicesTable, InvoicesTableRecord},
+    items::{ItemsTable, ItemsTableRecord},
+    part_categories::{PartCategoriesTable, PartCategoriesTableRecord},
+    part_manufacturers::{PartManufacturersTable, PartManufacturersTableRecord},
+    parts::{PartsTable, PartsTableRecord},
+    product_prices::{ProductPricesTable, ProductPricesTableRecord},
+    products::{ProductsTable, ProductsTableRecord},
+    service_prices::{ServicePricesTable, ServicePricesTableRecord},
+    service_types::{ServiceTypesTable, ServiceTypesTableRecord},
+    services::{ServicesTable, ServicesTableRecord},
+    ticket_devices::{TicketDevicesJunctionTable, TicketDevicesJunctionTableRecord},
+    tickets::{TicketsTable, TicketsTableRecord},
+    type_allocation_codes::{TypeAllocationCodesTable, TypeAllocationCodesTableRecord},
+    vendors::{VendorsTable, VendorsTableRecord},
+};
+
 pub trait IdentifiableRecord {
     fn id(&self) -> Option<i32>;
 }

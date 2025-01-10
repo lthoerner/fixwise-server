@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
+use http::StatusCode;
 use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::Postgres;
 
@@ -19,6 +20,7 @@ use crate::ServerState;
 pub trait WriteRelation: Relation {
     type WriteRecord: WriteRecord<WriteRelation = Self>;
 
+    #[allow(dead_code)]
     async fn create_one(
         database: &Database,
         create_params: <Self::WriteRecord as WriteRecord>::CreateQueryParameters,
@@ -28,11 +30,12 @@ pub trait WriteRelation: Relation {
 
     async fn create_one_handler(
         state: State<Arc<ServerState>>,
-        Query(create_params): Query<<Self::WriteRecord as WriteRecord>::CreateQueryParameters>,
-    ) -> Json<()> {
-        Json(Self::WriteRecord::create_one(&state.database, create_params).await)
+        create_params: Query<<Self::WriteRecord as WriteRecord>::CreateQueryParameters>,
+    ) -> StatusCode {
+        <Self::WriteRecord as WriteRecord>::create_one_handler(state, create_params).await
     }
 
+    #[allow(dead_code)]
     async fn update_one(
         database: &Database,
         update_params: <Self::WriteRecord as WriteRecord>::UpdateQueryParameters,
@@ -40,11 +43,12 @@ pub trait WriteRelation: Relation {
         <Self::WriteRecord as WriteRecord>::update_one(database, update_params).await
     }
 
+    #[allow(dead_code)]
     async fn update_one_handler(
         state: State<Arc<ServerState>>,
-        Query(update_params): Query<<Self::WriteRecord as WriteRecord>::UpdateQueryParameters>,
-    ) -> Json<()> {
-        Json(Self::WriteRecord::update_one(&state.database, update_params).await)
+        update_params: Query<<Self::WriteRecord as WriteRecord>::UpdateQueryParameters>,
+    ) -> StatusCode {
+        <Self::WriteRecord as WriteRecord>::update_one_handler(state, update_params).await
     }
 
     /// Delete a single record from the database using an identifying key.
@@ -127,19 +131,23 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     async fn create_one_handler(
         state: State<Arc<ServerState>>,
         Query(create_params): Query<Self::CreateQueryParameters>,
-    ) -> Json<()> {
-        Json(Self::create_one(&state.database, create_params).await)
+    ) -> StatusCode {
+        Self::create_one(&state.database, create_params).await;
+        StatusCode::CREATED
     }
 
-    async fn update_one(database: &Database, update_params: Self::UpdateQueryParameters) {
+    #[allow(dead_code)]
+    async fn update_one(_database: &Database, _update_params: Self::UpdateQueryParameters) {
         todo!()
     }
 
+    #[allow(dead_code)]
     async fn update_one_handler(
         state: State<Arc<ServerState>>,
         Query(update_params): Query<Self::UpdateQueryParameters>,
-    ) -> Json<()> {
-        Json(Self::update_one(&state.database, update_params).await)
+    ) -> StatusCode {
+        Self::update_one(&state.database, update_params).await;
+        StatusCode::OK
     }
 
     #[allow(dead_code)]

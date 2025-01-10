@@ -5,33 +5,22 @@ use std::sync::Arc;
 
 use axum::routing::{delete, get};
 use axum::Router;
-use database::tables::customers::CustomersTable;
 use http::Method;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
-use api::endpoints::processed::customers::CustomersResource;
-use api::endpoints::processed::device_models::DeviceModelsResource;
-use api::endpoints::processed::devices::DevicesResource;
-use api::endpoints::processed::invoices::InvoicesResource;
-use api::endpoints::processed::parts::PartsResource;
-use api::endpoints::processed::products::ProductsResource;
-use api::endpoints::processed::services::ServicesResource;
-use api::endpoints::processed::tickets::TicketsResource;
-use api::endpoints::processed::vendors::VendorsResource;
-use api::endpoints::utils::imei_check::ImeiInfoApiUtil;
+use api::endpoints::processed::{
+    CustomersResource, DeviceModelsResource, DevicesResource, InvoicesResource, PartsResource,
+    ProductsResource, ServicesResource, TicketsResource, VendorsResource,
+};
+use api::endpoints::utils::ImeiInfoApiUtil;
 use api::{GenericIdParameter, ServeRecordJson, ServeResourceJson};
-use database::tables::invoices::InvoicesTable;
-use database::tables::tickets::TicketsTable;
-use database::traits::read::ReadRelation;
-use database::traits::write::WriteRelation;
-use database::views::invoices::InvoicesView;
-use database::views::items::ItemsView;
-use database::views::products::ProductsView;
-use database::views::services::ServicesView;
-use database::views::tickets::TicketsView;
-use database::views::vendors::VendorsView;
+use database::tables::{CustomersTable, InvoicesTable, TicketsTable};
+use database::traits::{ReadRelation, WriteRelation};
+use database::views::{
+    CustomersView, InvoicesView, ItemsView, ProductsView, ServicesView, TicketsView, VendorsView,
+};
 use database::Database;
 
 #[derive(Clone)]
