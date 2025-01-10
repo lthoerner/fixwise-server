@@ -3,7 +3,7 @@ mod database;
 
 use std::sync::Arc;
 
-use axum::routing::{delete, get};
+use axum::routing::{delete, get, post};
 use axum::Router;
 use http::Method;
 use tokio::net::TcpListener;
@@ -55,7 +55,7 @@ async fn main() {
     server_state.database.add_generated_items().await;
 
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::DELETE])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE])
         .allow_origin(Any);
 
     let routes = Router::new()
@@ -68,6 +68,7 @@ async fn main() {
         .route("/vendors", get(VendorsResource::serve_all))
         .route("/products", get(ProductsResource::serve_all))
         .route("/services", get(ServicesResource::serve_all))
+        .route("/raw/customers", get(CustomersView::query_all_handler))
         .route("/raw/items", get(ItemsView::query_all_handler))
         .route("/raw/tickets", get(TicketsView::query_all_handler))
         .route("/raw/invoices", get(InvoicesView::query_all_handler))
@@ -85,7 +86,7 @@ async fn main() {
         )
         .route(
             "/raw/customers/create",
-            get(CustomersTable::create_one_handler),
+            post(CustomersTable::create_one_handler),
         )
         .layer(cors)
         .with_state(server_state);
