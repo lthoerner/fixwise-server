@@ -1,12 +1,19 @@
 use std::collections::HashSet;
 
+use serde::Deserialize;
+
 use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
-    SingleInsert, WriteRecord, WriteRelation,
+    BulkInsert, GenerateTable, IdParameter, IdentifiableRecord, ReadRecord, ReadRelation, Record,
+    Relation, SingleInsert, WriteRecord, WriteRelation,
 };
 
 use super::generators::*;
 use crate::database::traits::generate::GenerateRecord;
+
+#[derive(Clone, Deserialize, IdParameter)]
+pub struct SkuParameter {
+    sku: usize,
+}
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "products", primary_key = "sku")]

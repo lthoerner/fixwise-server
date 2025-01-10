@@ -87,6 +87,7 @@ pub trait FromRecord {
 /// The format for the URL will look like
 /// `https://fixwise.io/some/record/endpoint?id_parameter_name=123456`. If the ID parameter is just
 /// named `id`, simply use [`GenericIdParameter`].
+// TODO: Probably move this to some shared module with `database`
 pub trait IdParameter {
     /// Create the parameter with an inner [`usize`].
     fn new(value: usize) -> Self;
