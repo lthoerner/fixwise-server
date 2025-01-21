@@ -4,7 +4,7 @@ use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, Se
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;
-use crate::database::traits::shared::Relation;
+use crate::database::traits::Relation;
 use crate::database::views::customers::{CustomersView, CustomersViewRecord};
 
 #[derive(FromRelation, ServeResourceJson, Serialize)]

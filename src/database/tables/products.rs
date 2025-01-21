@@ -8,7 +8,7 @@ use proc_macros::{
 };
 
 use super::generators::*;
-use crate::database::traits::generate::GenerateRecord;
+use crate::database::traits::GenerateRecord;
 
 #[derive(Clone, Deserialize, IdParameter)]
 pub struct SkuParameter {

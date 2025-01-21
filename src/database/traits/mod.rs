@@ -8,5 +8,5 @@ pub use {
     generate::{GenerateRecord, GenerateStaticRecord, GenerateStaticTable, GenerateTable},
     read::{ReadRecord, ReadRelation},
     shared::{Record, Relation},
-    write::{WriteRecord, WriteRelation},
+    write::{BulkInsert, SingleInsert, WriteRecord, WriteRelation},
 };

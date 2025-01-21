@@ -8,8 +8,7 @@ use proc_macros::{
 use super::parts::PartsTable;
 use super::ticket_devices::TicketDevicesJunctionTable;
 use super::IdentifiableRecord;
-use crate::database::traits::generate::GenerateRecord;
-use crate::database::traits::shared::Relation;
+use crate::database::traits::{GenerateRecord, Relation};
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(

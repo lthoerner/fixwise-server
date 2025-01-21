@@ -13,8 +13,7 @@ use super::part_categories::PartCategoriesTable;
 use super::part_manufacturers::PartManufacturersTable;
 use super::vendors::VendorsTable;
 use super::IdentifiableRecord;
-use crate::database::traits::generate::GenerateRecord;
-use crate::database::traits::shared::Relation;
+use crate::database::traits::{GenerateRecord, Relation};
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "parts", primary_key = "id")]

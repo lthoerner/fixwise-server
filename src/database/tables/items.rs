@@ -9,7 +9,7 @@ use proc_macros::{
 use super::product_prices::ProductPricesTable;
 use super::service_prices::ServicePricesTable;
 use crate::database::shared_models::ItemType;
-use crate::database::traits::shared::Relation;
+use crate::database::traits::Relation;
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, Clone)]
 #[relation(relation_name = "items", primary_key = "id")]

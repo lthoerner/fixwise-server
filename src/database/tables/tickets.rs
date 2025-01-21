@@ -12,8 +12,7 @@ use super::generators::*;
 use super::invoices::InvoicesTable;
 use super::IdentifiableRecord;
 use crate::database::shared_models::TicketStatus;
-use crate::database::traits::generate::GenerateRecord;
-use crate::database::traits::shared::Relation;
+use crate::database::traits::{GenerateRecord, Relation};
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
 #[relation(relation_name = "tickets", primary_key = "id")]
