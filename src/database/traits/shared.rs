@@ -1,20 +1,24 @@
 use rand::{thread_rng, Rng};
 use sqlx::postgres::PgRow;
 
+#[allow(unused_imports)]
+use super::read::{ReadRecord, ReadRelation};
+#[allow(unused_imports)]
+use super::write::{BulkInsert, SingleInsert, WriteRecord, WriteRelation};
+
 /// A trait that allows table and view types to interoperate with and be queried from the database.
 ///
-/// This does not implement any insertion or deletion methods because "relations" can be views,
-/// which are read-only. For inserting items to tables, see the [`SingleInsert`] and [`BulkInsert`]
-/// traits. For deleting items from tables, see the [`Table`] trait.
-///
 /// This trait does not do a lot on its own but it, along with [`Record`], provides the
-/// functionality which allows almost all of the other database traits to be auto-implemented or
-/// conveniently derived.
+/// data which allows almost all of the other database traits to be auto-implemented or conveniently
+/// derived, particularly [`ReadRelation`], [`WriteRelation`], [`ReadRecord`], and [`WriteRecord`].
+///
+/// Also see [`Record`].
 pub trait Relation: Sized {
     /// The record type which this relation contains a collection of.
     ///
     /// This type and the [`Record::Relation`] type are directly interreferential to allow
-    /// "upcasting" and "downcasting," mostly for auto-implementations in other traits.
+    /// convenient "upcasting" and "downcasting" so the relation and record types can be used
+    /// interchangeably.
     type Record: Record<Relation = Self>;
 
     /// The name of the schema in which this relation exists in the database.
@@ -56,14 +60,14 @@ pub trait Relation: Sized {
     }
 }
 
-/// A trait that allows table/view record types to interoperate with and be queried from the
+/// A trait that allows table and view record types to interoperate with and be queried from the
 /// database.
 ///
-/// This does not implement any insertion methods because "relations" can be views, which are
-/// read-only. For inserting items to tables, see the [`SingleInsert`] and [`BulkInsert`] traits.
+/// This trait does not do a lot on its own but it, along with [`Relation`], provides the
+/// data which allows almost all of the other database traits to be auto-implemented or conveniently
+/// derived, particularly [`ReadRelation`], [`WriteRelation`], [`ReadRecord`], and [`WriteRecord`].
 ///
-/// This trait mostly exists for use with insertion traits, but also acts as a passthrough to allow
-/// items to be queried using the record type instead of the relation type when convenient.
+/// Also see [`Relation`].
 pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// The relation type which contains a collection of this record type.
     ///

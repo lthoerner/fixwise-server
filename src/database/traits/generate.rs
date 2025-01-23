@@ -1,8 +1,12 @@
 use std::collections::HashSet;
 
+#[allow(unused_imports)]
+use super::shared::Relation;
 use super::write::{WriteRecord, WriteRelation};
 use crate::database::loading_bar::LoadingBar;
 use crate::database::tables::generators::*;
+#[allow(unused_imports)]
+use crate::database::tables::DeviceCategoriesTable;
 
 /// A trait that allows a database table to be randomly generated.
 ///
@@ -69,7 +73,7 @@ pub trait GenerateRecord: WriteRecord + Sized {
 /// A trait that allows a database table to be generated from values known at compile-time.
 ///
 /// This is mostly useful for small tables that have a fixed set of data for whom randomly-generated
-/// data would not make sense, such as [`tables::device_categories::DeviceCategoriesTable`].
+/// data would not make sense, such as [`DeviceCategoriesTable`].
 pub trait GenerateStaticTable: WriteRelation<Record: GenerateStaticRecord> {
     /// The items that are to be inserted into the database table.
     ///

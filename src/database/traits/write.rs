@@ -5,22 +5,43 @@ use http::StatusCode;
 use sqlx::query_builder::{QueryBuilder, Separated};
 use sqlx::Postgres;
 
+#[allow(unused_imports)]
+use super::read::{ReadRecord, ReadRelation};
 use super::shared::{Record, Relation};
 use crate::api::IdParameter;
 use crate::database::{Database, SQL_PARAMETER_BIND_LIMIT};
 use crate::ServerState;
 
-/// A trait that allows table types to be deleted from the database.
+/// A trait that enables writable tables to have their records modified in the database.
 ///
-/// For now, this trait only implements deletion methods, but it may be expanded in the future.
-/// However, it is used as a trait bound for other traits which implement database write methods.
+/// This trait and [`ReadRelation`] are separated because because "relations" can be views, which
+/// are read-only. For view types, only [`ReadRelation`] should be implemented. For table types,
+/// both traits can be implemented safely.
 ///
-/// For querying items from tables, see the [`Relation`] trait. For inserting items to tables, see
-/// the [`SingleInsert`] and [`BulkInsert`] traits.
+/// This trait gets most of the information it needs to function from the upstream [`Relation`]
+/// trait.
+///
+/// Also see [`WriteRecord`].
 pub trait WriteRelation: Relation {
+    /// The record type which this relation contains a collection of.
+    ///
+    /// This type and the [`WriteRecord::WriteRelation`] type are directly interreferential to allow
+    /// convenient "upcasting" and "downcasting" so the relation and record types can be used
+    /// interchangeably.
+    ///
+    /// This type is declared separately from [`Relation::Record`] because of cyclic dependency
+    /// issues, but the type it refers to must be the same.
     type WriteRecord: WriteRecord<WriteRelation = Self>;
 
     #[allow(dead_code)]
+    /// Create a single record in the database.
+    ///
+    /// In the future, this will return a proper status code. At the moment, it does not return
+    /// anything because the underlying [`SingleInsert::insert()`] does not implement error
+    /// handling.
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`WriteRelation::create_one_handler()`].
     async fn create_one(
         database: &Database,
         create_params: <Self::WriteRecord as WriteRecord>::CreateQueryParameters,
@@ -28,6 +49,14 @@ pub trait WriteRelation: Relation {
         <Self::WriteRecord as WriteRecord>::create_one(database, create_params).await
     }
 
+    /// Create a single record in the database.
+    ///
+    /// In the future, this will return a proper status code. At the moment, it just returns a
+    /// placeholder status code because the underlying [`SingleInsert::insert()`] does not implement
+    /// error handling.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`WriteRelation::create_one()`].
     async fn create_one_handler(
         state: State<Arc<ServerState>>,
         create_params: Query<<Self::WriteRecord as WriteRecord>::CreateQueryParameters>,
@@ -57,7 +86,7 @@ pub trait WriteRelation: Relation {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`Table::delete_one_handler()`].
+    /// For the handler method, use [`WriteRelation::delete_one_handler()`].
     // TODO: Return a more useful value for error handling
     async fn delete_one<I: IdParameter>(database: &Database, id: I) -> bool {
         sqlx::query(&format!(
@@ -78,7 +107,7 @@ pub trait WriteRelation: Relation {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`Table::delete_one()`].
+    /// called outside of an Axum context, see [`WriteRelation::delete_one()`].
     async fn delete_one_handler<I: IdParameter>(
         state: State<Arc<ServerState>>,
         Query(id_param): Query<I>,
@@ -92,7 +121,7 @@ pub trait WriteRelation: Relation {
     /// error occurs, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`Table::delete_all_handler()`].
+    /// For the handler method, use [`WriteRelation::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
         sqlx::query(&format!(
             "DELETE FROM {}.{}",
@@ -110,29 +139,71 @@ pub trait WriteRelation: Relation {
     /// error occurs, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`Table::delete_all()`].
+    /// called outside of an Axum context, see [`WriteRelation::delete_all()`].
     async fn delete_all_handler(state: State<Arc<ServerState>>) -> Json<bool> {
         Json(Self::delete_all(&state.database).await)
     }
 }
 
+/// A trait that enables writable tables to have their records modified in the database.
+///
+/// This trait and [`ReadRecord`] are separated because because "relations" can be views, which
+/// are read-only. For view record types, only [`ReadRecord`] should be implemented. For table
+/// record types, both traits can be implemented safely.
+///
+/// This trait gets most of the information it needs to function from the upstream [`Relation`]
+/// trait, using the associated type [`Record::Relation`]. It also depends on [`SingleInsert`] to
+/// create items in the database when a call is made to [`WriteRecord::create_one()`] or
+/// [`WriteRecord::create_one_handler()`].
+///
+/// Also see [`WriteRelation`].
 pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
+    /// The relation type which contains a collection of this record type.
+    ///
+    /// This type and the [`WriteRelation::WriteRecord`] type are directly interreferential to allow
+    /// convenient "upcasting" and "downcasting" so the relation and record types can be used
+    /// interchangeably.
+    ///
+    /// This type is declared separately from [`Record::Relation`] because of cyclic dependency
+    /// issues, but the type it refers to must be the same.
     type WriteRelation: WriteRelation<WriteRecord = Self>;
-    // * Both of these types require a `Clone` and `Deserialize` implementation to work, but since
-    // * `Deserialize` requires lifetime annotations to be added everywhere, they are left out of
-    // * the trait bounds and instead simply added to the `WriteRecord` derive macro.
+    // * Both of the following types require a `Clone` and `Deserialize` implementation to work, but
+    // * since `Deserialize` requires lifetime annotations to be added everywhere, they are left out
+    // * of the trait bounds and instead simply added to the `WriteRecord` derive macro.
+    /// A type used for deserializing the query parameters in a request to a CREATE endpoint, which
+    /// includes all of the table's columns as fields except ID fields that are auto-generated in
+    /// the database.
     type CreateQueryParameters: Into<Self>;
+    /// A type used for deserializing the query parameters in a request to an UPDATE endpoint, which
+    /// includes all of the table's columns as optional fields except ID fields that must be
+    /// specified for the database to determine which record to update.
     type UpdateQueryParameters;
 
+    /// Create a single record in the database.
+    ///
+    /// In the future, this will return a proper status code. At the moment, it does not return
+    /// anything because the underlying [`SingleInsert::insert()`] does not implement error
+    /// handling.
+    ///
+    /// This is the standard version of this method and should not be used as an Axum route handler.
+    /// For the handler method, use [`WriteRecord::create_one_handler()`].
     async fn create_one(database: &Database, create_params: Self::CreateQueryParameters) {
         create_params.into().insert(database).await
     }
 
+    /// Create a single record in the database.
+    ///
+    /// In the future, this will return a proper status code. At the moment, it just returns a
+    /// placeholder status code because the underlying [`SingleInsert::insert()`] does not implement
+    /// error handling.
+    ///
+    /// This is the Axum route handler version of this method. For the standard method, which can be
+    /// called outside of an Axum context, see [`WriteRecord::create_one()`].
     async fn create_one_handler(
         state: State<Arc<ServerState>>,
         Query(create_params): Query<Self::CreateQueryParameters>,
     ) -> StatusCode {
-        Self::create_one(&state.database, create_params).await;
+        <Self as WriteRecord>::create_one(&state.database, create_params).await;
         StatusCode::CREATED
     }
 
@@ -157,7 +228,7 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`TableRecord::delete_one_handler()`].
+    /// For the handler method, use [`WriteRecord::delete_one_handler()`].
     async fn delete_one<I: IdParameter>(database: &Database, id: I) -> bool {
         Self::Relation::delete_one(database, id).await
     }
@@ -169,7 +240,7 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     /// error occurs, such as if the record does not exist in the database, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`TableRecord::delete_one()`].
+    /// called outside of an Axum context, see [`WriteRecord::delete_one()`].
     async fn delete_one_handler<I: IdParameter>(
         state: State<Arc<ServerState>>,
         id_param: Query<I>,
@@ -184,7 +255,7 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     /// error occurs, `false` is returned.
     ///
     /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`TableRecord::delete_all_handler()`].
+    /// For the handler method, use [`WriteRecord::delete_all_handler()`].
     async fn delete_all(database: &Database) -> bool {
         Self::Relation::delete_all(database).await
     }
@@ -196,7 +267,7 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
     /// error occurs, `false` is returned.
     ///
     /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`TableRecord::delete_all()`].
+    /// called outside of an Axum context, see [`WriteRecord::delete_all()`].
     async fn delete_all_handler(state: State<Arc<ServerState>>) -> Json<bool> {
         Self::Relation::delete_all_handler(state).await
     }
@@ -205,14 +276,14 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
 /// A trait that allows a single record to be inserted to the database.
 ///
 /// Though it would be possible to make this trait generic over [`Record`], it is only meant to be
-/// implemented on [`TableRecord`] types, as items cannot be inserted into a database view.
+/// implemented on [`WriteRecord`] types, as items cannot be inserted into a database view.
 ///
 /// For bulk-insertion of records, see the related [`BulkInsert`] trait.
 pub trait SingleInsert: Record {
     /// The names of all columns in the database table.
     ///
-    /// This was going to be a member of [`Table`] but was placed here because it is needed for
-    /// [`SingleInsert::get_query_builder`] to generate the SQL for inserting records to the
+    /// This was going to be a member of [`WriteRelation`] but was placed here because it is needed
+    /// for [`SingleInsert::get_query_builder`] to generate the SQL for inserting records to the
     /// database, as well as determining the [`BulkInsert::CHUNK_SIZE`].
     const COLUMN_NAMES: &[&str];
 
