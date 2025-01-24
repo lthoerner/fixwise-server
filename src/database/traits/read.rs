@@ -22,8 +22,7 @@ pub trait ReadRelation: Relation {
     /// The record type which this relation contains a collection of.
     ///
     /// This type and the [`ReadRecord::ReadRelation`] type are directly interreferential to allow
-    /// convenient "upcasting" and "downcasting" so the relation and record types can be used
-    /// interchangeably.
+    /// convenient "upcasting" so record types can be used interchangeably with relation types.
     ///
     /// This type is declared separately from [`Relation::Record`] because of cyclic dependency
     /// issues, but the type it refers to must be the same.
@@ -102,52 +101,9 @@ pub trait ReadRecord: Record {
     /// The relation type which contains a collection of this record type.
     ///
     /// This type and the [`ReadRelation::ReadRecord`] type are directly interreferential to allow
-    /// convenient "upcasting" and "downcasting" so the relation and record types can be used
-    /// interchangeably.
+    /// convenient "upcasting" so record types can be used interchangeably with relation types.
     ///
     /// This type is declared separately from [`Record::Relation`] because of cyclic dependency
     /// issues, but the type it refers to must be the same.
     type ReadRelation: ReadRelation<ReadRecord = Self>;
-
-    #[allow(dead_code)]
-    /// Query (select) a single record from the database using an identifying key.
-    ///
-    /// If the record exists in the database, it is returned. Otherwise, [`None`] is returned.
-    ///
-    /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`ReadRecord::query_one_handler()`].
-    async fn query_one<I: IdParameter>(database: &Database, id_param: I) -> Option<Self> {
-        Self::ReadRelation::query_one(database, id_param).await
-    }
-
-    /// Query (select) a single record from the database using an identifying key.
-    ///
-    /// If the record exists in the database, it is returned. Otherwise, [`None`] is returned.
-    ///
-    /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`ReadRecord::query_one()`].
-    async fn query_one_handler<I: IdParameter>(
-        state: State<Arc<ServerState>>,
-        id_param: Query<I>,
-    ) -> Json<Option<Self>> {
-        Self::ReadRelation::query_one_handler(state, id_param).await
-    }
-
-    #[allow(dead_code)]
-    /// Query (select) all records for this relation from the database.
-    ///
-    /// This is the standard version of this method and should not be used as an Axum route handler.
-    /// For the handler method, use [`ReadRecord::query_all_handler()`].
-    async fn query_all(database: &Database) -> Self::ReadRelation {
-        Self::ReadRelation::query_all(database).await
-    }
-
-    #[allow(dead_code)]
-    /// Query (select) all records for this relation from the database.
-    ///
-    /// This is the Axum route handler version of this method. For the standard method, which can be
-    /// called outside of an Axum context, see [`ReadRecord::query_all()`].
-    async fn query_all_handler(state: State<Arc<ServerState>>) -> Json<Self::ReadRelation> {
-        Self::ReadRelation::query_all_handler(state).await
-    }
 }

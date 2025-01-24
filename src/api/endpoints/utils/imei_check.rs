@@ -8,7 +8,7 @@ use proc_macros::FromRecord;
 
 use crate::api::{IdParameter, ServeRecordJson};
 use crate::database::tables::type_allocation_codes::TypeAllocationCodesTableRecord;
-use crate::database::traits::{ReadRecord, SingleInsert};
+use crate::database::traits::{ReadRecord, ReadRelation, SingleInsert};
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]
@@ -30,11 +30,12 @@ impl ServeRecordJson<ImeiParameter> for ImeiInfoApiUtil {
     ) -> Json<Option<Self>> {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
-        if let Json(Some(existing_row)) = Self::Record::query_one_handler(
-            state.clone(),
-            Query(ImeiParameter::new(tac.clone().into())),
-        )
-        .await
+        if let Json(Some(existing_row)) =
+            <Self::Record as ReadRecord>::ReadRelation::query_one_handler(
+                state.clone(),
+                Query(ImeiParameter::new(tac.clone().into())),
+            )
+            .await
         {
             Json(Some(<Self as crate::api::FromRecord>::from_record(
                 existing_row,

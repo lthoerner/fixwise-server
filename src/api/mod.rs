@@ -44,7 +44,7 @@ pub trait ServeRecordJson<I: IdParameter>: FromRecord + Serialize + Sized {
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
     async fn serve_one(state: State<Arc<ServerState>>, id_param: Query<I>) -> Json<Option<Self>> {
         Json(Some(Self::from_record(
-            Self::Record::query_one_handler(state, id_param)
+            <Self::Record as ReadRecord>::ReadRelation::query_one_handler(state, id_param)
                 .await
                 .0
                 .unwrap(),

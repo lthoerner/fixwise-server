@@ -17,8 +17,7 @@ pub trait Relation: Sized {
     /// The record type which this relation contains a collection of.
     ///
     /// This type and the [`Record::Relation`] type are directly interreferential to allow
-    /// convenient "upcasting" and "downcasting" so the relation and record types can be used
-    /// interchangeably.
+    /// convenient "upcasting" so record types can be used interchangeably with relation types.
     type Record: Record<Relation = Self>;
 
     /// The name of the schema in which this relation exists in the database.
@@ -72,6 +71,6 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// The relation type which contains a collection of this record type.
     ///
     /// This type and the [`Relation::Record`] type are directly interreferential to allow
-    /// "upcasting" and "downcasting," mostly for auto-implementations in other traits.
+    /// convenient "upcasting" so record types can be used interchangeably with relation types.
     type Relation: Relation<Record = Self>;
 }
