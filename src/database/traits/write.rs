@@ -66,8 +66,8 @@ pub trait WriteRelation: Relation {
 
     #[allow(dead_code)]
     async fn update_one(
-        database: &Database,
-        update_params: <Self::WriteRecord as WriteRecord>::UpdateQueryParameters,
+        _database: &Database,
+        _update_params: <Self::WriteRecord as WriteRecord>::UpdateQueryParameters,
     ) {
         todo!()
     }
@@ -116,6 +116,7 @@ pub trait WriteRelation: Relation {
         Json(Self::delete_one(&state.database, id_param).await)
     }
 
+    #[allow(dead_code)]
     /// Delete all records for this relation from the database.
     ///
     /// If the records are successfully deleted from the database, this method returns `true`. If an
@@ -134,6 +135,7 @@ pub trait WriteRelation: Relation {
         .is_ok()
     }
 
+    #[allow(dead_code)]
     /// Delete all records for this relation from the database.
     ///
     /// If the records are successfully deleted from the database, this method returns `true`. If an
