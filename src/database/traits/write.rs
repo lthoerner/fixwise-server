@@ -189,13 +189,6 @@ pub trait WriteRecord: Record<Relation: WriteRelation> + SingleInsert {
 ///
 /// For bulk-insertion of records, see the related [`BulkInsert`] trait.
 pub trait SingleInsert: Record {
-    /// The names of all columns in the database table.
-    ///
-    /// This was going to be a member of [`WriteRelation`] but was placed here because it is needed
-    /// for [`SingleInsert::get_query_builder`] to generate the SQL for inserting records to the
-    /// database, as well as determining the [`BulkInsert::CHUNK_SIZE`].
-    const COLUMN_NAMES: &[&str];
-
     /// Get the [`QueryBuilder`] necessary to insert one or more records of data into the database.
     ///
     /// This is used by both [`SingleInsert`] and [`BulkInsert`] and is meant mostly for

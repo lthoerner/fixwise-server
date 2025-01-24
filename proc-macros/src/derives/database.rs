@@ -142,12 +142,34 @@ pub fn derive_record(input: TokenStream) -> TokenStream {
         type_name.span(),
     );
 
-    let Data::Struct(_) = data else {
+    let Data::Struct(data_struct) = data else {
         synerror!(type_name, "cannot derive `Record` for non-struct types")
     };
 
+    let Fields::Named(_) = &data_struct.fields else {
+        synerror!(
+            type_name,
+            "cannot derive `SingleInsert` for unit or tuple structs"
+        )
+    };
+
+    let mut column_names: Vec<String> = Vec::new();
+    for field in data_struct.fields.iter() {
+        let field_ident = field.ident.clone().unwrap();
+        // TODO: Use the #[sqlx(rename = "<name>")] attribute
+        let field_name = field_ident
+            .clone()
+            .to_string()
+            .trim_start_matches("r#")
+            .to_owned();
+
+        column_names.push(field_name);
+    }
+
     quote! {
         impl crate::database::traits::shared::Record for #type_name {
+            const COLUMN_NAMES: &[&str] = &[#(#column_names),*];
+
             type Relation = #relation_type_name;
         }
     }
@@ -355,7 +377,7 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
         )
     };
 
-    let fields: Vec<(String, Ident, bool)> = {
+    let fields: Vec<(Ident, bool)> = {
         let Fields::Named(_) = &data_struct.fields else {
             synerror!(
                 type_name,
@@ -363,27 +385,20 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
             )
         };
 
-        let mut defaultable_fields: Vec<(String, Ident, bool)> = Vec::new();
+        let mut defaultable_fields: Vec<(Ident, bool)> = Vec::new();
         for mut field in data_struct.fields.into_iter() {
             let field_ident = field.ident.clone().unwrap();
-            // TODO: Use the #[sqlx(rename = "<name>")] attribute
-            let field_name = field_ident
-                .clone()
-                .to_string()
-                .trim_start_matches("r#")
-                .to_owned();
             let defaultable_attribute: Option<DefaultableRecordAttribute> =
                 deluxe::extract_attributes(&mut field).ok();
 
-            defaultable_fields.push((field_name, field_ident, defaultable_attribute.is_some()));
+            defaultable_fields.push((field_ident, defaultable_attribute.is_some()));
         }
 
         defaultable_fields
     };
 
-    let mut column_names = Vec::new();
     let mut binding_statements = Vec::new();
-    for (column_name, column_ident, defaultable) in fields {
+    for (column_ident, defaultable) in fields {
         let binding_or_default = match defaultable {
             true => {
                 quote! {
@@ -396,14 +411,11 @@ pub fn derive_single_insert(input: TokenStream) -> TokenStream {
             false => quote!(builder.push_bind(record.#column_ident);),
         };
 
-        column_names.push(column_name);
         binding_statements.push(binding_or_default);
     }
 
     quote! {
         impl crate::database::traits::write::SingleInsert for #type_name {
-            const COLUMN_NAMES: &[&str] = &[#(#column_names),*];
-
             fn push_column_bindings(
                 mut builder: sqlx::query_builder::Separated<crate::database::Postgres, &str>,
                 record: Self,

@@ -73,4 +73,10 @@ pub trait Record: for<'a> sqlx::FromRow<'a, PgRow> + Send + Unpin + Clone {
     /// This type and the [`Relation::Record`] type are directly interreferential to allow
     /// convenient "upcasting" so record types can be used interchangeably with relation types.
     type Relation: Relation<Record = Self>;
+
+    /// The names of all columns in the database table.
+    ///
+    /// This would have been a member of [`Relation`], but since the derive macro must rely on
+    /// knowledge of the record type's field names, it must be emitted as part of [`Record`].
+    const COLUMN_NAMES: &[&str];
 }
