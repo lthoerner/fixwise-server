@@ -1,9 +1,6 @@
 use std::collections::HashSet;
 
-use crudkit::{
-    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
-    WriteRecord, WriteRelation,
-};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 use proc_macros::GenerateTable;

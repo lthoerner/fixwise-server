@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use crudkit::{ReadRecord, ReadRelation, Record, Relation};
+use crudkit::prelude::*;
 use rust_decimal::Decimal;
 use serde::Serialize;
 

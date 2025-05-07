@@ -1,7 +1,4 @@
-use crudkit::{
-    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
-    WriteRecord, WriteRelation,
-};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 use crate::database::{GenerateStaticRecord, GenerateStaticTable};

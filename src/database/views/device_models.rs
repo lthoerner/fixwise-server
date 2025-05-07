@@ -1,4 +1,4 @@
-use crudkit::{ReadRecord, ReadRelation, Record, Relation};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 #[derive(Relation, ReadRelation, Serialize)]

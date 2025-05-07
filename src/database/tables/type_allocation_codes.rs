@@ -1,7 +1,4 @@
-use crudkit::{
-    BulkInsert, ReadRecord, ReadRelation, Record, Relation, SingleInsert, WriteRecord,
-    WriteRelation,
-};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 #[derive(Relation, ReadRelation, WriteRelation, BulkInsert, Serialize, Clone)]

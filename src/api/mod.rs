@@ -6,8 +6,7 @@ use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
 use crudkit::database::DatabaseState;
-use crudkit::traits::id_parameter::{GenericIdParameter, IdParameter};
-use crudkit::traits::read::{ReadRecord, ReadRelation};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 use crate::ServerState;

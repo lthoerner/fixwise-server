@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
 use crudkit::database::DatabaseState;
-use crudkit::traits::read::{ReadRecord, ReadRelation};
-use crudkit::traits::write::SingleInsert;
-use crudkit::IdParameter;
+use crudkit::prelude::*;
 use imei_info::{Imei, PhoneInfo, Tac};
 use serde::{Deserialize, Serialize};
 

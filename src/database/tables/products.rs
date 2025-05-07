@@ -2,10 +2,7 @@ use std::collections::HashSet;
 
 use serde::Deserialize;
 
-use crudkit::{
-    BulkInsert, IdParameter, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
-    SingleInsert, WriteRecord, WriteRelation,
-};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 use proc_macros::GenerateTable;

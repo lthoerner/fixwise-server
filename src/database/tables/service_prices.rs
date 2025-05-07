@@ -3,11 +3,7 @@ use std::collections::HashSet;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use crudkit::traits::shared::{IdentifiableRecord, Relation};
-use crudkit::{
-    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
-    WriteRecord, WriteRelation,
-};
+use crudkit::prelude::*;
 use serde::Serialize;
 
 use proc_macros::GenerateTable;

@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use axum::routing::{delete, get, post};
 use axum::Router;
-use crudkit::traits::id_parameter::GenericIdParameter;
+use crudkit::database::DatabaseState;
+use crudkit::prelude::*;
 use http::Method;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -17,9 +18,6 @@ use api::endpoints::processed::{
 };
 use api::endpoints::utils::ImeiInfoApiUtil;
 use api::{ServeRecordJson, ServeResourceJson};
-use crudkit::database::DatabaseState;
-use crudkit::traits::read::ReadRelation;
-use crudkit::traits::write::WriteRelation;
 use database::tables::{
     CustomersTable, DeviceModelsTable, DevicesTable, InvoicesTable, ItemsTable, PartsTable,
     ProductsTable, ServicesTable, TicketsTable, VendorsTable,
