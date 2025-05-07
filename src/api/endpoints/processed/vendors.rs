@@ -1,10 +1,10 @@
+use crudkit::traits::shared::Relation;
 use serde::Serialize;
 
 use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, ServeResourceJson};
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;
-use crate::database::traits::Relation;
 use crate::database::views::vendors::{VendorsView, VendorsViewRecord};
 
 #[derive(FromRelation, ServeResourceJson, Serialize)]

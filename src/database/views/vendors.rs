@@ -1,6 +1,5 @@
+use crudkit::{ReadRecord, ReadRelation, Record, Relation};
 use serde::Serialize;
-
-use proc_macros::{ReadRecord, ReadRelation, Record, Relation};
 
 #[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "vendors_view", primary_key = "id")]

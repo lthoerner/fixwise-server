@@ -49,10 +49,6 @@ pub use {
     vendors::{VendorsTable, VendorsTableRecord},
 };
 
-pub trait IdentifiableRecord {
-    fn id(&self) -> Option<i32>;
-}
-
 pub mod generators {
     use std::collections::HashSet;
 

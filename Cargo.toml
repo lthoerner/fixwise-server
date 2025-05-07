@@ -6,9 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.7.4", features = ["macros"] }
+axum = { version = "0.8.1", features = ["macros"] }
 chrono = { version = "0.4.37", features = ["serde"] }
 const_format = "0.2.33"
+crudkit = { version = "0.0.0", path = "../crudkit" }
 dotenvy = "0.15.7"
 fake = { version = "2.9.2", features = ["derive"] }
 http = "1.0.0"
@@ -20,12 +21,7 @@ rand = "0.8.5"
 rust_decimal = { version = "1.34.3", features = ["db-postgres"] }
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = { version = "1.0.115", features = ["preserve_order"] }
-sqlx = { version = "0.7.4", features = [
-    "postgres",
-    "rust_decimal",
-    "runtime-tokio",
-    "chrono",
-] }
+sqlx = { version = "0.8.3", features = ["chrono", "runtime-tokio", "rust_decimal"] }
 tokio = { version = "1.36.0", features = ["full"] }
 toml = { version = "0.8.10", features = ["preserve_order"] }
 tower-http = { version = "0.5.2", features = ["cors"] }

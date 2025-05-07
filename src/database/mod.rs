@@ -6,8 +6,11 @@ pub mod views;
 
 use std::time::Instant;
 
-use sqlx::query_builder::QueryBuilder;
-use sqlx::{raw_sql, PgPool, Postgres};
+use crudkit::database::PgDatabase;
+use crudkit::error::Error as CrudkitError;
+use crudkit::traits::read::ReadRelation;
+use crudkit::traits::write::BulkInsert;
+use sqlx::{raw_sql, PgPool};
 
 use tables::bundled_parts::BundledPartsJunctionTable;
 use tables::compatible_parts::CompatiblePartsJunctionTable;
@@ -31,10 +34,9 @@ use tables::services::ServicesTable;
 use tables::ticket_devices::TicketDevicesJunctionTable;
 use tables::tickets::TicketsTable;
 use tables::vendors::VendorsTable;
-use traits::{BulkInsert, GenerateStaticRecord, GenerateStaticTable, GenerateTable, ReadRelation};
+use traits::{GenerateStaticRecord, GenerateStaticTable, GenerateTable};
 
 const TABLE_GENERATION_LOADING_BAR_LENGTH: usize = 33;
-const SQL_PARAMETER_BIND_LIMIT: usize = u16::MAX as usize;
 
 const VENDORS_COUNT: usize = 123;
 const DEVICE_MANUFACTURERS_COUNT: usize = 123;
@@ -56,9 +58,7 @@ const TICKET_DEVICES_COUNT: usize = 1234;
 const BUNDLED_PARTS_COUNT: usize = 1234;
 
 #[derive(Clone)]
-pub struct Database {
-    connection: PgPool,
-}
+pub struct Database(pub PgDatabase);
 
 impl Database {
     const CONFIG_SCRIPT: &str = include_str!("../../database/config.pgsql");
@@ -71,96 +71,96 @@ impl Database {
     }
 
     async fn connect() -> Self {
-        Self {
+        Self(PgDatabase {
             connection: PgPool::connect("postgresql://fixwise:fixwise@localhost:5432")
                 .await
                 .unwrap(),
-        }
+        })
     }
 
     async fn configure(&self) {
         raw_sql(Self::CONFIG_SCRIPT)
-            .execute(&self.connection)
+            .execute(&self.0.connection)
             .await
             .unwrap();
     }
 
     pub async fn close_connection(&self) {
-        self.connection.close().await
+        self.0.connection.close().await
     }
 
-    pub async fn add_generated_items(&self) {
+    pub async fn add_generated_items(&self) -> Result<(), CrudkitError> {
         let start_time = Instant::now();
 
         let device_categories = DeviceCategoriesTable::generate();
-        device_categories.clone().insert_all(self).await;
+        device_categories.clone().insert_all(&self.0).await?;
         let part_categories = PartCategoriesTable::generate();
-        part_categories.clone().insert_all(self).await;
+        part_categories.clone().insert_all(&self.0).await?;
         let service_types = ServiceTypesTable::generate();
-        service_types.clone().insert_all(self).await;
+        service_types.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {VENDORS_COUNT} vendors");
         let vendors = VendorsTable::generate(VENDORS_COUNT, ());
-        vendors.clone().insert_all(self).await;
+        vendors.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {DEVICE_MANUFACTURERS_COUNT} device manufacturers");
         let device_manufacturers =
             DeviceManufacturersTable::generate(DEVICE_MANUFACTURERS_COUNT, ());
-        device_manufacturers.clone().insert_all(self).await;
+        device_manufacturers.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {PART_MANUFACTURERS_COUNT} part manufacturers");
         let part_manufacturers = PartManufacturersTable::generate(PART_MANUFACTURERS_COUNT, ());
-        part_manufacturers.clone().insert_all(self).await;
+        part_manufacturers.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {DEVICE_MODELS_COUNT} device models");
         let device_models = DeviceModelsTable::generate(
             DEVICE_MODELS_COUNT,
             (&device_manufacturers, &device_categories),
         );
-        device_models.clone().insert_all(self).await;
+        device_models.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {PARTS_COUNT} parts");
         let parts = PartsTable::generate(
             PARTS_COUNT,
             (&vendors, &part_manufacturers, &part_categories),
         );
-        parts.clone().insert_all(self).await;
+        parts.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {PRODUCTS_COUNT} products");
         let products = ProductsTable::generate(PRODUCTS_COUNT, ());
-        products.clone().insert_all(self).await;
+        products.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {PRODUCT_PRICES_COUNT} product_prices");
         let product_prices = ProductPricesTable::generate(PRODUCT_PRICES_COUNT, &products);
-        product_prices.clone().insert_all(self).await;
+        product_prices.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {SERVICES_COUNT} services");
         let services = ServicesTable::generate(SERVICES_COUNT, (&service_types, &device_models));
-        services.clone().insert_all(self).await;
+        services.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {SERVICE_PRICES_COUNT} service_prices");
         let service_prices = ServicePricesTable::generate(SERVICE_PRICES_COUNT, &services);
-        service_prices.clone().insert_all(self).await;
+        service_prices.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {CUSTOMERS_COUNT} customers");
         let customers = CustomersTable::generate(CUSTOMERS_COUNT, ());
-        customers.clone().insert_all(self).await;
+        customers.clone().insert_all(&self.0).await?;
 
         eprintln!("Generating {DEVICES_COUNT} devices");
         let devices = DevicesTable::generate(DEVICES_COUNT, (&device_models, &customers));
-        devices.clone().insert_all(self).await;
+        devices.clone().insert_all(&self.0).await?;
 
         // * Items must be fetched from the database as they are generated by triggers when
         // * inserting products and services and not separately generated.
-        let items = ItemsTable::query_all(self).await;
+        let items = ItemsTable::query_all(&self.0).await.unwrap();
 
         println!("Generating {INVOICES_COUNT} invoices");
         let invoices = InvoicesTable::generate(INVOICES_COUNT, ());
-        invoices.clone().insert_all(self).await;
+        invoices.clone().insert_all(&self.0).await?;
 
         println!("Generating {INVOICE_ITEMS_COUNT} invoice items");
         let invoice_items = InvoiceItemsTable::generate(INVOICE_ITEMS_COUNT, (&invoices, &items));
-        invoice_items.clone().insert_all(self).await;
+        invoice_items.clone().insert_all(&self.0).await?;
 
         println!("Generating {INVOICE_PAYMENTS_COUNT} invoice payments");
         let invoice_payments = InvoicePaymentsTable::generate(
@@ -173,30 +173,30 @@ impl Database {
                 &service_prices,
             ),
         );
-        invoice_payments.insert_all(self).await;
+        invoice_payments.insert_all(&self.0).await?;
 
         println!("Generating {TICKETS_COUNT} tickets");
         let tickets = TicketsTable::generate(TICKETS_COUNT, (&customers, &invoices));
-        tickets.clone().insert_all(self).await;
+        tickets.clone().insert_all(&self.0).await?;
 
         println!("Generating {COMPATIBLE_PARTS_COUNT} compatible parts");
         let compatible_parts = CompatiblePartsJunctionTable::generate(
             COMPATIBLE_PARTS_COUNT,
             (&device_models, &parts),
         );
-        compatible_parts.insert_all(self).await;
+        compatible_parts.insert_all(&self.0).await?;
 
         println!("Generating {TICKET_DEVICES_COUNT} ticket devices");
         let ticket_devices = TicketDevicesJunctionTable::generate(
             TICKET_DEVICES_COUNT,
             (&tickets, &devices, &services),
         );
-        ticket_devices.clone().insert_all(self).await;
+        ticket_devices.clone().insert_all(&self.0).await?;
 
         println!("Generating {BUNDLED_PARTS_COUNT} bundled parts");
         let bundled_parts =
             BundledPartsJunctionTable::generate(BUNDLED_PARTS_COUNT, (&ticket_devices, &parts));
-        bundled_parts.insert_all(self).await;
+        bundled_parts.insert_all(&self.0).await?;
 
         println!(
             "Generated and inserted {} items in {}ms",
@@ -220,13 +220,7 @@ impl Database {
                 + BUNDLED_PARTS_COUNT),
             start_time.elapsed().as_millis()
         );
-    }
 
-    async fn execute_query_builder<'a>(&self, mut query_builder: QueryBuilder<'a, Postgres>) {
-        query_builder
-            .build()
-            .execute(&self.connection)
-            .await
-            .unwrap();
+        Ok(())
     }
 }

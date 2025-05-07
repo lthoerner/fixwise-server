@@ -1,13 +1,14 @@
+// TODO: Remove unwraps and return errors
+
 pub mod endpoints;
 
 use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
-use serde::{Deserialize, Serialize};
+use crudkit::traits::id_parameter::{GenericIdParameter, IdParameter};
+use crudkit::traits::read::{ReadRecord, ReadRelation};
+use serde::Serialize;
 
-use proc_macros::IdParameter;
-
-use crate::database::traits::{ReadRecord, ReadRelation};
 use crate::ServerState;
 
 /// A trait that allows a JSON collection endpoint to be served to the API.
@@ -21,7 +22,7 @@ pub trait ServeResourceJson: FromRelation + Serialize + Sized {
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
     async fn serve_all(state: State<Arc<ServerState>>) -> Json<Self> {
         Json(Self::from_relation(
-            Self::Relation::query_all_handler(state).await.0,
+            Self::Relation::query_all(&state.database.0).await.unwrap(),
         ))
     }
 }
@@ -42,11 +43,13 @@ pub trait ServeRecordJson<I: IdParameter>: FromRecord + Serialize + Sized {
     /// Serve a JSON record endpoint.
     ///
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
-    async fn serve_one(state: State<Arc<ServerState>>, id_param: Query<I>) -> Json<Option<Self>> {
+    async fn serve_one(
+        state: State<Arc<ServerState>>,
+        Query(id_param): Query<I>,
+    ) -> Json<Option<Self>> {
         Json(Some(Self::from_record(
-            <Self::Record as ReadRecord>::ReadRelation::query_one_handler(state, id_param)
+            <Self::Record as ReadRecord>::ReadRelation::query_one(&state.database.0, id_param)
                 .await
-                .0
                 .unwrap(),
         )))
     }
@@ -80,26 +83,4 @@ pub trait FromRecord {
 
     /// Convert the database record into the data required for the endpoint.
     fn from_record(record: Self::Record) -> Self;
-}
-
-/// A trait that allows queries including an ID field to use unique nomenclature if desired.
-///
-/// The format for the URL will look like
-/// `https://fixwise.io/some/record/endpoint?id_parameter_name=123456`. If the ID parameter is just
-/// named `id`, simply use [`GenericIdParameter`].
-// TODO: Probably move this to some shared module with `database`
-pub trait IdParameter {
-    /// Create the parameter with an inner [`usize`].
-    fn new(value: usize) -> Self;
-    /// Get the inner [`usize`] ID parameter.
-    fn id(&self) -> usize;
-}
-
-/// A generic ID query parameter type.
-///
-/// Endpoints using this ID parameter will have URLs like
-/// `https://fixwise.io/some/record/endpoint?id=123456`.
-#[derive(Clone, Deserialize, IdParameter)]
-pub struct GenericIdParameter {
-    id: usize,
 }

@@ -3,26 +3,36 @@ use std::collections::HashSet;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
-    SingleInsert, WriteRecord, WriteRelation,
+use crudkit::traits::shared::{IdentifiableRecord, Relation};
+use crudkit::{
+    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+    WriteRecord, WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::generators::*;
 use super::part_categories::PartCategoriesTable;
 use super::part_manufacturers::PartManufacturersTable;
 use super::vendors::VendorsTable;
-use super::IdentifiableRecord;
-use crate::database::traits::{GenerateRecord, Relation};
+use crate::database::traits::GenerateRecord;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "parts", primary_key = "id")]
 pub struct PartsTable {
     records: Vec<PartsTableRecord>,
 }
 
 #[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    Serialize,
+    sqlx::FromRow,
+    IdentifiableRecord,
+    Clone,
 )]
 pub struct PartsTableRecord {
     #[auto_primary_key]

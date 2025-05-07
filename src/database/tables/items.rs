@@ -1,17 +1,18 @@
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 
-use proc_macros::{
+use crudkit::traits::shared::Relation;
+use crudkit::{
     BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
     WriteRecord, WriteRelation,
 };
+use serde::Serialize;
 
 use super::product_prices::ProductPricesTable;
 use super::service_prices::ServicePricesTable;
 use crate::database::shared_models::ItemType;
-use crate::database::traits::Relation;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, Serialize, Clone)]
 #[relation(relation_name = "items", primary_key = "id")]
 pub struct ItemsTable {
     records: Vec<ItemsTableRecord>,
@@ -35,7 +36,14 @@ impl ItemsTable {
 }
 
 #[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    Serialize,
+    sqlx::FromRow,
+    IdentifiableRecord,
+    Clone,
 )]
 pub struct ItemsTableRecord {
     #[auto_primary_key]

@@ -1,24 +1,27 @@
 use std::collections::HashSet;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
-    WriteRecord, WriteRelation,
+use crudkit::traits::shared::{IdentifiableRecord, Relation};
+use crudkit::{
+    BulkInsert, ReadRecord, ReadRelation, Record, Relation, SingleInsert, WriteRecord,
+    WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::devices::DevicesTable;
 use super::generators::*;
 use super::services::ServicesTable;
 use super::tickets::TicketsTable;
-use super::IdentifiableRecord;
-use crate::database::traits::{GenerateRecord, Relation};
+use crate::database::traits::GenerateRecord;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "ticket_devices", primary_key = "(ticket, device)")]
 pub struct TicketDevicesJunctionTable {
     records: Vec<TicketDevicesJunctionTableRecord>,
 }
 
-#[derive(Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, Clone)]
+#[derive(Record, ReadRecord, WriteRecord, SingleInsert, Serialize, sqlx::FromRow, Clone)]
 pub struct TicketDevicesJunctionTableRecord {
     #[manual_primary_key]
     pub ticket: i32,

@@ -2,22 +2,32 @@ use std::collections::HashSet;
 
 use chrono::NaiveDateTime;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
-    SingleInsert, WriteRecord, WriteRelation,
+use crudkit::{
+    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+    WriteRecord, WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::generators::*;
 use crate::database::traits::GenerateRecord;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "invoices", primary_key = "id")]
 pub struct InvoicesTable {
     records: Vec<InvoicesTableRecord>,
 }
 
 #[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    Serialize,
+    sqlx::FromRow,
+    IdentifiableRecord,
+    Clone,
 )]
 pub struct InvoicesTableRecord {
     #[auto_primary_key]

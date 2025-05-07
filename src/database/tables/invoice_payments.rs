@@ -4,10 +4,14 @@ use chrono::NaiveDateTime;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
-    SingleInsert, WriteRecord, WriteRelation,
+use crudkit::traits::shared::{IdentifiableRecord, Relation};
+use crudkit::{
+    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+    WriteRecord, WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::generators::*;
 use super::invoice_items::InvoiceItemsTable;
@@ -15,18 +19,24 @@ use super::invoices::InvoicesTable;
 use super::items::ItemsTable;
 use super::product_prices::ProductPricesTable;
 use super::service_prices::ServicePricesTable;
-use super::IdentifiableRecord;
 use crate::database::shared_models::PaymentType;
-use crate::database::traits::{GenerateRecord, Relation};
+use crate::database::traits::GenerateRecord;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "invoice_payments", primary_key = "id")]
 pub struct InvoicePaymentsTable {
     records: Vec<InvoicePaymentsTableRecord>,
 }
 
 #[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    Serialize,
+    sqlx::FromRow,
+    IdentifiableRecord,
+    Clone,
 )]
 pub struct InvoicePaymentsTableRecord {
     #[auto_primary_key]

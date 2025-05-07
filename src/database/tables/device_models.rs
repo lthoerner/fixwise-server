@@ -1,24 +1,34 @@
 use std::collections::HashSet;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
-    SingleInsert, WriteRecord, WriteRelation,
+use crudkit::traits::shared::{IdentifiableRecord, Relation};
+use crudkit::{
+    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+    WriteRecord, WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::device_categories::DeviceCategoriesTable;
 use super::device_manufacturers::DeviceManufacturersTable;
 use super::generators::*;
-use super::IdentifiableRecord;
-use crate::database::traits::{GenerateRecord, Relation};
+use crate::database::traits::GenerateRecord;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "device_models", primary_key = "id")]
 pub struct DeviceModelsTable {
     records: Vec<DeviceModelsTableRecord>,
 }
 
 #[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    Serialize,
+    sqlx::FromRow,
+    IdentifiableRecord,
+    Clone,
 )]
 pub struct DeviceModelsTableRecord {
     #[auto_primary_key]

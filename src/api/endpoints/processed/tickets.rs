@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use crudkit::traits::shared::Relation;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
@@ -7,7 +8,6 @@ use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, Se
 use crate::api::endpoints::{CssColor, TagOption, ViewCell};
 use crate::api::GenericIdParameter;
 use crate::database::shared_models::TicketStatus;
-use crate::database::traits::Relation;
 use crate::database::views::tickets::{TicketsView, TicketsViewRecord};
 
 const STATUS_TAG_OPTIONS: &[TagOption] = &[

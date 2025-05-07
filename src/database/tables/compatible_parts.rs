@@ -1,22 +1,34 @@
 use std::collections::HashSet;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
+use crudkit::traits::shared::{IdentifiableRecord, Relation};
+use crudkit::{
+    BulkInsert, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation, SingleInsert,
     WriteRecord, WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::device_models::DeviceModelsTable;
 use super::parts::PartsTable;
-use super::IdentifiableRecord;
-use crate::database::traits::{GenerateRecord, Relation};
+use crate::database::traits::GenerateRecord;
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "compatible_parts", primary_key = "(device, part)")]
 pub struct CompatiblePartsJunctionTable {
     records: Vec<CompatiblePartsJunctionTableRecord>,
 }
 
-#[derive(Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, Clone)]
+#[derive(
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    IdentifiableRecord,
+    Serialize,
+    sqlx::FromRow,
+    Clone,
+)]
 pub struct CompatiblePartsJunctionTableRecord {
     #[manual_primary_key]
     pub device: i32,

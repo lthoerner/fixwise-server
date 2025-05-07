@@ -2,10 +2,13 @@ use std::collections::HashSet;
 
 use serde::Deserialize;
 
-use proc_macros::{
-    BulkInsert, GenerateTable, IdParameter, IdentifiableRecord, ReadRecord, ReadRelation, Record,
-    Relation, SingleInsert, WriteRecord, WriteRelation,
+use crudkit::{
+    BulkInsert, IdParameter, IdentifiableRecord, ReadRecord, ReadRelation, Record, Relation,
+    SingleInsert, WriteRecord, WriteRelation,
 };
+use serde::Serialize;
+
+use proc_macros::GenerateTable;
 
 use super::generators::*;
 use crate::database::traits::GenerateRecord;
@@ -15,14 +18,21 @@ pub struct SkuParameter {
     sku: usize,
 }
 
-#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Clone)]
+#[derive(Relation, ReadRelation, WriteRelation, BulkInsert, GenerateTable, Serialize, Clone)]
 #[relation(relation_name = "products", primary_key = "sku")]
 pub struct ProductsTable {
     records: Vec<ProductsTableRecord>,
 }
 
 #[derive(
-    Record, ReadRecord, WriteRecord, SingleInsert, sqlx::FromRow, IdentifiableRecord, Clone,
+    Record,
+    ReadRecord,
+    WriteRecord,
+    SingleInsert,
+    Serialize,
+    sqlx::FromRow,
+    IdentifiableRecord,
+    Clone,
 )]
 pub struct ProductsTableRecord {
     #[auto_primary_key]

@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
+use crudkit::database::DatabaseState;
+use crudkit::traits::read::{ReadRecord, ReadRelation};
+use crudkit::traits::write::SingleInsert;
+use crudkit::IdParameter;
 use imei_info::{Imei, PhoneInfo, Tac};
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +12,6 @@ use proc_macros::FromRecord;
 
 use crate::api::{IdParameter, ServeRecordJson};
 use crate::database::tables::type_allocation_codes::TypeAllocationCodesTableRecord;
-use crate::database::traits::{ReadRecord, ReadRelation, SingleInsert};
 use crate::ServerState;
 
 #[derive(Clone, Deserialize, IdParameter)]
@@ -30,12 +33,11 @@ impl ServeRecordJson<ImeiParameter> for ImeiInfoApiUtil {
     ) -> Json<Option<Self>> {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
-        if let Json(Some(existing_row)) =
-            <Self::Record as ReadRecord>::ReadRelation::query_one_handler(
-                state.clone(),
-                Query(ImeiParameter::new(tac.clone().into())),
-            )
-            .await
+        if let Ok(existing_row) = <Self::Record as ReadRecord>::ReadRelation::query_one(
+            &state.database.0,
+            ImeiParameter::new(tac.clone().into()),
+        )
+        .await
         {
             Json(Some(<Self as crate::api::FromRecord>::from_record(
                 existing_row,
@@ -55,7 +57,10 @@ impl ServeRecordJson<ImeiParameter> for ImeiInfoApiUtil {
                 model: model.clone(),
             };
 
-            database_imei_info.insert(&state.database).await;
+            database_imei_info
+                .insert(state.get_database())
+                .await
+                .unwrap();
 
             let frontend_imei_info = ImeiInfoApiUtil {
                 manufacturer,

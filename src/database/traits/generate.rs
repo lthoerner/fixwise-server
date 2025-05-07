@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 
-#[allow(unused_imports)]
-use super::shared::Relation;
-use super::write::{WriteRecord, WriteRelation};
 use crate::database::loading_bar::LoadingBar;
 use crate::database::tables::generators::*;
 #[allow(unused_imports)]
 use crate::database::tables::DeviceCategoriesTable;
+#[allow(unused_imports)]
+use crudkit::traits::shared::Relation;
+use crudkit::traits::write::{WriteRecord, WriteRelation};
 
 /// A trait that allows a database table to be randomly generated.
 ///

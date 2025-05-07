@@ -1,7 +1,6 @@
+use crudkit::{ReadRecord, ReadRelation, Record, Relation};
 use rust_decimal::Decimal;
 use serde::Serialize;
-
-use proc_macros::{ReadRecord, ReadRelation, Record, Relation};
 
 use crate::database::shared_models::ItemType;
 

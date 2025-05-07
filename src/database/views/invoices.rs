@@ -1,8 +1,7 @@
 use chrono::NaiveDateTime;
+use crudkit::{ReadRecord, ReadRelation, Record, Relation};
 use rust_decimal::Decimal;
 use serde::Serialize;
-
-use proc_macros::{ReadRecord, ReadRelation, Record, Relation};
 
 #[derive(Relation, ReadRelation, Serialize)]
 #[relation(relation_name = "invoices_view", primary_key = "id")]

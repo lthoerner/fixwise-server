@@ -1,3 +1,4 @@
+use crudkit::traits::shared::Relation;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
@@ -5,7 +6,6 @@ use proc_macros::{FromRecord, FromRelation, ProcessEndpoint, ServeRecordJson, Se
 
 use crate::api::endpoints::ViewCell;
 use crate::api::GenericIdParameter;
-use crate::database::traits::Relation;
 use crate::database::views::services::{ServicesView, ServicesViewRecord};
 
 #[derive(FromRelation, ServeResourceJson, Serialize)]
