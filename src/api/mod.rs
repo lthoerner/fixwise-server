@@ -5,6 +5,7 @@ pub mod endpoints;
 use std::sync::Arc;
 
 use axum::extract::{Json, Query, State};
+use crudkit::database::DatabaseState;
 use crudkit::traits::id_parameter::{GenericIdParameter, IdParameter};
 use crudkit::traits::read::{ReadRecord, ReadRelation};
 use serde::Serialize;
@@ -22,7 +23,9 @@ pub trait ServeResourceJson: FromRelation + Serialize + Sized {
     /// This function is used as an axum handler via [`axum::routing::method_routing::get`].
     async fn serve_all(state: State<Arc<ServerState>>) -> Json<Self> {
         Json(Self::from_relation(
-            Self::Relation::query_all(&state.database.0).await.unwrap(),
+            Self::Relation::query_all(state.get_database())
+                .await
+                .unwrap(),
         ))
     }
 }
@@ -48,7 +51,7 @@ pub trait ServeRecordJson<I: IdParameter>: FromRecord + Serialize + Sized {
         Query(id_param): Query<I>,
     ) -> Json<Option<Self>> {
         Json(Some(Self::from_record(
-            <Self::Record as ReadRecord>::ReadRelation::query_one(&state.database.0, id_param)
+            <Self::Record as ReadRecord>::ReadRelation::query_one(state.get_database(), id_param)
                 .await
                 .unwrap(),
         )))

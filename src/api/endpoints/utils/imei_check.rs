@@ -34,7 +34,7 @@ impl ServeRecordJson<ImeiParameter> for ImeiInfoApiUtil {
         let imei = Imei::try_from(imei_param.0.id()).unwrap();
         let tac = Tac::from(imei.clone());
         if let Ok(existing_row) = <Self::Record as ReadRecord>::ReadRelation::query_one(
-            &state.database.0,
+            state.get_database(),
             ImeiParameter::new(tac.clone().into()),
         )
         .await
