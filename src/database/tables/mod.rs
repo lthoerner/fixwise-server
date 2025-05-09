@@ -180,13 +180,15 @@ pub mod generators {
     }
 
     pub fn generate_ticket_status() -> TicketStatus {
-        match thread_rng().gen_range(0..=5) {
-            0 => TicketStatus::New,
+        match thread_rng().gen_range(0..=7) {
+            0 => TicketStatus::Pending,
             1 => TicketStatus::WaitingForParts,
             2 => TicketStatus::WaitingForCustomer,
             3 => TicketStatus::InRepair,
-            4 => TicketStatus::ReadyForPickup,
-            5 => TicketStatus::Closed,
+            4 => TicketStatus::UnableToRepair,
+            5 => TicketStatus::ReadyForPickup,
+            6 => TicketStatus::Cancelled,
+            7 => TicketStatus::Collected,
             _ => unreachable!(),
         }
     }

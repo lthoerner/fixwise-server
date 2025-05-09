@@ -9,12 +9,14 @@ CREATE SCHEMA IF NOT EXISTS persistent;
 CREATE SCHEMA main;
 
 CREATE TYPE ticket_status AS ENUM (
-    'new',
+    'pending',
     'waiting_for_parts',
     'waiting_for_customer',
     'in_repair',
+    'unable_to_repair',
     'ready_for_pickup',
-    'closed'
+    'cancelled',
+    'collected'
 );
 
 CREATE TYPE payment_type AS ENUM ('card', 'cash');
@@ -145,7 +147,7 @@ CREATE TABLE main.invoice_payments (
 
 CREATE TABLE main.tickets (
     id serial PRIMARY KEY,
-    status ticket_status NOT NULL DEFAULT 'new',
+    status ticket_status NOT NULL DEFAULT 'pending',
     customer integer references main.customers (id),
     invoice integer references main.invoices (id) ON DELETE SET NULL,
     description text,

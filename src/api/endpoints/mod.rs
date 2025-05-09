@@ -91,7 +91,7 @@ impl ViewFormat for i32 {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
         match column_formatting {
             ColumnFormat::None => None,
-            ColumnFormat::Id => Some(format!("#{:0>10}", self)),
+            ColumnFormat::Id => Some(format!("#{}", self)),
             _ => panic!("Invalid formatting specifier for u32"),
         }
     }
@@ -130,12 +130,14 @@ impl ViewFormat for TicketStatus {
     fn format(&self, column_formatting: &ColumnFormat) -> Option<String> {
         Some(match column_formatting {
             ColumnFormat::Tag => match self {
-                TicketStatus::New => "New".to_string(),
-                TicketStatus::WaitingForParts => "Waiting for Parts".to_string(),
-                TicketStatus::WaitingForCustomer => "Waiting for Customer".to_string(),
-                TicketStatus::InRepair => "In Repair".to_string(),
-                TicketStatus::ReadyForPickup => "Ready for Pickup".to_string(),
-                TicketStatus::Closed => "Closed".to_string(),
+                TicketStatus::Pending => "Pending".to_owned(),
+                TicketStatus::WaitingForParts => "Waiting for Parts".to_owned(),
+                TicketStatus::WaitingForCustomer => "Waiting for Customer".to_owned(),
+                TicketStatus::InRepair => "In Repair".to_owned(),
+                TicketStatus::UnableToRepair => "Unable to Repair".to_owned(),
+                TicketStatus::ReadyForPickup => "Ready for Pickup".to_owned(),
+                TicketStatus::Cancelled => "Cancelled".to_owned(),
+                TicketStatus::Collected => "Collected".to_owned(),
             },
             _ => panic!("Invalid formatting specifier for ApiTag"),
         })

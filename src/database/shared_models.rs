@@ -4,12 +4,14 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "ticket_status", rename_all = "snake_case")]
 pub enum TicketStatus {
-    New,
+    Pending,
     WaitingForParts,
     WaitingForCustomer,
     InRepair,
+    UnableToRepair,
     ReadyForPickup,
-    Closed,
+    Cancelled,
+    Collected,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Serialize, sqlx::Type)]

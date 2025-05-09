@@ -12,17 +12,17 @@ use crate::database::views::tickets::{TicketsView, TicketsViewRecord};
 
 const STATUS_TAG_OPTIONS: &[TagOption] = &[
     TagOption {
-        name: "new",
+        name: "pending",
         color: CssColor::Preset {
-            name: "royalblue",
-            opacity: 0.45,
+            name: "orange",
+            opacity: 0.54,
         },
     },
     TagOption {
         name: "waiting_for_parts",
         color: CssColor::Preset {
-            name: "red",
-            opacity: 0.37,
+            name: "yellow",
+            opacity: 0.43,
         },
     },
     TagOption {
@@ -35,8 +35,15 @@ const STATUS_TAG_OPTIONS: &[TagOption] = &[
     TagOption {
         name: "in_repair",
         color: CssColor::Preset {
-            name: "orange",
-            opacity: 0.54,
+            name: "royalblue",
+            opacity: 0.45,
+        },
+    },
+    TagOption {
+        name: "unable_to_repair",
+        color: CssColor::Preset {
+            name: "limegreen",
+            opacity: 0.37,
         },
     },
     TagOption {
@@ -47,7 +54,14 @@ const STATUS_TAG_OPTIONS: &[TagOption] = &[
         },
     },
     TagOption {
-        name: "closed",
+        name: "cancelled",
+        color: CssColor::Preset {
+            name: "gray",
+            opacity: 0.45,
+        },
+    },
+    TagOption {
+        name: "collected",
         color: CssColor::Preset {
             name: "gray",
             opacity: 0.45,
